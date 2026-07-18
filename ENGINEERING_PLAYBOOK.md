@@ -2,12 +2,11 @@
 
 This is the teaching/reference document behind Smolink — it explains *why* backend systems are built the way they are, using Smolink as the running example. It is intentionally framework-agnostic where possible: the concepts apply to FastAPI, Django, Express, Spring Boot, or anything else.
 
-**Relationship to the other two docs**, so nothing drifts out of sync:
-- `README.md` — the canonical endpoint list and phase-by-phase implementation roadmap.
-- `SMOLINK_CONTEXT.md` — the canonical list of fixed architectural decisions and invariants.
+**Relationship to the other docs**, so nothing drifts out of sync:
+- `README.md` — the canonical architectural decisions, invariants, endpoint list, and phase-by-phase implementation roadmap.
 - **This file** — the conceptual "why," taught once, referenced everywhere else.
 
-If something here ever conflicts with `SMOLINK_CONTEXT.md`, the context file wins — update this file to match, not the other way around.
+If something here ever conflicts with `README.md`, the README wins — update this file to match, not the other way around.
 
 ## Table of Contents
 
@@ -78,7 +77,7 @@ URL shortening · redirects · custom aliases · expiration · QR generation · 
 
 ## Technology Stack
 
-Python · FastAPI · Pydantic · SQLAlchemy · Alembic · PostgreSQL · Redis · JWT · Kafka *(later)* · Docker · Docker Compose · NGINX · GitHub Actions · Prometheus · Grafana · Oracle Cloud (Ubuntu VM).
+Python · FastAPI · Pydantic · async SQLAlchemy · Alembic · PostgreSQL · Redis (cache and ephemeral rate-limit counters) · JWT · Argon2 · Kafka *(later)* · Docker · Docker Compose · NGINX · GitHub Actions · Prometheus · Grafana · Oracle Cloud (Ubuntu VM).
 
 ## High-Level Architecture
 
@@ -90,7 +89,7 @@ The architecture is meant to grow *alongside* the project, not be built in full 
 
 ## Project Constraints
 
-These are treated as fixed unless consciously revisited — see `SMOLINK_CONTEXT.md` for the maintained, canonical version of this list:
+These are treated as fixed unless consciously revisited — see `README.md` for the maintained, canonical version of this list:
 
 - Guests can shorten URLs; auth is optional, never mandatory.
 - PostgreSQL is the source of truth; Redis is cache-only.
@@ -150,7 +149,7 @@ Every request has: **method, path, headers, body, query parameters.** Every resp
 
 ## 10. REST API Design
 
-Think in **nouns, not verbs**: `/api/urls` not `/createURL`. Resources are acted on via HTTP methods, not baked into the path.
+Think in **nouns, not verbs**: `/api/v1/urls` not `/createURL`. Resources are acted on via HTTP methods, not baked into the path.
 
 **Statelessness:** every request carries everything needed to process it (this is *why* Smolink uses JWT instead of server-side sessions — it lets multiple FastAPI instances work correctly without shared session state).
 
@@ -159,7 +158,7 @@ Think in **nouns, not verbs**: `/api/urls` not `/createURL`. Resources are acted
 ## 11. Request Lifecycle
 
 ```
-React → POST /api/urls → NGINX → FastAPI Router
+React → POST /api/v1/urls → NGINX → FastAPI Router
       → Pydantic validation → Service layer → Repository layer
       → PostgreSQL → back up through Repository → Service
       → API route → JSON response → React
@@ -169,7 +168,7 @@ Every request in Smolink follows this same pipeline — no shortcuts, no layer-s
 
 ## 12. Folder Structure
 
-Reconciled with the modular-monolith decision in `SMOLINK_CONTEXT.md`: each **domain module** owns its own layers internally, rather than one shared `services/`/`repositories/` folder spanning all domains. This keeps the "no cross-module DB access" invariant enforceable at the folder level.
+Reconciled with the modular-monolith decision in `README.md`: each **domain module** owns its own layers internally, rather than one shared `services/`/`repositories/` folder spanning all domains. This keeps the "no cross-module DB access" invariant enforceable at the folder level.
 
 ```
 app/
@@ -212,7 +211,7 @@ FastAPI provides objects (DB session, current user, settings, logger) automatica
 
 ## 15. Configuration Management
 
-Never hardcode secrets. `.env` holds real values (never committed); `.env.example` is the template contributors copy. `pyproject.toml` holds dependencies/metadata, not secrets. Configuration loads once at startup and is reused — not re-read per request.
+Never hardcode secrets. `.env` holds real values (never committed); `.env.example` is the template contributors copy. At minimum, configure the database URL, Redis URL, JWT secret, public base URL, and IP-hash secret. `pyproject.toml` holds dependencies/metadata, not secrets. Configuration loads once at startup and is reused — not re-read per request.
 
 ---
 
@@ -228,11 +227,11 @@ HTTP Request → Pydantic Schema → Service → Repository → SQLAlchemy Model
 
 Design the data model **before** the API — changing a database schema later is expensive; changing a route handler is not.
 
-**Entities (initial):** `users`, `urls`. **Later:** `clicks`, `api_keys`.
+**Entities (initial):** `users`, `urls`, `click_events`. **Later:** `api_keys`.
 
 - **Primary keys:** Smolink uses Snowflake IDs (see §32), not naive auto-increment (predictable, and doesn't work cleanly across multiple instances without coordination).
 - **Foreign keys:** store `user_id` on `urls`, not duplicated user data.
-- **Constraints:** unique alias, unique email, `NOT NULL` on required fields — the database is the last line of defense against bad data.
+- **Constraints:** unique `short_code` (generated code or custom alias), unique email, `NOT NULL` on required fields — the database is the last line of defense against bad data.
 - **Indexes:** the redirect path (`GET /{short_code}`) is the single most latency-sensitive query in the system — index `short_code`. Indexes speed reads at the cost of extra storage and slightly slower writes; add them where a real query pattern justifies it, not everywhere.
 - **Normalization:** avoid duplicating data (e.g. don't store `username` on every `url` row — join through `user_id`).
 
@@ -242,7 +241,10 @@ Design the data model **before** the API — changing a database schema later is
 |---|---|---|
 | `expires_at` | `TIMESTAMP WITH TIME ZONE` | Users and servers may be in different time zones; storing without TZ creates silent bugs the moment the app or a user crosses one |
 | Snowflake IDs | `BIGINT` | 64-bit by design; `INTEGER` overflows |
-| `custom_alias` | `VARCHAR(n)` with a sane max length | Bounded, indexable; `TEXT` works but signals "unbounded," which aliases aren't |
+| `short_code` | `VARCHAR(n)` with a sane max length | Stores either the generated Base62 code or a custom alias; bounded and indexed for redirects |
+| `total_clicks` | `BIGINT` | Fast aggregate for dashboard lists without scanning raw click events |
+| `last_clicked_at` | `TIMESTAMP WITH TIME ZONE` | Fast "last activity" value for an owned URL |
+| `click_events.ip_hash` | fixed-length keyed hash | Supports limited abuse analysis without ever retaining a raw IP address |
 | Future analytics metadata | `JSONB` | Schema-flexible for fields you don't want to migrate for every new tracked attribute (e.g. UTM params) — but don't reach for this before you have an actual variable-shape field |
 
 ## 17. SQLAlchemy Models
@@ -314,7 +316,7 @@ One file per domain (`urls.py`, `auth.py`, `users.py`, `analytics.py`, `health.p
 
 ## 27. API Endpoints
 
-Resource-oriented, not action-oriented: `GET /api/me/urls` not `/getUserURLs`. **The full, current endpoint list lives in `README.md`** — don't let this section drift into a second copy of it.
+Resource-oriented, not action-oriented: `GET /api/v1/me/urls` not `/getUserURLs`. **The full, current endpoint list lives in `README.md`** — don't let this section drift into a second copy of it.
 
 ## 28. Authentication & Authorization
 
@@ -331,7 +333,7 @@ Not needed for v1. Later candidates: QR logo upload, CSV import for bulk shorten
 
 ## 30. API Versioning
 
-Not needed while there's a single first-party frontend. Becomes necessary the moment there's a public API with external consumers you can't force to upgrade simultaneously — at that point, new breaking changes go to `/api/v2/...` while `/api/v1/...` keeps working for existing clients. (Whether Smolink adopts the `/api/v1/` prefix *now*, pre-emptively, is still an open question — tracked in `SMOLINK_CONTEXT.md`.)
+Smolink starts with the `/api/v1/` prefix. If external consumers later require a breaking change, the new behavior goes under `/api/v2/...` while `/api/v1/...` remains available for existing clients.
 
 ---
 
@@ -341,7 +343,7 @@ For every feature: why it exists, what it needs from the DB, what the request fl
 
 ## 31. URL Shortening
 
-`POST /api/urls` → validate schema → validate business rules (alias available, expiry sane) → generate ID → encode → persist → return short URL. Works identically for guests and logged-in users; the only difference is whether `user_id` is populated.
+`POST /api/v1/urls` → validate schema → validate business rules (alias available, expiry sane) → generate ID → encode → persist → return short URL. Works identically for guests and logged-in users; the only difference is whether `user_id` is populated.
 
 ## 32. Snowflake IDs
 
@@ -353,13 +355,13 @@ Converts the (large) Snowflake integer into a short, URL-safe string using `[0-9
 
 ## 34. Custom Aliases
 
-Validated for length, allowed characters, and **reserved words** (`login`, `register`, `admin`, `health`, `metrics`, `api`, `me`, `dashboard` — anything that would collide with a real route must never be assignable as an alias). On conflict: `409`, and per the decision in `SMOLINK_CONTEXT.md`, **no separate availability-check endpoint** — the create call's `409` is sufficient for v1.
+Validated for length, allowed characters, and **reserved words** (`login`, `register`, `admin`, `health`, `metrics`, `api`, `me`, `dashboard` — anything that would collide with a real route must never be assignable as an alias). On conflict: `409`, and per the decision in `README.md`, **no separate availability-check endpoint** — the create call's `409` is sufficient for v1.
 
 ## 35. Expiring Links
 
 `expires_at` is a nullable timestamp. Enforced **at read time** on the redirect path (`WHERE expires_at IS NULL OR expires_at > now()`), returning `410 Gone` if expired — not via a scheduled job. Redis TTL is set to match `expires_at` on write so the cache self-evicts at the same moment.
 
-**Data retention policy** (decided in this project's own design discussion, not in the original source material): expiring a link is not the same as deleting it. The `url` row and its aggregate stats (`total_clicks`, `last_clicked_at`) persist indefinitely unless the user explicitly deletes the link via `DELETE /api/me/urls/{id}`. Only raw, granular `click_events` are candidates for a cron-based prune job, and only after a long retention window (e.g. 90 days) — because that's disposable detail, not the aggregate. **Principle: raw event data is disposable, aggregates are not.**
+**Data retention policy** (decided in this project's own design discussion, not in the original source material): expiring a link is not the same as deleting it. The `url` row and its aggregate stats (`total_clicks`, `last_clicked_at`) persist indefinitely unless the user explicitly deletes the link via `DELETE /api/v1/me/urls/{id}`. Only raw, granular `click_events` are candidates for a cron-based prune job, and only after a long retention window (e.g. 90 days) — because that's disposable detail, not the aggregate. **Principle: raw event data is disposable, aggregates are not.**
 
 ## 36. Redirect Flow
 
@@ -367,19 +369,19 @@ The single most performance-critical endpoint in the system.
 
 ```
 GET /{short_code} → NGINX → FastAPI → Redis
-  cache hit  → 302 immediately, click event published async
-  cache miss → PostgreSQL → populate Redis → 302
+  cache hit  → record click event, then 302
+  cache miss → PostgreSQL → populate Redis → record click event, then 302
 ```
 
 Uses `302` (temporary) rather than `301` (permanent) initially, since destination URLs may be edited — a `301` risks browsers caching a redirect that's no longer accurate.
 
 ## 37. QR Code Generation
 
-`GET /api/urls/{short_code}/qr` → generate PNG → return image. Future: logo embedding, color customization, SVG output.
+`GET /api/v1/urls/{short_code}/qr` → generate PNG → return image. Future: logo embedding, color customization, SVG output.
 
 ## 38. Click Analytics
 
-Captured per redirect: timestamp, browser, OS, device, referrer, user-agent, IP hash (never raw IP — see security notes in Part 1). Initially written synchronously; the moment this measurably slows the redirect path, move it to a queue (Kafka) consumed by a separate analytics worker — this is the one genuine service-extraction candidate in the whole system, because it's naturally async and decoupled from the redirect's response.
+Captured per redirect: timestamp, browser, OS, device, referrer, user-agent, and a keyed IP hash (never a raw IP). The first backend release stores events synchronously and provides owner-only date-range reports with daily, browser, OS, device, and referrer breakdowns. Measure redirect latency; only when synchronous capture demonstrably harms it should events move to Kafka and a separate analytics worker. This remains the one genuine service-extraction candidate because it is naturally async and decoupled from the redirect response.
 
 ---
 
@@ -394,7 +396,7 @@ Request → Redis → hit? → yes: return
                        → no: PostgreSQL → write to Redis → return
 ```
 
-**Cached:** `short_code → destination_url` initially; later, dashboard stats and hot analytics. **Invalidation:** on update, write the DB first, then delete the stale cache key — never write-through to Redis as if it were authoritative. Postgres remains the source of truth at all times.
+**Cached:** `short_code → destination_url` initially; later, dashboard stats and hot analytics. **Invalidation:** on update, write the DB first, then delete the stale cache key — never write-through to Redis as if it were authoritative. If the redirect cache is unavailable, log the failure and read from Postgres. Postgres remains the source of truth at all times.
 
 ## 40. Background Tasks
 
@@ -402,7 +404,7 @@ Move slow work out of the request/response path: QR generation, email verificati
 
 ## 41. Rate Limiting
 
-Redis-backed counter per user/IP; exceeding the limit returns `429`. Suggested starting tiers: guests lower, authenticated users higher — exact numbers are a config decision, not an architectural one.
+Use atomic fixed-window Redis counters: registration and login share 5 attempts per IP per minute; guest URL creation allows 10 requests per IP per minute; authenticated URL creation allows 30 requests per user per minute. Redirects and `/health` are not rate-limited. Exceeded limits return `429` with `Retry-After`. Unlike redirect caching, the limiter fails closed: if Redis is unavailable for a protected write, return `503` rather than silently disabling abuse protection. These counters are ephemeral enforcement data, not a durable source of truth.
 
 ## 42. Async Programming
 
@@ -477,11 +479,11 @@ Tests one function in isolation — no real DB, no HTTP, no Redis; dependencies 
 
 ## 50. Integration Testing
 
-Real components working together — e.g. `POST /api/urls` exercising service → repository → actual test database → response, end to end.
+Real components working together — e.g. `POST /api/v1/urls` exercising service → repository → actual test database → response, end to end.
 
 ## 51. API Testing
 
-For every endpoint, test: correct request, invalid request, unauthorized, forbidden, missing resource, duplicate resource, and unexpected failure. Concretely for Smolink: `POST /api/urls` → `201`; duplicate alias → `409`; malformed body → `422`; `GET /api/me` without a JWT → `401`; deleting someone else's URL → `403`; redirect on an expired link → `410`; on a missing one → `404`.
+For every endpoint, test: correct request, invalid request, unauthorized, forbidden, missing resource, duplicate resource, and unexpected failure. Concretely for Smolink: `POST /api/v1/urls` → `201`; duplicate alias → `409`; malformed body → `422`; `GET /api/v1/me/urls` without a JWT → `401`; deleting someone else's URL → `403`; redirect on an expired link → `410`; on a missing one → `404`; exceeding an auth or creation limit → `429` with `Retry-After`; and a Redis outage during a rate-limited write → `503` while a redirect still falls back to Postgres.
 
 ## 52. Debugging Strategy
 
