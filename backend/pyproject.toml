@@ -4,8 +4,23 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.18.5",
+    "argon2-cffi>=25.1.0",
+    "asyncpg>=0.31.0",
     "fastapi[standard]>=0.139.0",
+    "pydantic-settings>=2.14.2",
+    "pyjwt>=2.13.0",
+    "qrcode[pil]>=8.2",
+    "redis>=8.0.1",
+    "sqlalchemy>=2.0.51",
+    "user-agents>=2.2.0",
     "uvicorn[standard]>=0.51.0",
 ]
 [tool.fastapi]
 entrypoint = "app.main:app"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
