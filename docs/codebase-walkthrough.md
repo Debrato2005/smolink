@@ -21,6 +21,7 @@ The implementation sequence is tracked separately in [backend-build-checklist.md
 | `backend/app/core/config.py` | Loads typed environment-based settings | Implemented and tested |
 | `backend/app/db/base.py` | Provides shared SQLAlchemy metadata for ORM models and Alembic | Implemented |
 | `backend/app/db/session.py` | Creates the async SQLAlchemy engine and per-request sessions | Implemented and tested |
+| `backend/app/models/` | SQLAlchemy tables for users, URLs, and click events | Implemented; registered for Alembic through `models/__init__.py` |
 | `backend/tests/` | Automated API and configuration tests | Two tests implemented |
 | `backend/.env.example` | Safe template for local environment values | Implemented |
 | `backend/pyproject.toml` | Python package metadata and dependency declarations | Implemented |
@@ -388,7 +389,48 @@ Defines Smolink's shared ORM base. Future models inherit from `Base`, which give
 
 `alembic.ini` keeps Alembic's generated settings and script location. Its placeholder `sqlalchemy.url` is intentionally not replaced with a real connection string.
 
-`alembic/env.py` imports `asyncio`, Alembic's `context`, SQLAlchemy's async engine support and `NullPool`, plus Smolink's `get_settings` and `Base`. It assigns `get_settings().database_url` to Alembic at runtime, so local credentials stay in `backend/.env`; it assigns `Base.metadata` as `target_metadata`, so future model tables are visible to Alembic; and it runs online migrations through an async engine and `connection.run_sync(...)`, which adapts Alembic's synchronous migration operations to the async connection. `uv run alembic current` connected to Postgres successfully on 2026-07-20 and found no revision, as expected before the first migration.
+`alembic/env.py` imports `asyncio`, Alembic's `context`, SQLAlchemy's async engine support and `NullPool`, plus Smolink's `get_settings` and `Base`. It assigns `get_settings().database_url` to Alembic at runtime, so local credentials stay in `backend/.env`; it assigns `Base.metadata` as `target_metadata`, so future model tables are visible to Alembic; and it runs online migrations through an async engine and `connection.run_sync(...)`, which adapts Alembic's synchronous migration operations to the async connection. `uv run alembic current` connected to Postgres successfully on 2026-07-20 and found no revision, as expected before the first migration. `from app import models` loads `models/__init__.py`, which imports all concrete model classes and registers their tables with `Base.metadata`.
+
+## Initial ORM models (in progress)
+
+`backend/app/models/user.py` defines the `users` table: a Snowflake `BIGINT`
+primary key, required unique/indexed email, Argon2 hash field, and
+timezone-aware creation/update timestamps.
+
+`backend/app/models/url.py` defines the `urls` table: a Snowflake `BIGINT`
+primary key, the public unique/indexed `short_code`, destination URL, nullable
+`owner_id` with `ON DELETE SET NULL`, expiry, click aggregates, and timestamps.
+The numeric ID and public short code are separate: generated codes derive from
+the ID later, while custom aliases are stored directly in `short_code`.
+
+`backend/app/models/click_event.py` defines immutable analytics facts: its
+Snowflake ID, URL foreign key with `ON DELETE CASCADE`, click time, derived
+browser/OS/device fields, optional referrer, keyed IP hash, and the composite
+`(url_id, clicked_at)` index. Raw IP addresses and raw user-agent strings are
+not stored.
+
+The model tests in `backend/tests/test_models.py` inspect this metadata and use
+real Postgres sessions to prove the unique-email and URL-owner foreign-key
+constraints. Each integration test creates a `NullPool` engine inside its own
+`asyncio.run()` call and disposes it before that loop ends. This avoids reusing
+an asyncpg connection created by a different event loop. The tests passed on
+2026-07-25, and revision `10e6aa664dee` is applied to local Postgres.
+
+## Short-code utilities
+
+`backend/app/utils/base62.py` contains a dependency-free encoder. Its alphabet
+is digits, lowercase letters, then uppercase letters; zero encodes as `"0"`,
+negative values raise `ValueError`, and repeated division by 62 builds every
+other result.
+
+`backend/app/utils/snowflake.py` creates sortable 64-bit IDs from milliseconds
+since a fixed epoch, a configurable worker ID, and a per-millisecond sequence.
+The lock protects concurrent calls in one process. Production multi-instance
+deployments must assign each instance a different worker ID from `0` to `1023`.
+
+`backend/app/utils/aliases.py` lowercases aliases, rejects reserved route names,
+and permits only 3–64 lowercase letters, digits, or hyphens. Generated codes
+and aliases both occupy `urls.short_code`; no `custom_alias` column exists.
 
 ## `backend/.env.example`
 

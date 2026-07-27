@@ -112,11 +112,21 @@ smolink/
 
 ## Data Model Overview
 
-*(Needs clarification — no schema has been finalized yet. Sketch below for reference only.)*
+The initial schema uses Snowflake `BIGINT` primary keys for `users`, `urls`,
+and `click_events`; the generator is implemented in the next utility
+milestone.
 
-- **User**: id, email, password_hash, created_at
-- **Url**: id, short_code, destination, owner_id (nullable), expires_at, total_clicks, last_clicked_at, created_at. `short_code` stores either the generated Base62 code or a custom alias; there is no separate `custom_alias` field.
-- **ClickEvent**: id, url_id, timestamp, browser, os, device_type, referrer, ip_hash. Store a keyed IP hash only; never store a raw IP address.
+- **User**: id, normalized unique email, password_hash, created_at, updated_at.
+- **Url**: id, unique indexed short_code, destination, nullable owner_id,
+  expires_at, total_clicks, last_clicked_at, created_at, updated_at.
+  `short_code` stores either the generated Base62 code or a custom alias;
+  there is no separate `custom_alias` field.
+- **ClickEvent**: id, url_id, clicked_at, browser, os, device, referrer,
+  ip_hash. It uses `(url_id, clicked_at)` for date-range analytics. Store a
+  keyed IP hash only; never store a raw IP address.
+
+Deleting a user preserves URLs by setting `owner_id` to `NULL`. Deleting a URL
+permanently cascades to its click events in v1.
 
 ## Invariants — Do Not Break
 
@@ -132,5 +142,4 @@ Password-protected links, scheduled activation, bulk shortening, custom domains,
 
 ## Open Questions
 
-- Exact DB schema (fields, indexes) — not yet finalized.
 - Deployment target details beyond "Oracle Cloud VM" (single instance vs. planned multi-instance timeline).

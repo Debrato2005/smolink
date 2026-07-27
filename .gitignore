@@ -62,3 +62,5 @@ dist/
 # --- Misc ---
 *.bak
 .cache/
+
+Agents.md

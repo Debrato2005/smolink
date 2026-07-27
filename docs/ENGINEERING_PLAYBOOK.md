@@ -230,7 +230,9 @@ Design the data model **before** the API — changing a database schema later is
 **Entities (initial):** `users`, `urls`, `click_events`. **Later:** `api_keys`.
 
 - **Primary keys:** Smolink uses Snowflake IDs (see §32), not naive auto-increment (predictable, and doesn't work cleanly across multiple instances without coordination).
-- **Foreign keys:** store `user_id` on `urls`, not duplicated user data.
+- **Foreign keys:** store `owner_id` on `urls`, not duplicated user data;
+  deleting a user sets that nullable field to `NULL`, while deleting a URL
+  cascades to its click events in v1.
 - **Constraints:** unique `short_code` (generated code or custom alias), unique email, `NOT NULL` on required fields — the database is the last line of defense against bad data.
 - **Indexes:** the redirect path (`GET /{short_code}`) is the single most latency-sensitive query in the system — index `short_code`. Indexes speed reads at the cost of extra storage and slightly slower writes; add them where a real query pattern justifies it, not everywhere.
 - **Normalization:** avoid duplicating data (e.g. don't store `username` on every `url` row — join through `user_id`).
@@ -245,6 +247,7 @@ Design the data model **before** the API — changing a database schema later is
 | `total_clicks` | `BIGINT` | Fast aggregate for dashboard lists without scanning raw click events |
 | `last_clicked_at` | `TIMESTAMP WITH TIME ZONE` | Fast "last activity" value for an owned URL |
 | `click_events.ip_hash` | fixed-length keyed hash | Supports limited abuse analysis without ever retaining a raw IP address |
+| `click_events.(url_id, clicked_at)` | composite index | Supports a URL's date-range analytics queries |
 | Future analytics metadata | `JSONB` | Schema-flexible for fields you don't want to migrate for every new tracked attribute (e.g. UTM params) — but don't reach for this before you have an actual variable-shape field |
 
 ## 17. SQLAlchemy Models
@@ -347,7 +350,7 @@ For every feature: why it exists, what it needs from the DB, what the request fl
 
 ## 32. Snowflake IDs
 
-Why not auto-increment? Auto-increment is predictable and requires DB coordination across multiple instances. A Snowflake ID packs **timestamp + machine ID + sequence number** into a 64-bit integer — unique, roughly sortable by creation time, and generated without a database round-trip, which matters once there's more than one FastAPI instance.
+Why not auto-increment? Auto-increment is predictable and requires DB coordination across multiple instances. A Snowflake ID packs **timestamp + machine ID + sequence number** into a 64-bit integer — unique, roughly sortable by creation time, and generated without a database round-trip, which matters once there's more than one FastAPI instance. Each running instance must receive a distinct worker ID from `0` through `1023`; use `0` locally and inject a unique value through deployment configuration before multiple instances exist.
 
 ## 33. Base62 Encoding
 
@@ -355,7 +358,7 @@ Converts the (large) Snowflake integer into a short, URL-safe string using `[0-9
 
 ## 34. Custom Aliases
 
-Validated for length, allowed characters, and **reserved words** (`login`, `register`, `admin`, `health`, `metrics`, `api`, `me`, `dashboard` — anything that would collide with a real route must never be assignable as an alias). On conflict: `409`, and per the decision in `README.md`, **no separate availability-check endpoint** — the create call's `409` is sufficient for v1.
+Validated as 3–64 lowercase letters, digits, or hyphens, then checked against **reserved words** (`api`, `docs`, `health`, `login`, `me`, `openapi.json`, `redoc`, `register`) so aliases cannot collide with application routes. On conflict: `409`, and per the decision in `README.md`, **no separate availability-check endpoint** — the create call's `409` is sufficient for v1.
 
 ## 35. Expiring Links
 

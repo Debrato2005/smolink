@@ -78,25 +78,25 @@ The backend release is not the end of Smolink. After its API contracts are verif
 
 ### D. Initial data model and migration — 120 minutes
 
-- [ ] Create `User`: Snowflake `BIGINT` id, unique indexed email, Argon2 password hash, created timestamp.
-- [ ] Create `Url`: Snowflake `BIGINT` id, unique indexed `short_code`, destination, nullable owner id, nullable expiry, `total_clicks` default `0`, nullable `last_clicked_at`, timestamps.
-- [ ] Create `ClickEvent`: id, URL foreign key, click timestamp, browser, OS, device type, referrer, keyed IP hash.
-- [ ] Add indexes for `urls.short_code`, URL ownership/listing, and `click_events.url_id + clicked_at`.
-- [ ] Generate the initial Alembic migration; inspect it before applying.
-- [ ] Apply the migration to the local Postgres service.
-- [ ] Write integration tests proving uniqueness and foreign-key constraints work.
-- [ ] Run: `uv run pytest tests/test_models.py -q -s` and `alembic upgrade head`.
+- [x] Create `User`: Snowflake `BIGINT` id, unique indexed email, Argon2 password hash, created timestamp.
+- [x] Create `Url`: Snowflake `BIGINT` id, unique indexed `short_code`, destination, nullable owner id, nullable expiry, `total_clicks` default `0`, nullable `last_clicked_at`, timestamps.
+- [x] Create `ClickEvent`: id, URL foreign key, click timestamp, browser, OS, device type, referrer, keyed IP hash.
+- [x] Add indexes for `urls.short_code`, URL ownership/listing, and `click_events.url_id + clicked_at`.
+- [x] Generate the initial Alembic migration; inspect it before applying.
+- [x] Apply the migration to the local Postgres service.
+- [x] Write integration tests proving uniqueness and foreign-key constraints work.
+- [x] Run: `uv run pytest tests/test_models.py -q -s` and `alembic upgrade head`.
 - [ ] Commit: `feat: add initial url shortener schema`.
 
 ### E. Short-code utilities — 90 minutes
 
-- [ ] Create tests for Base62 known values, zero handling, and invalid negative input.
-- [ ] Implement Base62 encoding as a pure utility with no database or FastAPI imports.
-- [ ] Create tests for Snowflake IDs: integer type, uniqueness across repeated calls, and creation-order sorting.
-- [ ] Implement one configurable Snowflake generator; document machine-id configuration before multi-instance use.
-- [ ] Create tests for aliases: allowed characters, 3–64 length boundaries, reserved words, and case-normalization rule.
-- [ ] Implement alias validation. Use `short_code` for both generated codes and custom aliases; do not add `custom_alias` to the database.
-- [ ] Run: `uv run pytest tests/test_short_codes.py -q -s`.
+- [x] Create tests for Base62 known values, zero handling, and invalid negative input.
+- [x] Implement Base62 encoding as a pure utility with no database or FastAPI imports.
+- [x] Create tests for Snowflake IDs: integer type, uniqueness across repeated calls, and creation-order sorting.
+- [x] Implement one configurable Snowflake generator; document machine-id configuration before multi-instance use.
+- [x] Create tests for aliases: allowed characters, 3–64 length boundaries, reserved words, and case-normalization rule.
+- [x] Implement alias validation. Use `short_code` for both generated codes and custom aliases; do not add `custom_alias` to the database.
+- [x] Run: `uv run pytest tests/test_short_codes.py -q -s`.
 - [ ] Commit: `feat: add short code generation and alias validation`.
 
 ### F. URL creation vertical slice — 150 minutes
@@ -224,3 +224,6 @@ The backend release is not the end of Smolink. After its API contracts are verif
 | 2026-07-19 | Local service connectivity | Postgres `SELECT 1` → `1`; Redis `redis-cli ping` → `PONG` | Postgres check used the application's configured `DATABASE_URL` from `backend/.env`. |
 | 2026-07-20 | Async database session dependency | `uv run pytest tests/test_db_session.py -q -s` → 1 passed | Test first failed with missing `session.get_session`, then passed after the minimal engine, session factory, and yielding dependency were added. |
 | 2026-07-20 | Async Alembic environment | `uv run alembic current` connected using `PostgresqlImpl` | Alembic reads `DATABASE_URL` through application settings and uses `Base.metadata`; no revisions exist yet. |
+| 2026-07-24 | Initial ORM models and migration generated | User-reported model test completion; manual migration inspection | `User`, `Url`, and `ClickEvent` use Snowflake `BIGINT` IDs. `app/models/__init__.py` now imports the models, allowing Alembic to generate revision `10e6aa664dee` with all tables, keys, indexes, and defaults. |
+| 2026-07-25 | Initial schema database constraints | `uv run pytest tests/test_models.py -q -s` → 5 passed | Integration tests use isolated `NullPool` engines so each `asyncio.run()` owns and disposes its asyncpg connection. The migration is applied locally. |
+| 2026-07-26 | Short-code utilities | User-reported utility test suite passed | Base62 encodes non-negative integers; Snowflake IDs use timestamp, worker ID, and sequence bits; aliases normalize to lowercase and accept only 3–64 lowercase letters, digits, and hyphens. |
