@@ -10,6 +10,8 @@ class Settings(BaseSettings): #Defines your application settings. Because it inh
     public_base_url: str
     redis_cache_ttl_seconds: int = 3600
 
+    snowflake_worker_id: int = 0
+
     model_config=SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

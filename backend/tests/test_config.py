@@ -15,3 +15,5 @@ def test_settings_reads_environment_variables(monkeypatch)-> None: #monkeypatch 
     assert settings.ip_hash_secret == "test-ip-hash-secret"
     assert settings.public_base_url == "http://localhost:8000"
     assert settings.redis_cache_ttl_seconds == 3600
+
+    assert settings.snowflake_worker_id == 0
