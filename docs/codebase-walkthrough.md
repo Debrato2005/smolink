@@ -124,11 +124,25 @@ The Redis verification runs `docker compose exec redis redis-cli ping`. `exec` l
 
 ## How the current application starts
 
+Method 1 — FastAPI CLI (development)
+
 ```text
 uv run fastapi dev app/main.py
   → imports app.main
   → module executes app = create_app()
   → FastAPI receives the application object
+  → GET /health calls health()
+  → FastAPI serializes the returned Python dictionary as JSON
+```
+
+Method 2 — Uvicorn (development/production)
+
+```text
+uv run uvicorn app.main:app --reload
+  → Uvicorn imports app.main
+  → retrieves the variable app
+  → during import, app = create_app() executes
+  → Uvicorn starts the ASGI server
   → GET /health calls health()
   → FastAPI serializes the returned Python dictionary as JSON
 ```
@@ -431,6 +445,23 @@ deployments must assign each instance a different worker ID from `0` to `1023`.
 `backend/app/utils/aliases.py` lowercases aliases, rejects reserved route names,
 and permits only 3–64 lowercase letters, digits, or hyphens. Generated codes
 and aliases both occupy `urls.short_code`; no `custom_alias` column exists.
+
+## Guest URL creation
+
+`CreateUrlRequest` validates an HTTP destination and carries optional alias and
+expiry values. `CreateUrlResponse` returns the durable ID, public code and URL,
+destination, expiry, and creation timestamp without exposing ORM internals.
+
+The URL repository flushes inserts and looks up codes; it does not commit. The
+service selects a normalized alias or a Base62-encoded Snowflake ID, rejects a
+past expiry and an already-used alias, and creates the `Url` model. The route
+owns the transaction boundary: it commits only after service success, maps
+`AliasTakenError` to the documented `409` envelope, and returns `201` for a
+guest URL with `owner_id=None`. `InvalidAliasError` originates in the alias
+utility and `InvalidExpiryError` in the service; both are expected client
+errors mapped to `422`, rather than uncaught exceptions that would become
+`500` responses. A concurrent database uniqueness race is the remaining
+exception case to map when the rate-limit and API-error work is completed.
 
 ## `backend/.env.example`
 

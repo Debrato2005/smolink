@@ -54,7 +54,7 @@ Do not unify these "for simplicity" — they serve different access-control cont
 `/live` and `/ready` are meaningful once there's an orchestrator (Kubernetes, Docker Swarm) deciding whether to restart or route traffic to an instance. Adding them before Phase 11 (multiple instances / load balancing) is premature.
 
 ### 8. Strict Redis-backed rate limiting
-Rate limiting uses atomic fixed-window Redis counters. Registration and login share a limit of 5 attempts per IP per minute; guest URL creation is limited to 10 requests per IP per minute; authenticated URL creation is limited to 30 requests per user per minute. Redirects and `/health` are not rate-limited. Exceeded limits return `429 Too Many Requests` with `Retry-After`. If Redis is unavailable, redirect caching falls back to Postgres, while rate-limited write routes fail closed with `503` so abuse protection is not silently disabled.
+Rate limiting uses an atomic Redis sliding-window log, avoiding fixed-window boundary bursts. Registration and login share a limit of 5 attempts per IP per rolling minute; guest URL creation is limited to 10 requests per IP per rolling minute; authenticated URL creation is limited to 30 requests per user per rolling minute. Redirects and `/health` are not rate-limited. Exceeded limits return `429 Too Many Requests` with `Retry-After`. If Redis is unavailable, redirect caching falls back to Postgres, while rate-limited write routes fail closed with `503` so abuse protection is not silently disabled.
 
 ## Current Backend Roadmap
 

@@ -5,8 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.db.session import get_session
 from app.schemas.url import CreateUrlRequest, CreateUrlResponse
-from app.services.url_service import AliasTakenError, create_short_url
+from app.services.url_service import AliasTakenError, InvalidExpiryError, create_short_url
+from app.utils.aliases import InvalidAliasError
 from app.utils.snowflake import SnowflakeGenerator
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.api.v1.dependencies.rate_limit import limit_guest_creation
 
 router=APIRouter(prefix="/urls",tags=["urls"])#A router (APIRouter) in FastAPI is a tool used to organize code, group endpoints, and split large projects into multiple files
 generator=SnowflakeGenerator(worker_id=get_settings().snowflake_worker_id,)
@@ -17,7 +22,8 @@ generator=SnowflakeGenerator(worker_id=get_settings().snowflake_worker_id,)
     status_code=status.HTTP_201_CREATED, #If function succeeds instead of default 200
 )
 async def create_url(  payload: CreateUrlRequest,
-                     session: AsyncSession=Depends(get_session) #session should be an AsyncSession object with default value after =
+                     session: AsyncSession=Depends(get_session), #session should be an AsyncSession object with default value after =
+                     _: None = Depends(limit_guest_creation), #by convention, _ means: "I know this variable exists, but I intentionally won't use it."
                      )->CreateUrlResponse|JSONResponse:
     try:
         url=await create_short_url(
@@ -38,6 +44,29 @@ async def create_url(  payload: CreateUrlRequest,
                 "message":"Alias is already taken",
             },
         )
+    except InvalidExpiryError as error:
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            content={
+                "error": "invalid_expiry",
+                "message": str(error),
+            },
+        )
+    # except InvalidExpiryError as error:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+    #         detail=str(error),
+    #     )       from error
+    except InvalidAliasError as error:
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            content={
+                "error": "invalid_alias",
+                "message": str(error),
+            },
+        )
+   
+    
     public_base_url=get_settings().public_base_url.rstrip("/")
     return CreateUrlResponse (
         id=url.id,

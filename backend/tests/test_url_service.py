@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 from app.core.config import get_settings
-from app.services.url_service import create_short_url
+from app.services.url_service import create_short_url, InvalidExpiryError
 from app.utils.snowflake import SnowflakeGenerator
 from app.services.url_service import AliasTakenError
 
@@ -44,7 +44,7 @@ def test_create_short_url_rejects_past_expiry() -> None:
 
         try:
             async with session_factory() as session:
-                with pytest.raises(ValueError, match="future"):  #Why no assert? Because pytest.raises() is itself the assertion.
+                with pytest.raises(InvalidExpiryError, match="future"):  #Why no assert? Because pytest.raises() is itself the assertion.
                     await create_short_url(
                         session=session,
                         destination="https://example.com",

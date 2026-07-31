@@ -2,14 +2,15 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.url import Url
 from app.repositories.url_repository import create_url, get_url_by_short_code
-from app.utils.aliases import normalize_alias
+from app.utils.aliases import InvalidAliasError, normalize_alias
 from app.utils.base62 import encode_base62
 from app.utils.snowflake import SnowflakeGenerator
 
 
 class AliasTakenError(Exception):
     pass
-
+class InvalidExpiryError(Exception):
+    pass
 
 async def create_short_url(
     session: AsyncSession,
@@ -21,7 +22,7 @@ async def create_short_url(
 ) -> Url:
     
     if expires_at is not None and expires_at <= datetime.now(timezone.utc):
-        raise ValueError("Expiry must be in the future")
+        raise InvalidExpiryError("Expiry must be in the future")
 
     url_id = generator.next_id()
 

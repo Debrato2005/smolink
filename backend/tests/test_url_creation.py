@@ -9,6 +9,14 @@ from app.core.config import get_settings
 from app.db.session import get_session
 from app.main import app
 
+from datetime import datetime, timedelta, timezone
+from app.services.url_service import create_short_url
+
+import asyncio
+from redis.asyncio import Redis
+
+from app.core.redis import get_redis_client
+
 #TestClient does not create a fake database. It only creates a fake HTTP client.
 
 @pytest.fixture
@@ -23,12 +31,21 @@ def client() -> TestClient:
         async with session_factory() as session:
             yield session
 
+    async def override_get_redis_client():
+        client = Redis.from_url(get_settings().redis_url)
+        try:
+            yield client
+        finally:
+            await client.aclose()
+
     app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_redis_client] = override_get_redis_client
 
     with TestClient(app) as test_client:
         yield test_client
 
     app.dependency_overrides.clear()
+    
 
 def test_guest__url_creation_returns_201(client: TestClient)->None:
     response=client.post("/api/v1/urls",
@@ -64,7 +81,49 @@ def test_guest_url_creation_rejects_duplicate_alias(client: TestClient) -> None:
         "error": "alias_taken",
         "message": "Alias is already taken",
     }
+    
+def test_guest_url_creation_rejects_past_expiry(
+    client: TestClient,
+) -> None:
+    response = client.post(
+        "/api/v1/urls",
+        json={
+            "destination": "https://example.com",
+            "expires_at": (
+                datetime.now(timezone.utc) - timedelta(seconds=1)
+            ).isoformat(),
+        },
+    )
+    assert response.status_code == 422
 
+
+#endpoint rate limit test
+def test_guest_url_creation_returns_429_after10_requests(client:TestClient,)->None:
+    key="rate:create:guest:testclient" 
+    async def clear_limit()->None:
+        redis_client=Redis.from_url(get_settings().redis_url) #This client exists only to delete the key before and after the test.
+        try :
+            await redis_client.delete(key)
+        finally:
+            await redis_client.aclose()
+    asyncio.run(clear_limit())
+    try:
+        for i in range(10):
+            response=client.post("/api/v1/urls",
+                                 json={"destination": "https://example.com"},)
+            assert response.status_code==201
+        response=client.post("/api/v1/urls", 
+                             json={"destination": "https://example.com"},)
+        assert response.status_code==429
+        assert int(response.headers["Retry-After"])>0
+    finally:
+        asyncio.run(clear_limit())
+        
+
+
+
+
+        
 # Why the "different event loop" error happened
 #
 # - `engine = create_async_engine(...)` is a global object, created once when
@@ -318,3 +377,126 @@ def test_guest_url_creation_rejects_duplicate_alias(client: TestClient) -> None:
 # • pytest fixtures inject objects into tests.
 # • Endpoint owns transaction commit/rollback.
 # =============================================================================
+# =============================================================================
+# Why override get_redis_client() in tests?
+#
+# The production app uses a cached Redis client:
+#
+#     @lru_cache
+#     def get_redis_client():
+#         return Redis.from_url(...)
+#
+# This is fine in production because FastAPI runs on one long-lived event loop,
+# so the same Redis client is reused safely for the lifetime of the application.
+#
+# In the test suite, however, each TestClient creates its own asyncio event loop.
+#
+# Test 1:
+#     Event Loop A
+#         └── cached Redis client is created
+#
+# Test 2:
+#     Event Loop B
+#         └── get_redis_client() returns the SAME cached client
+#
+# The cached Redis client still belongs to Event Loop A, so using it from
+# Event Loop B raises errors such as:
+#
+#     RuntimeError: Future attached to a different loop
+#     RuntimeError: Event loop is closed
+#
+# To keep tests isolated, we override get_redis_client() so that each TestClient
+# receives a fresh Redis client tied to its own event loop. The client is closed
+# after the test finishes, preventing cross-test event loop issues.
+# =============================================================================
+# =============================================================================
+
+# Resource cleanup summary
+#
+# 1. Use try...finally only when something MUST be cleaned up.
+#
+# Pattern:
+#
+#     resource = acquire()
+#     try:
+#         use(resource)
+#     finally:
+#         release(resource)
+#
+# Examples:
+#   - close file
+#   - close Redis/DB connection
+#   - release a lock
+#   - delete temporary test data
+#
+# If there is nothing to clean up, a try...finally block is unnecessary.
+#
+# Redis clients
+# -------------
+# There are TWO different Redis clients in the rate-limit test.
+#
+# (1) Test Redis client
+#
+#     redis_client = Redis.from_url(...)
+#
+# Purpose:
+#   - delete the rate-limit key before the test
+#   - delete it again after the test
+#
+# It is closed immediately with:
+#
+#     await redis_client.aclose()
+#
+# Closing this client only closes THAT connection.
+#
+# (2) Application Redis client
+#
+#     TestClient
+#         │
+#         ▼
+#     FastAPI
+#         │
+#     App Redis Client
+#         │
+#         ▼
+#     Redis Server
+#
+# This is the client FastAPI uses internally during:
+#
+#     client.post("/api/v1/urls")
+#
+# It is completely independent of the temporary test client.
+#
+# Therefore:
+#
+#     await redis_client.aclose()
+#
+# DOES NOT stop Redis.
+# DOES NOT stop FastAPI.
+# DOES NOT affect the application's Redis connection.
+#
+# It only closes the temporary connection used for cleanup.
+#
+# What happens if you don't close it?
+# -----------------------------------
+#
+# Short-lived script:
+#   Usually nothing noticeable. When the process exits (or the PC restarts),
+#   the operating system closes all remaining connections.
+#
+# Long-running application:
+#   Open connections accumulate, eventually exhausting available resources.
+#   This is why production code always performs explicit cleanup instead of
+#   relying on process termination or a system reboot.
+#
+# Test flow
+# ---------
+#
+# 1. Create temporary Redis client
+# 2. Delete old rate-limit key
+# 3. Close temporary Redis client
+# 4. Send 10 POST requests (FastAPI uses its OWN Redis client)
+# 5. 11th request returns 429
+# 6. Create temporary Redis client again
+# 7. Delete test key
+# 8. Close temporary Redis client

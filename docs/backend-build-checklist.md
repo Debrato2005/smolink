@@ -101,21 +101,21 @@ The backend release is not the end of Smolink. After its API contracts are verif
 
 ### F. URL creation vertical slice — 150 minutes
 
-- [ ] Define request/response schemas for `POST /api/v1/urls`: destination, optional alias, optional expiry, and returned id/code/public URL/timestamps.
-- [ ] Create shortener repository functions only for insert and lookup-by-code.
-- [ ] Create shortener service rules: valid destination, future expiry, custom alias uniqueness, generated code path, and nullable owner id.
-- [ ] Add domain exceptions and map alias conflicts to `{ "error": "alias_taken", "message": "..." }` with `409`.
-- [ ] Write endpoint tests first: guest creation returns `201`, invalid body returns `422`, duplicate alias returns `409`.
-- [ ] Register `POST /api/v1/urls` in the versioned router.
-- [ ] Run: `uv run pytest tests/test_url_creation.py -q -s`.
+- [x] Define request/response schemas for `POST /api/v1/urls`: destination, optional alias, optional expiry, and returned id/code/public URL/timestamps.
+- [x] Create shortener repository functions only for insert and lookup-by-code.
+- [x] Create shortener service rules: valid destination, future expiry, custom alias uniqueness, generated code path, and nullable owner id.
+- [x] Add domain exceptions and map alias conflicts to `{ "error": "alias_taken", "message": "..." }` with `409`.
+- [x] Write endpoint tests first: guest creation returns `201`, invalid body returns `422`, duplicate alias returns `409`.
+- [x] Register `POST /api/v1/urls` in the versioned router.
+- [x] Run: `uv run pytest tests/test_url_creation.py -q -s`.
 - [ ] Commit: `feat: create guest short URLs`.
 
 ## Day 2 — Security, Redis behavior, and complete URL experience
 
 ### G. Rate-limit infrastructure — 90 minutes
 
-- [ ] Write Redis tests for atomic increment, first-write expiry, separate keys, and over-limit behavior.
-- [ ] Implement a Lua-backed fixed-window counter so increment and initial expiry are atomic.
+- [ ] Write Redis tests for atomic sliding-window pruning, first write, separate keys, and over-limit behavior.
+- [ ] Implement a Lua-backed sliding-window log so pruning, counting, recording, and expiry are atomic.
 - [ ] Define key formats: `rate:auth:{ip}`, `rate:create:guest:{ip}`, and `rate:create:user:{user_id}`.
 - [ ] Add a common limiter dependency that returns `429` plus `Retry-After` when over limit.
 - [ ] Add a Redis-failure test showing rate-limited writes return the documented `503` envelope.
@@ -227,3 +227,4 @@ The backend release is not the end of Smolink. After its API contracts are verif
 | 2026-07-24 | Initial ORM models and migration generated | User-reported model test completion; manual migration inspection | `User`, `Url`, and `ClickEvent` use Snowflake `BIGINT` IDs. `app/models/__init__.py` now imports the models, allowing Alembic to generate revision `10e6aa664dee` with all tables, keys, indexes, and defaults. |
 | 2026-07-25 | Initial schema database constraints | `uv run pytest tests/test_models.py -q -s` → 5 passed | Integration tests use isolated `NullPool` engines so each `asyncio.run()` owns and disposes its asyncpg connection. The migration is applied locally. |
 | 2026-07-26 | Short-code utilities | User-reported utility test suite passed | Base62 encodes non-negative integers; Snowflake IDs use timestamp, worker ID, and sequence bits; aliases normalize to lowercase and accept only 3–64 lowercase letters, digits, and hyphens. |
+| 2026-07-28 | Guest URL creation | User-reported full suite → 40 passed | Versioned endpoint validates requests, creates guest URLs, persists a successful transaction at the endpoint boundary, returns the documented `409` alias-conflict envelope, and maps invalid alias/expiry business errors to `422`. |

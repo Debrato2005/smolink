@@ -407,7 +407,7 @@ Move slow work out of the request/response path: QR generation, email verificati
 
 ## 41. Rate Limiting
 
-Use atomic fixed-window Redis counters: registration and login share 5 attempts per IP per minute; guest URL creation allows 10 requests per IP per minute; authenticated URL creation allows 30 requests per user per minute. Redirects and `/health` are not rate-limited. Exceeded limits return `429` with `Retry-After`. Unlike redirect caching, the limiter fails closed: if Redis is unavailable for a protected write, return `503` rather than silently disabling abuse protection. These counters are ephemeral enforcement data, not a durable source of truth.
+Use an atomic Redis sliding-window log: a Lua script removes timestamps outside the rolling minute, counts the remaining entries, records an allowed request, and calculates the retry time on rejection. Registration and login share 5 attempts per IP per rolling minute; guest URL creation allows 10 requests per IP per rolling minute; authenticated URL creation allows 30 requests per user per rolling minute. Redirects and `/health` are not rate-limited. Exceeded limits return `429` with `Retry-After`. Unlike redirect caching, the limiter fails closed: if Redis is unavailable for a protected write, return `503` rather than silently disabling abuse protection. These keys are ephemeral enforcement data, not a durable source of truth.
 
 ## 42. Async Programming
 
