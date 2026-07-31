@@ -114,12 +114,12 @@ The backend release is not the end of Smolink. After its API contracts are verif
 
 ### G. Rate-limit infrastructure — 90 minutes
 
-- [ ] Write Redis tests for atomic sliding-window pruning, first write, separate keys, and over-limit behavior.
-- [ ] Implement a Lua-backed sliding-window log so pruning, counting, recording, and expiry are atomic.
-- [ ] Define key formats: `rate:auth:{ip}`, `rate:create:guest:{ip}`, and `rate:create:user:{user_id}`.
-- [ ] Add a common limiter dependency that returns `429` plus `Retry-After` when over limit.
-- [ ] Add a Redis-failure test showing rate-limited writes return the documented `503` envelope.
-- [ ] Do not apply this limiter to `/health` or `GET /{short_code}`.
+- [x] Write Redis tests for atomic sliding-window pruning, first write, separate keys, and over-limit behavior.
+- [x] Implement a Lua-backed sliding-window log so pruning, counting, recording, and expiry are atomic.
+- [x] Define key formats: `rate:auth:{ip}`, `rate:create:guest:{ip}`, and `rate:create:user:{user_id}`.
+- [x] Add a common limiter dependency that returns `429` plus `Retry-After` when over limit.
+- [x] Add a Redis-failure test showing rate-limited writes return the documented `503` envelope.
+- [x] Do not apply this limiter to `/health` or `GET /{short_code}`.
 - [ ] Commit: `feat: add strict redis rate limiting`.
 
 ### H. Authentication — 120 minutes
@@ -228,3 +228,4 @@ The backend release is not the end of Smolink. After its API contracts are verif
 | 2026-07-25 | Initial schema database constraints | `uv run pytest tests/test_models.py -q -s` → 5 passed | Integration tests use isolated `NullPool` engines so each `asyncio.run()` owns and disposes its asyncpg connection. The migration is applied locally. |
 | 2026-07-26 | Short-code utilities | User-reported utility test suite passed | Base62 encodes non-negative integers; Snowflake IDs use timestamp, worker ID, and sequence bits; aliases normalize to lowercase and accept only 3–64 lowercase letters, digits, and hyphens. |
 | 2026-07-28 | Guest URL creation | User-reported full suite → 40 passed | Versioned endpoint validates requests, creates guest URLs, persists a successful transaction at the endpoint boundary, returns the documented `409` alias-conflict envelope, and maps invalid alias/expiry business errors to `422`. |
+| 2026-07-31 | Strict guest-creation rate limiting | User-reported rate-limit tests passed | A Lua-backed Redis sliding window enforces 10 guest creations per IP per rolling minute. The endpoint returns `429` with `Retry-After` when limited and fails closed with `503` when Redis is unavailable. Test Redis clients are isolated per TestClient event loop. |

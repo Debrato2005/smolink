@@ -118,10 +118,28 @@ def test_guest_url_creation_returns_429_after10_requests(client:TestClient,)->No
         assert int(response.headers["Retry-After"])>0
     finally:
         asyncio.run(clear_limit())
-        
 
+#redis outage test
+def test_guest_url_creation_returns_503_when_limiter_is_unavailable(client: TestClient,monkeypatch: pytest.MonkeyPatch,
+                                                                    ) -> None:
+    async def unavailable(*args:object, **kwargs:object)->None: #Accept any positional or keyword arguments
+        raise OSError("Redis unavailable") #OSError is a built-in Python exception used when an operating system or external resource fails.
+    #can use Exception. The test would still work.
+    monkeypatch.setattr(
+    "app.api.v1.dependencies.rate_limit.SlidingWindowRateLimiter.check",
+        unavailable,)
+    response = client.post(
+        "/api/v1/urls",
+        json={"destination": "https://example.com"},
+    )
 
-
+    assert response.status_code == 503
+    
+# Monkeypatch temporarily replaces SlidingWindowRateLimiter.check() with a fake
+# implementation that always raises OSError, simulating Redis or rate-limiter
+# failure. This verifies that the dependency converts unexpected internal
+# errors into HTTP 503 Service Unavailable instead of exposing the exception
+# or crashing the application.
 
         
 # Why the "different event loop" error happened

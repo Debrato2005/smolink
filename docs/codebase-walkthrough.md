@@ -463,6 +463,17 @@ errors mapped to `422`, rather than uncaught exceptions that would become
 `500` responses. A concurrent database uniqueness race is the remaining
 exception case to map when the rate-limit and API-error work is completed.
 
+## Sliding-window rate limiting
+
+`app/core/redis.py` exposes a cached asynchronous Redis client for production
+use. `app/api/v1/dependencies/rate_limit.py` derives the guest key from the
+request client address, asks the sliding-window limiter whether request 11 is
+allowed, and returns `429` with `Retry-After` on denial. The API test fixture
+overrides both the database session and Redis client so asynchronous clients
+are not reused across TestClient event loops. The suite also simulates a Redis
+outage and verifies that protected URL creation fails closed with `503`, rather
+than silently disabling abuse protection.
+
 ## `backend/.env.example`
 
 ```dotenv
