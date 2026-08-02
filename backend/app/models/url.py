@@ -8,12 +8,12 @@ class Url(Base):
     __tablename__ = "urls"
 
     id: Mapped[int] = mapped_column(
-        BigInteger,
+        BigInteger,  #snowflake 
         primary_key=True,
         autoincrement=False, #So id is the internal numeric identifier; short_code is the public redirect value. We store both because aliases cannot be derived from the ID, and redirects query short_code directly.
     )
     short_code: Mapped[str] = mapped_column(
-        String(64),
+        String(64), #snowflake+base62(on url_id)
         unique=True,
         index=True,
         nullable=False,

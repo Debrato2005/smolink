@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -35,15 +36,8 @@ async def create_url(  payload: CreateUrlRequest,
             generator=generator,
         )
         await session.commit() #important look down at comment as well as in test_url_creation
-    except AliasTakenError:
-        return JSONResponse(
-            status_code=status.HTTP_409_CONFLICT,
-            content=
-            {
-                "error":"alias_taken",
-                "message":"Alias is already taken",
-            },
-        )
+        await session.refresh(url)
+
     except InvalidExpiryError as error:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -65,6 +59,29 @@ async def create_url(  payload: CreateUrlRequest,
                 "message": str(error),
             },
         )
+    except AliasTakenError:
+            return JSONResponse(
+                status_code=status.HTTP_409_CONFLICT,
+                content=
+                {
+                    "error":"alias_taken",
+                    "message":"Alias is already taken",
+                },
+            )
+    
+    except IntegrityError as error:
+        await session.rollback()
+
+        if getattr(error.orig, "sqlstate", None) == "23505":
+            return JSONResponse(
+                status_code=status.HTTP_409_CONFLICT,
+                content={
+                    "error": "alias_taken",
+                    "message": "Alias is already taken",
+                },
+            )
+
+        raise
    
     
     public_base_url=get_settings().public_base_url.rstrip("/")
@@ -126,3 +143,9 @@ async def create_url(  payload: CreateUrlRequest,
 # the session closed, and SQLAlchemy rolled back the transaction. The first
 # URL was never persisted, so duplicate-alias tests incorrectly succeeded.
     
+#==============================================================================================
+
+# Exception handlers are ordered by execution flow: application-level
+# validation and business-rule errors first, followed by IntegrityError,
+# which represents PostgreSQL's final concurrency safeguard during
+# flush()/commit() when a UNIQUE constraint is violated.

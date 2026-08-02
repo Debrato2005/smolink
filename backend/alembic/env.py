@@ -8,6 +8,10 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.core.config import get_settings
 from app.db.base import Base
 from app import models
+# Alembic's env.py imports `app.models`, which executes this package's
+# __init__.py. Importing each model here ensures it is registered with
+# Base.metadata, allowing Alembic's autogenerate feature to discover all
+# tables and schema changes (e.g. new models like AuthIdentity).
 
 config = context.config
 

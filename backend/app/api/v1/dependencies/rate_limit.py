@@ -29,6 +29,29 @@ async def limit_guest_creation(
             headers={"Retry-After": str(result.retry_after)},
         )
 
+async def limit_auth_write(request:Request, client: Redis=Depends(get_redis_client),
+                           )->None:
+    client_ip=request.client.host if request.client is not None else "unknown"
+
+    try :
+        result = await SlidingWindowRateLimiter(client).check(
+            f"rate:auth:{client_ip}",
+            5,
+            60,
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from error
+
+    if not result.allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded",
+            headers={"Retry-After": str(result.retry_after)},
+        )
+
+    
 #A FastAPI dependency that runs before an endpoint.
 #==========================================================================================
 #whenever errors remove teh try except block to inspect proper error codes
