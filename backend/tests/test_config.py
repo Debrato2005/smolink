@@ -7,6 +7,12 @@ def test_settings_reads_environment_variables(monkeypatch)-> None: #monkeypatch 
     monkeypatch.setenv("IP_HASH_SECRET", "test-ip-hash-secret")
     monkeypatch.setenv("PUBLIC_BASE_URL", "http://localhost:8000")
 
+    monkeypatch.setenv("JWT_ISSUER", "smolink")
+    monkeypatch.setenv("JWT_AUDIENCE", "smolink-api")
+    monkeypatch.setenv("ACCESS_TOKEN_TTL_SECONDS", "900")
+    monkeypatch.setenv("REFRESH_TOKEN_TTL_SECONDS", "2592000")
+    monkeypatch.setenv("TOKEN_HASH_SECRET", "test-token-hash-secret")
+
     settings=Settings(_env_file=None)
 
     assert settings.database_url == ( "postgresql+asyncpg://smolink:smolink@localhost:5432/smolink")
@@ -17,3 +23,9 @@ def test_settings_reads_environment_variables(monkeypatch)-> None: #monkeypatch 
     assert settings.redis_cache_ttl_seconds == 3600
 
     assert settings.snowflake_worker_id == 0
+
+    assert settings.jwt_issuer == "smolink"
+    assert settings.jwt_audience == "smolink-api"
+    assert settings.access_token_ttl_seconds == 900
+    assert settings.refresh_token_ttl_seconds == 2_592_000
+    assert settings.token_hash_secret == "test-token-hash-secret"

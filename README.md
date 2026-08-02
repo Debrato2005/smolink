@@ -21,12 +21,18 @@ Smolink is a URL shortener built to demonstrate real backend engineering judgmen
 
 ## Architecture Decisions
 
-### 1. Modular monolith, not microservices (current)
+### 1. Layered modular monolith, not microservices (current)
 **Reasoning:** The redirect path (hot, read-heavy, latency-sensitive) and the creation path (cold, write-light) have different traffic profiles, but a cache layer in front of one service captures most of that benefit without network-separated services. Splitting `shortener`/`redirect` into separate services would add a network hop to a codepath that should be sub-millisecond — a regression, not an upgrade.
 
 **What's a real extraction candidate:** analytics/click-tracking. It is naturally async and decoupled. The first backend release records click events synchronously; if measurement shows that this harms redirect latency, the redirect handler can publish events to a queue and a separate consumer can aggregate them.
 
-**Module boundaries inside the monolith** (each owns its own data access; no cross-module DB queries):
+The current repository uses shared top-level API, schema, service, repository,
+and model packages. Domain boundaries are enforced by ownership and interfaces,
+not by one directory tree per domain: a domain must not directly query another
+domain's repository. Do not introduce a parallel domain-folder layout while the
+shared-layer layout remains canonical.
+
+**Domain boundaries inside the monolith** (each owns its own data access; no cross-module DB queries):
 - `shortener` — encode/decode, collision handling, custom aliases
 - `redirect` — cache-first lookup, fallback to DB, publishes click events
 - `analytics` — records and reports click events; it becomes an asynchronous consumer only when measurement justifies extraction
@@ -56,19 +62,50 @@ Do not unify these "for simplicity" — they serve different access-control cont
 ### 8. Strict Redis-backed rate limiting
 Rate limiting uses an atomic Redis sliding-window log, avoiding fixed-window boundary bursts. Registration and login share a limit of 5 attempts per IP per rolling minute; guest URL creation is limited to 10 requests per IP per rolling minute; authenticated URL creation is limited to 30 requests per user per rolling minute. Redirects and `/health` are not rate-limited. Exceeded limits return `429 Too Many Requests` with `Retry-After`. If Redis is unavailable, redirect caching falls back to Postgres, while rate-limited write routes fail closed with `503` so abuse protection is not silently disabled.
 
+### 9. Authentication is session-backed JWT, not stateless-only JWT
+Smolink issues short-lived JWT access tokens and rotated JWT refresh tokens.
+Refresh-token state is persisted in Postgres so logout, password reset, token
+revocation, and reuse detection are enforceable. A reused rotated-out refresh
+token revokes its entire token family. Access tokens carry only identity and
+validation claims; authorization always loads the current user from Postgres.
+
+New password registrations are unverified and cannot log in until their email
+is verified. Google OIDC accounts are verified through Google; a verified
+Google email matching a local account links to that account rather than creating
+a duplicate user. See the authentication design specification for the full
+contract and persistence model.
+
+### 10. All application APIs remain versioned under `/api/v1`
+Authentication routes live under `/api/v1/auth/...`; they are not root-level
+exceptions. The public `/{short_code}` redirect is the only root dynamic route.
+Alias reservations therefore protect root paths such as `api`, `health`,
+`docs`, `redoc`, and `openapi.json`; versioned auth paths do not create
+short-code collisions. Keep conservative legacy alias reservations unless a
+separate compatibility decision removes them.
+
+### 11. Services coordinate multi-record transactions; handlers translate HTTP
+Routes stay thin. A service owns the atomic workflow for registration, refresh
+rotation, password reset, and Google identity linking through a shared session
+or unit-of-work boundary. Repositories flush but do not commit. Global handlers
+map domain exceptions to the canonical error envelope; routes should not add
+new per-route exception-mapping patterns.
+
 ## Current Backend Roadmap
 
 1. **Foundation** — FastAPI configuration, Docker Compose, PostgreSQL, Redis, and `/health`.
 2. **Data layer** — async SQLAlchemy, Alembic, and the `users`, `urls`, and `click_events` tables.
 3. **URL utilities** — Snowflake IDs, Base62 encoding, and custom-alias validation.
 4. **Rate limiting** — strict Redis-backed limits for authentication and URL creation.
-5. **Auth and creation** — JWT authentication plus optional-auth URL creation for guests and users.
+5. **Auth and creation** — verified local and Google OIDC authentication,
+   refresh-token rotation, optional-auth URL creation for guests and users.
 6. **Core URL features** — owner management, cache-aside redirects, QR generation, and full analytics.
 7. **Verification and next phases** — tests and documentation, followed by frontend and deployment work.
 
 ## API Standards
 
-- Errors use `{ "error": "<short code>", "message": "<human readable>" }`.
+- Expected API errors use `{ "error": "<short code>", "message": "<human readable>" }`.
+  A shared `ErrorResponse` schema and global handlers own this shape, including
+  auth errors; request-validation errors are normalized before release.
 - Conflicts → `409`. Validation failures → `422` (FastAPI/Pydantic default). Not found → `404`. Auth required → `401`. Forbidden (wrong owner) → `403`.
 - Rate limits → `429` with `Retry-After`; an unavailable rate limiter on protected writes → `503`.
 - Pagination via `?page=&limit=`; search/filter/sort are additive query params, never separate endpoints.
@@ -80,7 +117,15 @@ Rate limiting uses an atomic Redis sliding-window log, avoiding fixed-window bou
 |---|---|---|
 | `GET` | `/health` | Application health check |
 | `POST` | `/api/v1/auth/register` | Register a user |
-| `POST` | `/api/v1/auth/login` | Authenticate and receive a JWT |
+| `POST` | `/api/v1/auth/login` | Authenticate a verified local user and receive tokens |
+| `POST` | `/api/v1/auth/refresh` | Rotate a refresh token and issue a new token pair |
+| `POST` | `/api/v1/auth/logout` | Revoke the current refresh-token family |
+| `GET` | `/api/v1/auth/me` | Retrieve the authenticated current user |
+| `POST` | `/api/v1/auth/verify-email` | Consume an email-verification token |
+| `POST` | `/api/v1/auth/forgot-password` | Request a password-reset email without account enumeration |
+| `POST` | `/api/v1/auth/reset-password` | Consume a reset token and revoke active sessions |
+| `GET` | `/api/v1/auth/google/start` | Begin Google OAuth2/OIDC authorization-code flow |
+| `GET` | `/api/v1/auth/google/callback` | Validate Google OIDC callback and issue Smolink tokens |
 | `POST` | `/api/v1/urls` | Create a URL as a guest or authenticated user |
 | `GET` | `/api/v1/me/urls` | List the authenticated user's URLs |
 | `PATCH` | `/api/v1/me/urls/{id}` | Update an owned URL |
@@ -89,25 +134,24 @@ Rate limiting uses an atomic Redis sliding-window log, avoiding fixed-window bou
 | `GET` | `/api/v1/urls/{short_code}/qr` | Generate a QR PNG for a public code |
 | `GET` | `/{short_code}` | Redirect to the destination URL |
 
-## Proposed Project Structure
-
-*(Proposed — adjust as implementation lands; not yet locked in.)*
+## Current Project Structure
 
 ```
 smolink/
-├── app/
-│   ├── main.py
-│   ├── core/          # config, security, dependencies
-│   ├── shortener/      # module: encode/decode, alias logic
-│   ├── redirect/       # module: cache-first lookup
-│   ├── analytics/      # module: click recording and reporting
-│   ├── auth/           # module: JWT, optional-auth
-│   ├── models/         # SQLAlchemy models
-│   ├── schemas/         # Pydantic request/response models
-│   └── db/             # session, migrations (Alembic)
-├── tests/
-├── docker-compose.yml
-└── alembic/
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/endpoints/  # HTTP route handlers
+│   │   ├── core/              # configuration, Redis, security helpers
+│   │   ├── db/                # engine, sessions, declarative base
+│   │   ├── models/            # SQLAlchemy tables
+│   │   ├── repositories/      # SQL access grouped by domain ownership
+│   │   ├── schemas/           # Pydantic request/response contracts
+│   │   ├── services/          # business workflows grouped by domain
+│   │   └── utils/             # pure helpers
+│   ├── alembic/
+│   └── tests/
+├── docs/
+└── docker-compose.yml
 ```
 
 ## Data Model Overview
@@ -116,7 +160,14 @@ The initial schema uses Snowflake `BIGINT` primary keys for `users`, `urls`,
 and `click_events`; the generator is implemented in the next utility
 milestone.
 
-- **User**: id, normalized unique email, password_hash, created_at, updated_at.
+- **User**: id, normalized unique email, nullable Argon2id password hash,
+  verified timestamp, login-failure/lock state, auth-version, timestamps.
+- **AuthIdentity**: provider and provider subject linked to one user; Google
+  identity is unique by provider-subject pair.
+- **RefreshToken**: hashed JWT identifier, token family and parent relation,
+  expiry, rotation/revocation/reuse-detection state.
+- **EmailVerificationToken** and **PasswordResetToken**: one-time hashed,
+  expiring tokens; resetting a password revokes active refresh-token families.
 - **Url**: id, unique indexed short_code, destination, nullable owner_id,
   expires_at, total_clicks, last_clicked_at, created_at, updated_at.
   `short_code` stores either the generated Base62 code or a custom alias;
@@ -135,6 +186,9 @@ permanently cascades to its click events in v1.
 - No cross-module direct DB access — go through the owning module's interface.
 - Redis is never the only place a piece of data exists.
 - Rate-limit counters are ephemeral Redis enforcement data; durable application data remains in Postgres.
+- Password hashes, raw refresh tokens, reset tokens, verification tokens, and
+  OAuth client secrets are never persisted or logged in plaintext.
+- Unverified password accounts cannot receive tokens or access protected APIs.
 
 ## Future Expansion Ideas
 

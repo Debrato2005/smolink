@@ -168,27 +168,26 @@ Every request in Smolink follows this same pipeline — no shortcuts, no layer-s
 
 ## 12. Folder Structure
 
-Reconciled with the modular-monolith decision in `README.md`: each **domain module** owns its own layers internally, rather than one shared `services/`/`repositories/` folder spanning all domains. This keeps the "no cross-module DB access" invariant enforceable at the folder level.
+Reconciled with the current `README.md`: Smolink uses shared top-level layers,
+not a parallel folder tree per domain. Domain ownership is enforced by
+interfaces: a domain uses its own repository and must not query another
+domain's repository directly.
 
 ```
 app/
-├── core/            # config, security, dependencies — shared, no business logic
-├── db/              # engine, session, connection management — shared
-├── shortener/
-│   ├── router.py    # API layer
-│   ├── schema.py    # Pydantic request/response models
-│   ├── model.py     # SQLAlchemy model
-│   ├── repository.py
-│   └── service.py
-├── redirect/
-│   └── ...same shape
-├── analytics/
-│   └── ...same shape
-└── auth/
-    └── ...same shape
+├── api/v1/endpoints/    # route handlers, grouped by domain file
+├── api/v1/dependencies/ # shared FastAPI dependencies
+├── core/                # config, Redis, security helpers
+├── db/                  # engine, sessions, declarative base
+├── models/              # SQLAlchemy tables
+├── repositories/        # SQL access, grouped by domain ownership
+├── schemas/             # Pydantic request/response contracts
+├── services/            # business workflows, grouped by domain
+└── utils/               # pure helpers
 ```
 
-A module never imports another module's `repository.py` directly — if `redirect` needs something from `shortener`, it calls `shortener`'s service function, not its repository.
+A domain never imports another domain's repository directly. If one needs
+another's data or behavior, it uses that domain's service interface.
 
 ## 13. Layered Architecture (within each module)
 
@@ -326,9 +325,30 @@ Resource-oriented, not action-oriented: `GET /api/v1/me/urls` not `/getUserURLs`
 **Authentication** = who are you (JWT after login). **Authorization** = are you allowed (e.g. deleting someone else's URL → `403`, not `401`). Guests can create/redirect/QR-generate; they cannot access dashboard, delete, or view analytics — those require a JWT.
 
 ```
-Register → Login → receive access token → stored client-side
-→ sent as Authorization: Bearer <token> → validated per request on protected routes
+Register → verify email → login → receive access + refresh tokens
+→ access token sent as Authorization: Bearer <token>
+→ OAuth2PasswordBearer → JWT validation → current-user lookup → protected route
 ```
+
+Smolink's production auth design keeps authorization state enforceable in
+Postgres instead of treating a JWT as permanent proof. Access JWTs are short
+lived and contain minimal identity, issuer, audience, expiry, token type, and
+identifier claims. Refresh JWTs are rotated and tracked in a persisted token
+family; reuse of a consumed token revokes the complete family. Logout and
+password reset therefore have immediate effect on future token refreshes.
+
+Password accounts use normalized unique emails and Argon2id hashes. A new
+account must verify its email before it may log in. Failed password logins are
+limited by both request IP and account state, using progressive backoff or a
+temporary lockout to resist distributed brute-force attacks. Password reset
+and email-verification tokens are one-time, time-limited, and stored only as
+hashes.
+
+Google sign-in is an OAuth2/OpenID Connect authorization-code flow. The
+backend validates state, PKCE, nonce, issuer, audience, signature, expiry, and
+Google's verified-email claim before issuing Smolink tokens. If that verified
+email already belongs to a local password account, the Google provider subject
+is linked to it; no duplicate user is created.
 
 ## 29. File Uploads *(future)*
 
@@ -358,7 +378,13 @@ Converts the (large) Snowflake integer into a short, URL-safe string using `[0-9
 
 ## 34. Custom Aliases
 
-Validated as 3–64 lowercase letters, digits, or hyphens, then checked against **reserved words** (`api`, `docs`, `health`, `login`, `me`, `openapi.json`, `redoc`, `register`) so aliases cannot collide with application routes. On conflict: `409`, and per the decision in `README.md`, **no separate availability-check endpoint** — the create call's `409` is sufficient for v1.
+Validated as 3–64 lowercase letters, digits, or hyphens, then checked against
+**reserved words** (`api`, `docs`, `health`, `login`, `me`, `openapi.json`,
+`redoc`, `register`). Authentication routes are versioned under `/api/v1/auth`,
+so they cannot shadow root short codes; the legacy auth names remain reserved
+conservatively. On conflict: `409`, and per the decision in `README.md`, **no
+separate availability-check endpoint** — the create call's `409` is sufficient
+for v1.
 
 ## 35. Expiring Links
 
@@ -408,6 +434,12 @@ Move slow work out of the request/response path: QR generation, email verificati
 ## 41. Rate Limiting
 
 Use an atomic Redis sliding-window log: a Lua script removes timestamps outside the rolling minute, counts the remaining entries, records an allowed request, and calculates the retry time on rejection. Registration and login share 5 attempts per IP per rolling minute; guest URL creation allows 10 requests per IP per rolling minute; authenticated URL creation allows 30 requests per user per rolling minute. Redirects and `/health` are not rate-limited. Exceeded limits return `429` with `Retry-After`. Unlike redirect caching, the limiter fails closed: if Redis is unavailable for a protected write, return `503` rather than silently disabling abuse protection. These keys are ephemeral enforcement data, not a durable source of truth.
+
+IP limits alone cannot detect distributed password attacks. The auth service also
+persists failed-login state per account and applies progressive delay or
+temporary lockout after consecutive failures. Successful login resets that
+account's failure state. This durable security state belongs in Postgres, not
+Redis.
 
 ## 42. Async Programming
 

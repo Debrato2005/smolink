@@ -2,6 +2,12 @@ from app.utils.security import hash_password, verify_password
 
 from app.utils.security import hash_password, normalize_email, verify_password
 
+from datetime import timedelta
+
+import pytest
+
+from app.utils.security import InvalidAccessTokenError, create_access_token, decode_access_token
+
 def test_password_hash_is_argon2id_and_verifiable()->None:
     password="hello1345678"
     password_hash=hash_password(password)
@@ -13,6 +19,56 @@ def test_password_hash_is_argon2id_and_verifiable()->None:
 
 def test_normalize_email_strips_and_lowercases() -> None:
     assert normalize_email(" User.Name@Example.COM ") == "user.name@example.com"
+
+
+
+def test_access_token_contains_only_required_claims()->None:
+    token=create_access_token(
+        user_id=123,
+        auth_version=1,
+        secret="test-jwt-secret",
+        issuer="smolink",
+        audience="smolink-api",
+        expires_in=timedelta(minutes=15), #will create expires_at
+    )
+    claims=decode_access_token(
+        token,
+        secret="test-jwt-secret",
+        issuer="smolink",
+        audience="smolink-api",
+    )
+    assert claims["sub"] == "123"
+    assert claims["auth_version"] == 1
+    assert claims["typ"] == "access"
+    assert isinstance(claims["jti"], str) #jwt id
+    assert "email" not in claims
+    assert "password" not in claims
+
+def test_access_token_rejects_wrong_issuer_or_audience() -> None:
+    token = create_access_token(
+        user_id=123,
+        auth_version=1,
+        secret="test-jwt-secret",
+        issuer="smolink",
+        audience="smolink-api",
+        expires_in=timedelta(minutes=15),
+    )
+
+    with pytest.raises(InvalidAccessTokenError):
+        decode_access_token(
+            token,
+            secret="test-jwt-secret",
+            issuer="wrong-issuer",
+            audience="smolink-api",
+        )
+
+    with pytest.raises(InvalidAccessTokenError):
+        decode_access_token(
+            token,
+            secret="test-jwt-secret",
+            issuer="smolink",
+            audience="wrong-audience",
+        )
 
 # Passwords are never stored or compared in plaintext. Instead, they are
 # hashed using Argon2id, a password hashing algorithm designed to be slow and

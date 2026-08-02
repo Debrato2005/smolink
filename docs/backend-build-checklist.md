@@ -120,18 +120,47 @@ The backend release is not the end of Smolink. After its API contracts are verif
 - [x] Add a common limiter dependency that returns `429` plus `Retry-After` when over limit.
 - [x] Add a Redis-failure test showing rate-limited writes return the documented `503` envelope.
 - [x] Do not apply this limiter to `/health` or `GET /{short_code}`.
-- [ ] Commit: `feat: add strict redis rate limiting`.
+- [x] Commit: `feat: add strict redis rate limiting`.
 
-### H. Authentication — 120 minutes
+### H. Production authentication and authorization — in progress
 
-- [ ] Write tests for registration, duplicate email, login success, invalid password, missing token, and malformed token.
-- [ ] Add Argon2 hashing and JWT issue/verify utilities.
-- [ ] Add `POST /api/v1/auth/register` and `POST /api/v1/auth/login`.
-- [ ] Apply the shared 5-attempts-per-IP-per-minute limiter to both routes.
-- [ ] Implement `get_current_user()` and `get_optional_current_user()` dependencies.
-- [ ] Update URL creation to attach the optional authenticated user id and choose the correct guest/user creation limit.
-- [ ] Run: `uv run pytest tests/test_auth.py -q -s`.
-- [ ] Commit: `feat: add optional JWT authentication`.
+**Status:** the persistence foundation, Argon2id helpers, normalized-email
+registration service, registration route, and registration IP limiter are
+implemented. The registration endpoint still needs focused verification before
+it is marked complete. Follow
+`docs/superpowers/specs/2026-08-01-authentication-authorization-design.md`.
+
+- [x] Add the reviewed auth migrations: verified/lock/auth-version user fields,
+  nullable password hashes for OIDC-only users, identities, refresh-token
+  families, and one-time verification/reset tokens.
+- [x] Add registration request/public-user schemas with the approved 12–128
+  character password policy; email normalization occurs in the service and
+  public responses exclude secrets.
+- [x] Add the initial user repository and registration service.
+- [ ] Add repositories and services for identities, token state, email
+  verification, password resets, and account-lock state.
+- [x] Use Argon2id for password hashing and library-backed verification.
+- [ ] Issue and validate issuer/audience-bound, short-lived JWT access and
+  refresh tokens with minimal claims and configurable expiry/secrets.
+- [ ] Rotate refresh tokens; on reuse of a rotated token, revoke its complete
+  token family. Resetting a password revokes every active family for that user.
+- [ ] Verify `POST /api/v1/auth/register`: success, duplicate normalized email,
+  validation, limiter, and database-race cases.
+- [ ] Add `/api/v1/auth/login`, `/refresh`, `/logout`, `/me`, `/verify-email`,
+  `/forgot-password`, and `/reset-password` endpoints.
+- [ ] Block unverified password accounts from login until email verification.
+- [ ] Add Google OAuth2/OIDC authorization-code flow with state, nonce, PKCE,
+  ID-token validation, and verified-email auto-linking to matching local users.
+- [ ] Apply the IP limiter to the remaining auth writes and add per-account
+  progressive backoff/temporary lockout to failed local-password logins.
+- [ ] Add `OAuth2PasswordBearer`, `get_current_user()`, and
+  `get_optional_current_user()`; update URL creation to select the guest or
+  authenticated-user rate-limit scope.
+- [ ] Cover registration, duplicate email, login, invalid/expired JWTs,
+  refresh rotation/reuse, lockout, verification, reset, Google linking,
+  authorization, and unavailable dependencies with unit and integration tests.
+- [ ] Run: `uv run pytest tests/test_auth.py -q -s` and `uv run pytest -q -s`.
+- [ ] Commit: `feat: add production authentication and authorization`.
 
 ### I. Owned URL management — 90 minutes
 
