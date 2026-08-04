@@ -15,10 +15,12 @@ from app.main import app
 
 from sqlalchemy.exc import IntegrityError
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from app.models.user import User
-from app.utils.security import hash_password
+from app.utils.security import hash_password, create_refresh_token
+
+from uuid import uuid4
 
 @pytest.fixture
 def client()->TestClient:
@@ -299,8 +301,12 @@ def test_register_maps_database_unique_race_to_409(
 
 
 
-
-def create_verified_user()->tuple[int,str]:
+# `*` makes all following parameters keyword-only. This forces callers to write
+# `locked_until=...`, making test setup more explicit and preventing accidental
+# positional arguments.
+def create_verified_user(
+    *,
+    locked_until: datetime | None = None,)->tuple[int,str]:
     async def seed()->tuple[int,str]:
         engine=create_async_engine(
             get_settings().database_url,
@@ -318,6 +324,7 @@ def create_verified_user()->tuple[int,str]:
                         email=email,
                         password_hash=hash_password("hello12345678"),
                         email_verified_at=datetime.now(timezone.utc),
+                        locked_until=locked_until, 
                     )
                 )
                 await session.commit()
@@ -354,3 +361,197 @@ def test_login_returns_token_pair_for_verified_user(
         "token_type": "bearer",
         "expires_in": 900,
     }
+
+def test_login_returns_generic_401_for_wrong_password(
+    client:TestClient,
+)->None:
+    _,email=create_verified_user() #seed function
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": "wrong-password"},
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {
+        "error": "invalid_credentials",
+        "message": "Invalid email or password",
+    }
+
+def test_login_rejects_unverified_password_account(client:TestClient)->None:
+    email=f"user-{time_ns()}@example.com"
+
+    assert client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "hello12345678"},
+    ).status_code == 201
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": "hello12345678"},
+    )
+
+    assert response.status_code==403
+    assert response.json() == {
+        "error": "email_unverified",
+        "message": "Email verification is required before login",
+    }
+
+def test_login_returns_503_when_limiter_is_unavailable(client:TestClient,
+monkeypatch:pytest.MonkeyPatch)->None:
+
+    async def unavailable(*args:object,**kwargs:object)->None:
+        raise OSError("Redis unavailable")
+# Accept any positional and keyword arguments so this test override remains
+# compatible with the original dependency's signature, even if FastAPI or the
+# application starts passing arguments in the future. The arguments are ignored.
+    monkeypatch.setattr(
+        "app.api.v1.dependencies.rate_limit.SlidingWindowRateLimiter.check",
+        unavailable,
+    )
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "user@example.com",
+            "password": "hello12345678",
+        },
+    )
+
+    assert response.status_code == 503
+
+def test_login_returns_423_for_locked_accoount(client:TestClient)->None:
+    _,email=create_verified_user(locked_until=datetime.now(timezone.utc)+timedelta(minutes=15))
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": "hello12345678"},
+    )
+
+    assert response.status_code == 423
+    assert response.json() == {
+        "error": "account_locked",
+        "message": "Account is temporarily locked",
+    }
+
+def test_login_returns_429_after_five_requests(client: TestClient) -> None:
+    payload = {
+        "email": "missing@example.com",
+        "password": "hello12345678",
+    }
+
+    for _ in range(5):
+        assert client.post("/api/v1/auth/login", json=payload).status_code == 401
+
+    response = client.post("/api/v1/auth/login", json=payload)
+
+    assert response.status_code == 429
+    assert int(response.headers["Retry-After"]) > 0
+
+#tests after refresh tokens rotation feature
+
+def test_refresh_rotates_token_pair(client:TestClient)->None:
+    _,email=create_verified_user()
+    login=client.post("/api/v1/auth/login",
+        json={"email": email, "password": "hello12345678"},
+    )
+    original_refresh_token = login.json()["refresh_token"]
+
+    response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": original_refresh_token},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["refresh_token"] != original_refresh_token
+    assert response.json()["access_token"]
+
+def test_refresh_token_reuse_revokes_its_family(client: TestClient) -> None:
+    _, email = create_verified_user()
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": "hello12345678"}, 
+    ) # to know json requirement see the payload class variables etc
+    original_refresh_token = login.json()["refresh_token"]
+
+    rotated = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": original_refresh_token},
+    )
+    replacement_refresh_token = rotated.json()["refresh_token"]
+
+    replay = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": original_refresh_token},
+    )
+    assert replay.status_code == 401
+    assert replay.json()["error"] == "invalid_refresh_token"
+
+    revoked_successor = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": replacement_refresh_token},
+    )
+    assert revoked_successor.status_code == 401
+    assert revoked_successor.json()["error"] == "invalid_refresh_token"
+# Verify refresh-token rotation and replay protection.
+#
+# Flow:
+#   1. Log in to obtain the initial refresh token (A).
+#   2. Refresh using A, which rotates it into a replacement refresh token (B).
+#   3. Replay A. Since A was already consumed, the server detects a replay
+#      attack, revokes the entire refresh-token family, and returns 401.
+#   4. Verify that B (the latest valid successor) is also rejected because the
+#      family revocation invalidates every refresh token from that login session.
+
+def test_refresh_rejects_invalid_token(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": "not-a-valid-jwt"},
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {
+        "error": "invalid_refresh_token",
+        "message": "Invalid refresh token",
+    }
+
+def test_refresh_rejects_expired_token(client: TestClient) -> None:
+    settings = get_settings()
+    expired_token = create_refresh_token(
+        user_id=1,
+        family_id=uuid4(),
+        secret=settings.jwt_secret,
+        issuer=settings.jwt_issuer,
+        audience=settings.jwt_audience,
+        expires_in=timedelta(seconds=-1),
+    )
+
+    response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": expired_token},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error"] == "invalid_refresh_token"
+
+def test_refresh_rejects_token_without_a_persisted_record(
+    client: TestClient,
+) -> None:
+    settings = get_settings()
+    token = create_refresh_token(
+        user_id=1,
+        family_id=uuid4(),
+        secret=settings.jwt_secret,
+        issuer=settings.jwt_issuer,
+        audience=settings.jwt_audience,
+        expires_in=timedelta(days=30),
+    )
+
+    response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": token},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error"] == "invalid_refresh_token"

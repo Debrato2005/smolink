@@ -128,6 +128,12 @@ def test_guest_url_creation_returns_503_when_limiter_is_unavailable(client: Test
     monkeypatch.setattr(
     "app.api.v1.dependencies.rate_limit.SlidingWindowRateLimiter.check",
         unavailable,)
+    
+# Temporarily replace the Redis-backed rate limiter's `check()` method with the
+# test's `unavailable()` function. This simulates Redis being unavailable
+# without stopping the real Redis server, allowing us to verify that the
+# application handles rate-limiter failures correctly.
+
     response = client.post(
         "/api/v1/urls",
         json={"destination": "https://example.com"},

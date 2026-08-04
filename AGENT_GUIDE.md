@@ -92,6 +92,8 @@ additional development commands and conventions.
 
 - Follow red → green: write or adjust a focused failing test, implement the
   minimum behavior, then rerun focused and full verification.
+- Keep tests isolated: do not rely on execution order or leftover database or
+  Redis state; use unique data and clean fixed external-state keys in fixtures.
 - Use real Compose PostgreSQL for database constraints and Redis for Redis
   behavior. Use `-s` with pytest in this environment.
 - Keep API failures deliberate and consistent with the documented status and

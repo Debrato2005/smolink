@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.auth import LoginRequest, TokenPairResponse
+from app.schemas.auth import LoginRequest, TokenPairResponse, RefreshRequest
 
 def test_login_request_accepts_valid_credentials() -> None:
     request=LoginRequest(
@@ -56,3 +56,11 @@ def test_token_pair_response_has_the_public_contract() -> None:
         "expires_in": 900,
     }
 
+
+def test_refresh_request_requires_a_token() -> None:
+    request = RefreshRequest(refresh_token="refresh-token")
+
+    assert request.refresh_token == "refresh-token"
+
+    with pytest.raises(ValidationError):
+        RefreshRequest(refresh_token="")

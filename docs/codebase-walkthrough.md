@@ -497,8 +497,21 @@ and identifier; access tokens also include `auth_version`.
 Login tracks failed attempts in Postgres. Five consecutive failed passwords
 lock an account for 15 minutes; a successful login clears that state. The
 shared `rate:auth:{ip}` rolling limit covers registration and login. Focused
-API verification remains in progress. Refresh rotation, verification/reset
-workflows, current-user dependencies, and Google OIDC remain unfinished.
+API verification remains in progress. `POST /api/v1/auth/refresh` validates a
+refresh JWT, locks its persisted record, marks it used, and creates a child
+record in the same family. Replaying a consumed token revokes every active
+record in that family. Verification/reset workflows, current-user dependencies,
+and Google OIDC remain unfinished.
+
+`auth_repository.py` owns refresh-token persistence. Its lookup-for-rotation
+uses PostgreSQL `FOR UPDATE`, preventing concurrent refresh requests from both
+consuming the same record. The family-revocation update marks every active
+record with a revocation timestamp. The route commits even after a refresh
+replay because that revocation must persist; ordinary invalid refresh tokens
+produce the same `401 invalid_refresh_token` envelope.
+
+The focused API tests cover successful rotation and reuse revocation. They must
+be run before the checklist rotation item is marked complete.
 
 Local accounts normalize email before uniqueness checks and use Argon2id
 password hashes. New password registrations remain unable to log in until a

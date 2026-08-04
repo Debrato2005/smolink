@@ -126,7 +126,7 @@ The backend release is not the end of Smolink. After its API contracts are verif
 
 **Status:** the persistence foundation, Argon2id helpers, normalized-email
 registration, local-login service and route, JWT helpers, refresh-token record
-creation, and registration/login IP limiting are implemented. Focused
+creation/rotation, and registration/login IP limiting are implemented. Focused
 verification is still in progress; do not mark the milestone complete. Follow
 `docs/superpowers/specs/2026-08-01-authentication-authorization-design.md`.
 
@@ -148,6 +148,8 @@ verification is still in progress; do not mark the milestone complete. Follow
   keyed hash of each issued refresh-token identifier.
 - [ ] Rotate refresh tokens; on reuse of a rotated token, revoke its complete
   token family. Resetting a password revokes every active family for that user.
+  The refresh implementation is present; leave this unchecked until its focused
+  rotation and reuse tests pass.
 - [ ] Verify `POST /api/v1/auth/register`: success, duplicate normalized email,
   validation, limiter, and database-race cases.
 - [ ] Add `/api/v1/auth/login`, `/refresh`, `/logout`, `/me`, `/verify-email`,
@@ -263,3 +265,4 @@ verification is still in progress; do not mark the milestone complete. Follow
 | 2026-07-28 | Guest URL creation | User-reported full suite → 40 passed | Versioned endpoint validates requests, creates guest URLs, persists a successful transaction at the endpoint boundary, returns the documented `409` alias-conflict envelope, and maps invalid alias/expiry business errors to `422`. |
 | 2026-07-31 | Strict guest-creation rate limiting | User-reported rate-limit tests passed | A Lua-backed Redis sliding window enforces 10 guest creations per IP per rolling minute. The endpoint returns `429` with `Retry-After` when limited and fails closed with `503` when Redis is unavailable. Test Redis clients are isolated per TestClient event loop. |
 | 2026-08-04 | Local login/JWT foundation | Focused API verification still in progress | Verified password accounts can receive an access/refresh token pair. Refresh JWT identifiers are stored only as keyed hashes; failed password attempts persist and lock an account after five failures for 15 minutes. |
+| 2026-08-04 | Refresh-token rotation implementation | Focused rotation/reuse verification pending | The refresh route consumes one token under a row lock, issues a child in the same family, and revokes the full family when a consumed token is replayed. |

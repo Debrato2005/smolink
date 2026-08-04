@@ -526,6 +526,10 @@ Reproduce → identify which layer (frontend/API/service/repository/DB/Redis) �
 
 **Common mistakes to avoid:** testing only happy paths, skipping auth tests, one giant test function instead of focused ones, testing implementation details instead of observable behavior. Coverage isn't the goal — meaningful tests on critical paths (auth, money-adjacent logic, business rules) are worth more than 100% coverage of trivial getters.
 
+Tests must be isolated: never rely on test order, leftover database rows, or
+shared Redis keys. Use unique test data and reset fixed external-state keys in
+fixture setup and cleanup.
+
 ---
 
 # Part 10 — DevOps & Deployment

@@ -6,11 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.dependencies.rate_limit import limit_auth_write
 from app.core.config import get_settings
 from app.db.session import get_session
+
 from app.schemas.auth import (
     LoginRequest,
     PublicUserResponse,
     RegisterRequest,
     TokenPairResponse,
+    RefreshRequest,
 )
 from app.services.auth_service import (
     AccountLockedError,
@@ -20,6 +22,8 @@ from app.services.auth_service import (
     authenticate_user,
     issue_token_pair,
     register_user,
+    InvalidRefreshTokenError,
+    rotate_refresh_token,
 )
 from app.utils.snowflake import SnowflakeGenerator
 
@@ -124,3 +128,43 @@ async def login(
         refresh_token=token_pair.refresh_token,
         expires_in=token_pair.expires_in,
     )
+
+@router.post(
+    "/refresh",
+    response_model=TokenPairResponse
+)
+async def refresh(
+    payload:RefreshRequest,
+    session: AsyncSession = Depends(get_session),
+    _: None = Depends(limit_auth_write),
+) -> TokenPairResponse | JSONResponse:
+    try:
+        token_pair=await rotate_refresh_token(
+            session=session,
+            refresh_token=payload.refresh_token,
+            generator=generator
+        )
+        await session.commit()
+    except InvalidRefreshTokenError:
+        # A replay may revoke a token family, so preserve transaction changes.
+        await session.commit()
+        #Do not replace await session.commit() with rollback in the exception branch: 
+        # a replayed refresh token intentionally revokes the token family and must persist 
+        # that revocation.
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={
+                "error": "invalid_refresh_token",
+                "message": "Invalid refresh token",
+            },
+        )
+    return TokenPairResponse(
+        access_token=token_pair.access_token,
+        refresh_token=token_pair.refresh_token,
+        expires_in=token_pair.expires_in,
+    )
+# Normally exceptions trigger a rollback, but refresh-token replay is different:
+# replay detection revokes the entire refresh-token family before raising
+# InvalidRefreshTokenError. Committing here preserves that security update. If
+# no database changes were made (e.g. malformed or expired token), commit is a
+# harmless no-op.

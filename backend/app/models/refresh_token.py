@@ -25,7 +25,7 @@ class RefreshToken(Base):
         unique=True,
         nullable=False,
     )
-    family_id: Mapped[UUID] = mapped_column(
+    family_id: Mapped[UUID] = mapped_column(#The family groups all refresh tokens that belong to one login session.
         Uuid,
         index=True,
         nullable=False,
@@ -78,3 +78,16 @@ class RefreshToken(Base):
 #
 # Access tokens remain short-lived and stateless (JWTs), while refresh tokens
 # are intentionally stateful to provide secure long-lived authentication.
+
+#==============================================================================================================================
+# why no model for access model only for refresh token
+
+# Because access tokens are short-lived, signed JWTs—usually 15 minutes. 
+# The server validates their signature, expiry, issuer/audience, then loads the user 
+# and checks auth_version; no database row is needed for each access token.
+# Refresh tokens live much longer (30 days) and must support rotation, logout, 
+# reuse detection, and family revocation. Their JWT jti is therefore stored as 
+# a keyed hash in the refresh_tokens table.
+# So:
+# Access JWT: signed, short-lived, not persisted.
+# Refresh JWT: signed, long-lived, persisted as hashed state.

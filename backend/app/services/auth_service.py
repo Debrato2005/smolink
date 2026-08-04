@@ -1,14 +1,22 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from uuid import uuid4
+from uuid import uuid4,UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
-from app.repositories.auth_repository import create_refresh_token_record
-from app.repositories.user_repository import create_user, get_user_by_email
+from app.repositories.auth_repository import (
+    create_refresh_token_record,
+    get_refresh_token_by_token_hash_for_update,
+    revoke_refresh_token_family,
+)
+from app.repositories.user_repository import (
+    create_user,
+    get_user_by_email,
+    get_user_by_id,
+)
 from app.utils.security import (
     create_access_token,
     create_refresh_token,
@@ -17,6 +25,7 @@ from app.utils.security import (
     hash_token_identifier,
     normalize_email,
     verify_password,
+    InvalidRefreshJwtError,
 )
 from app.utils.snowflake import SnowflakeGenerator
 
@@ -30,6 +39,9 @@ class EmailUnverifiedError(Exception):
     pass
 
 class AccountLockedError(Exception):
+    pass
+
+class InvalidRefreshTokenError(Exception):
     pass
 
 MAX_FAILED_LOGIN_ATTEMPTS = 5
@@ -96,9 +108,11 @@ async def issue_token_pair(
     session: AsyncSession,
     user: User,
     generator: SnowflakeGenerator,
+    family_id: UUID | None = None,
+    parent_token_id: int | None = None,
 ) -> IssuedTokenPair:
     settings = get_settings()
-    family_id = uuid4()
+    token_family_id = family_id or uuid4()
 
     access_token = create_access_token(
         user_id=user.id,
@@ -111,7 +125,7 @@ async def issue_token_pair(
 
     refresh_token = create_refresh_token(
         user_id=user.id,
-        family_id=family_id,
+        family_id=token_family_id,
         secret=settings.jwt_secret,
         issuer=settings.jwt_issuer,
         audience=settings.jwt_audience,
@@ -132,7 +146,8 @@ async def issue_token_pair(
             str(refresh_claims["jti"]),
             secret=settings.token_hash_secret,
         ),
-        family_id=family_id,
+        family_id=token_family_id,
+        parent_token_id=parent_token_id,
         expires_at=datetime.now(timezone.utc)
         + timedelta(seconds=settings.refresh_token_ttl_seconds),
     )
@@ -143,3 +158,99 @@ async def issue_token_pair(
         refresh_token=refresh_token,
         expires_in=settings.access_token_ttl_seconds,
     )
+
+async def rotate_refresh_token(
+    *,
+    session: AsyncSession,
+    refresh_token:str,
+    generator:SnowflakeGenerator,
+)->IssuedTokenPair:
+    settings=get_settings()
+    now=datetime.now(timezone.utc)
+
+    try:
+        claims=decode_refresh_token(
+            refresh_token,
+            secret=settings.jwt_secret,
+            issuer=settings.jwt_issuer,
+            audience=settings.jwt_audience
+        )
+        user_id=int(str(claims["sub"]))
+        family_id=UUID(str(claims["family_id"]))
+        token_hash=hash_token_identifier(str(claims["jti"]),
+                                         secret=settings.token_hash_secret,
+                                         )
+    except (InvalidRefreshJwtError, KeyError, TypeError, ValueError) as error:
+        raise InvalidRefreshTokenError from error
+
+    token_record=await get_refresh_token_by_token_hash_for_update(
+        session,
+        token_hash,
+    )
+
+    if( # Ensure the refresh token still represents a valid, active login session.
+        token_record is None
+        or token_record.user_id!=user_id
+        or token_record.family_id!=family_id
+        or token_record.expires_at<=now
+        or token_record.revoked_at is not None
+    ):
+        raise InvalidRefreshTokenError
+
+# A refresh token is single-use. Reusing an already-consumed token indicates
+# a replay attack, so revoke the entire refresh-token family.
+    if token_record.used_at is not None:
+        await revoke_refresh_token_family(
+            session,
+            family_id=token_record.family_id,
+            revoked_at=now,
+        )
+        raise InvalidRefreshTokenError
+    # Ensure the owning account still exists and is eligible to receive new
+    # tokens.
+    user = await get_user_by_id(session, token_record.user_id)
+    if user is None or user.email_verified_at is None:
+        raise InvalidRefreshTokenError
+
+    token_record.used_at = now # Consume this refresh token so it can never be used again.
+
+    # Rotate the refresh token by issuing a new token pair in the same family.
+    # The parent_token_id links the new refresh token to the one it replaced.
+    return await issue_token_pair(
+        session=session,
+        user=user,
+        generator=generator,
+        family_id=token_record.family_id,
+        parent_token_id=token_record.id,
+    )
+
+
+
+# A refresh-token family represents one authenticated login session.
+#
+# • Login:
+#   - A successful login creates a brand-new `family_id` (UUID), a new access
+#     token, and the first refresh token in that family.
+#
+# • Refresh rotation:
+#   - Access tokens are short-lived (e.g. 15 minutes). When one expires, the
+#     client presents its current refresh token instead of logging in again.
+#   - Refresh tokens have a maximum lifetime (e.g. 30 days) but are single-use.
+#     Every successful refresh marks the current refresh token as used and
+#     issues a new access token and a new refresh token with a fresh expiry.
+#   - The new refresh token reuses the same `family_id`, so all rotated refresh
+#     tokens belong to the same login session. `parent_token_id` links each
+#     refresh token to the one that created it.
+#
+# • Session end:
+#   - If the session ends normally (logout or refresh-token expiry), the next
+#     login starts a completely new refresh-token family with a new UUID.
+#   - Previous families are never reused or linked to new ones; they may remain
+#     in the database for auditing or later cleanup.
+#
+# • Replay protection:
+#   - Reusing an already-consumed refresh token indicates a possible replay
+#     attack. The server revokes every refresh token in that family, invalidating
+#     the entire login session.
+#   - The user must log in again, creating a new token pair in a brand-new,
+#     unrelated refresh-token family.

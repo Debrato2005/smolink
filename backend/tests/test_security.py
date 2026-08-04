@@ -6,7 +6,7 @@ from datetime import timedelta
 
 import pytest
 
-from app.utils.security import InvalidAccessTokenError, create_access_token, decode_access_token, InvalidRefreshTokenError,create_refresh_token,decode_refresh_token
+from app.utils.security import InvalidAccessTokenError, create_access_token, decode_access_token, InvalidRefreshJwtError,create_refresh_token,decode_refresh_token
 
 from uuid import UUID, uuid4
 
@@ -127,7 +127,7 @@ def test_refresh_decoder_rejects_access_token() -> None:
         expires_in=timedelta(minutes=15),
     )
 
-    with pytest.raises(InvalidRefreshTokenError):
+    with pytest.raises(InvalidRefreshJwtError):
         decode_refresh_token(
             access_token,
             secret="test-jwt-secret",

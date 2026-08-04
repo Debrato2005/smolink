@@ -116,7 +116,7 @@ def decode_access_token(
 # payload if everything is valid. Using PyJWT avoids implementing security-
 # critical JWT encoding, signing, and validation logic manually.
 
-class InvalidRefreshTokenError(Exception):
+class InvalidRefreshJwtError(Exception):
     pass
 
 
@@ -174,10 +174,10 @@ def decode_refresh_token(
             },
         )
     except jwt.PyJWTError as error:
-        raise InvalidRefreshTokenError from error
+        raise InvalidRefreshJwtError from error
 
     if claims["typ"] != "refresh":
-        raise InvalidRefreshTokenError
+        raise InvalidRefreshJwtError
 
     return claims
 

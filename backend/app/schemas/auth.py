@@ -20,6 +20,9 @@ class LoginRequest(BaseModel):
     email:EmailStr
     password: str = Field(min_length=12, max_length=128)
 
+class RefreshRequest(BaseModel):
+    refresh_token:str=Field(min_length=1)
+
 class TokenPairResponse(BaseModel):
     access_token:str
     refresh_token:str
@@ -53,5 +56,3 @@ class TokenPairResponse(BaseModel):
 # - SQLAlchemy models -> Database tables.
 # - @dataclass -> Simple internal value objects (e.g. RateLimitResult).
 # - BaseModel -> API request/response schemas with automatic validation.
-
-

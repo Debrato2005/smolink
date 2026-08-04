@@ -78,8 +78,10 @@ contract and persistence model.
 **Current implementation status:** local registration and login foundations are
 in progress. Login issues signed access and refresh JWTs, persists only a keyed
 hash of the refresh JWT identifier, and applies the five-failure/15-minute
-account-lock policy. Rotation, logout, verification delivery, resets,
-current-user dependencies, and Google OIDC remain unfinished.
+account-lock policy. Refresh rotation locks and consumes one persisted token,
+issues its child in the same family, and revokes the family when a consumed
+token is replayed; focused verification is still pending. Logout, verification
+delivery, resets, current-user dependencies, and Google OIDC remain unfinished.
 
 ### 10. All application APIs remain versioned under `/api/v1`
 Authentication routes live under `/api/v1/auth/...`; they are not root-level
