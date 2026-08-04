@@ -75,6 +75,12 @@ Google email matching a local account links to that account rather than creating
 a duplicate user. See the authentication design specification for the full
 contract and persistence model.
 
+**Current implementation status:** local registration and login foundations are
+in progress. Login issues signed access and refresh JWTs, persists only a keyed
+hash of the refresh JWT identifier, and applies the five-failure/15-minute
+account-lock policy. Rotation, logout, verification delivery, resets,
+current-user dependencies, and Google OIDC remain unfinished.
+
 ### 10. All application APIs remain versioned under `/api/v1`
 Authentication routes live under `/api/v1/auth/...`; they are not root-level
 exceptions. The public `/{short_code}` redirect is the only root dynamic route.

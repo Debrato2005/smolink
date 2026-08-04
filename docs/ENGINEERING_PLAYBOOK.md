@@ -210,7 +210,7 @@ FastAPI provides objects (DB session, current user, settings, logger) automatica
 
 ## 15. Configuration Management
 
-Never hardcode secrets. `.env` holds real values (never committed); `.env.example` is the template contributors copy. At minimum, configure the database URL, Redis URL, JWT secret, public base URL, and IP-hash secret. `pyproject.toml` holds dependencies/metadata, not secrets. Configuration loads once at startup and is reused — not re-read per request.
+Never hardcode secrets. `.env` holds real values (never committed); `.env.example` is the template contributors copy. At minimum, configure the database URL, Redis URL, JWT signing secret, JWT issuer/audience, access/refresh TTLs, a distinct refresh-token-hash secret, public base URL, and IP-hash secret. `pyproject.toml` holds dependencies/metadata, not secrets. Configuration loads once at startup and is reused — not re-read per request.
 
 ---
 

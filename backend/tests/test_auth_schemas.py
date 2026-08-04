@@ -12,7 +12,7 @@ def test_login_request_accepts_valid_credentials() -> None:
     assert str(request.email) == "User@example.com"
     assert request.password == "hello12345678"
 
-@pytest.mark.parametrize(
+@pytest.mark.parametrize( #Instead of writing three separate tests, pytest runs the same test with three different inputs.
     "payload",
     [
         {"email": "not-an-email", "password": "hello12345678"},
@@ -24,7 +24,23 @@ def test_login_request_rejects_invalid_credentials(
     payload: dict[str, str],
 ) -> None:
     with pytest.raises(ValidationError):
-        LoginRequest(**payload)
+        LoginRequest(**payload) #The ** operator unpacks the dictionary into keyword arguments.
+
+# `**` unpacks a dictionary into keyword arguments. For example:
+#
+#     payload = {"email": "...", "password": "..."}
+#
+#     LoginRequest(**payload)
+#
+# is equivalent to:
+#
+#     LoginRequest(
+#         email="...",
+#         password="...",
+#     )
+#
+# Without `**`, the entire dictionary would be passed as a single positional
+# argument, which is not how Pydantic BaseModels are constructed.
 
 def test_token_pair_response_has_the_public_contract() -> None:
     response = TokenPairResponse(
@@ -39,3 +55,4 @@ def test_token_pair_response_has_the_public_contract() -> None:
         "token_type": "bearer",
         "expires_in": 900,
     }
+

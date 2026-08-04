@@ -6,7 +6,9 @@ from datetime import timedelta
 
 import pytest
 
-from app.utils.security import InvalidAccessTokenError, create_access_token, decode_access_token
+from app.utils.security import InvalidAccessTokenError, create_access_token, decode_access_token, InvalidRefreshTokenError,create_refresh_token,decode_refresh_token
+
+from uuid import UUID, uuid4
 
 def test_password_hash_is_argon2id_and_verifiable()->None:
     password="hello1345678"
@@ -88,3 +90,48 @@ def test_access_token_rejects_wrong_issuer_or_audience() -> None:
 # These tests verify that passwords are hashed with Argon2id, never stored in
 # plaintext, and that password verification succeeds only for the correct
 # password while rejecting incorrect ones.
+
+def test_refresh_token_contains_required_sesssiion_claims()->None:
+    family_id=uuid4()
+
+    token=create_refresh_token(
+        user_id=123,
+        family_id=family_id,
+        secret="test-jwt-secret",
+        issuer="smolink",
+        audience="smolink-api",
+        expires_in=timedelta(days=30),
+    )
+
+    claims = decode_refresh_token(
+        token,
+        secret="test-jwt-secret",
+        issuer="smolink",
+        audience="smolink-api",
+    )
+
+    assert claims["sub"] == "123"
+    assert claims["typ"] == "refresh"
+    assert UUID(str(claims["family_id"])) == family_id
+    assert isinstance(claims["jti"], str)
+    assert "email" not in claims
+    assert "password" not in claims
+
+def test_refresh_decoder_rejects_access_token() -> None:
+    access_token = create_access_token(
+        user_id=123,
+        auth_version=1,
+        secret="test-jwt-secret",
+        issuer="smolink",
+        audience="smolink-api",
+        expires_in=timedelta(minutes=15),
+    )
+
+    with pytest.raises(InvalidRefreshTokenError):
+        decode_refresh_token(
+            access_token,
+            secret="test-jwt-secret",
+            issuer="smolink",
+            audience="smolink-api",
+        )
+#This test verifies that an access token cannot be used where a refresh token is expected.

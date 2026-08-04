@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from typing import Literal
+
 class RegisterRequest(BaseModel):
     email:EmailStr 
     password: str=Field(min_length=12,max_length=128)
@@ -14,6 +16,18 @@ class PublicUserResponse(BaseModel):
     created_at:datetime
     updated_at:datetime
 
+class LoginRequest(BaseModel):
+    email:EmailStr
+    password: str = Field(min_length=12, max_length=128)
+
+class TokenPairResponse(BaseModel):
+    access_token:str
+    refresh_token:str
+    token_type:Literal["bearer"]="bearer"
+    expires_in : int =Field(gt=0)
+# Literal["bearer"] restricts the field to exactly one allowed value:
+# "bearer". Unlike `str`, it prevents any other string from being assigned,
+# ensuring the response follows the OAuth 2.0 token response contract.
 
 #without pydantic no validation it will be just type hints
 # also BaseModel parses an Parsing also includes type conversion.

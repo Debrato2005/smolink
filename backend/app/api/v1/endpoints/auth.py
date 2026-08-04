@@ -6,8 +6,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.dependencies.rate_limit import limit_auth_write
 from app.core.config import get_settings
 from app.db.session import get_session
-from app.schemas.auth import PublicUserResponse, RegisterRequest
-from app.services.auth_service import EmailTakenError, register_user
+from app.schemas.auth import (
+    LoginRequest,
+    PublicUserResponse,
+    RegisterRequest,
+    TokenPairResponse,
+)
+from app.services.auth_service import (
+    AccountLockedError,
+    EmailTakenError,
+    EmailUnverifiedError,
+    InvalidCredentialsError,
+    authenticate_user,
+    issue_token_pair,
+    register_user,
+)
 from app.utils.snowflake import SnowflakeGenerator
 
 router=APIRouter(prefix="/auth", tags=["auth"])
@@ -59,3 +72,55 @@ async def register(
 # - IntegrityError handles rare concurrent race conditions where two requests
 #   pass the duplicate check simultaneously, and PostgreSQL's UNIQUE
 #   constraint rejects the second insert. Both return the same 409 response.
+
+@router.post("/login",
+             response_model=TokenPairResponse,)
+async def login(
+    payload:LoginRequest,
+    session:AsyncSession=Depends(get_session),
+    _:None=Depends(limit_auth_write)
+)->TokenPairResponse | JSONResponse:
+    try:
+        user=await authenticate_user(
+            session=session,
+            email=str(payload.email),
+            password=payload.password,
+        )
+        token_pair=await issue_token_pair(
+            session=session,
+            user=user,
+            generator=generator,
+        )
+        await session.commit()
+    except InvalidCredentialsError:
+        await session.commit() #to update the failed counter
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={
+                "error": "invalid_credentials",
+                "message": "Invalid email or password",
+            },
+        )
+    except EmailUnverifiedError:
+        await session.rollback()
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={
+                "error": "email_unverified",
+                "message": "Email verification is required before login",
+            },
+        )
+    except AccountLockedError:
+        await session.rollback()
+        return JSONResponse(
+            status_code=status.HTTP_423_LOCKED,
+            content={
+                "error": "account_locked",
+                "message": "Account is temporarily locked",
+            },
+        )
+    return TokenPairResponse(
+        access_token=token_pair.access_token,
+        refresh_token=token_pair.refresh_token,
+        expires_in=token_pair.expires_in,
+    )

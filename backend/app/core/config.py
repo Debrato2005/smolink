@@ -10,6 +10,12 @@ class Settings(BaseSettings): #Defines your application settings. Because it inh
     public_base_url: str
     redis_cache_ttl_seconds: int = 3600
 
+    jwt_issuer: str
+    jwt_audience: str
+    access_token_ttl_seconds: int
+    refresh_token_ttl_seconds: int
+    token_hash_secret: str
+
     snowflake_worker_id: int = 0
 
     model_config=SettingsConfigDict(

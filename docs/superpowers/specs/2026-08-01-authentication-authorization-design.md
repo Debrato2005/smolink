@@ -1,6 +1,6 @@
 # Production authentication and authorization design
 
-**Status:** approved target design; implementation pending  
+**Status:** approved target design; partially implemented (local login/JWT foundation)
 **Date:** 2026-08-01
 
 ## Purpose and scope
@@ -9,6 +9,15 @@ Define Smolink's complete local-password and Google OIDC authentication system.
 It supersedes the earlier minimal-auth checklist item, while preserving optional
 authentication for URL creation. It does not add roles, organizations, API keys,
 custom domains, or external identity providers beyond Google.
+
+## Implementation status (2026-08-04)
+
+Implemented: registration and local-login foundations, Argon2id password
+verification, five-failure/15-minute account locking, signed access/refresh
+JWT helpers, keyed refresh-JTI storage, and shared registration/login IP
+limiting. Focused API verification is still in progress. Refresh rotation,
+logout, email verification and reset flows, bearer-token dependencies, and
+Google OIDC are not yet implemented.
 
 ## Product decisions
 

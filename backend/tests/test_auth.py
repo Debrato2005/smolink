@@ -15,6 +15,11 @@ from app.main import app
 
 from sqlalchemy.exc import IntegrityError
 
+from datetime import datetime, timezone
+
+from app.models.user import User
+from app.utils.security import hash_password
+
 @pytest.fixture
 def client()->TestClient:
     engine=create_async_engine(get_settings().database_url,
@@ -35,13 +40,30 @@ def client()->TestClient:
             yield redis_client
         finally:
             await redis_client.aclose()
+
+    async def clear_auth_rate_limit() -> None:
+        redis_client = Redis.from_url(get_settings().redis_url)
+        try:
+            await redis_client.delete("rate:auth:testclient")
+        finally:
+            await redis_client.aclose()
 #dependency_overrides is a dictionary.
     app.dependency_overrides[get_session] = override_get_session
     app.dependency_overrides[get_redis_client] = override_get_redis_client
 
-    with TestClient(app) as test_client:
-        yield test_client
-    app.dependency_overrides.clear()
+    asyncio.run(clear_auth_rate_limit()) #Every auth API test will now start and end with a clean rate-limit key
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        asyncio.run(clear_auth_rate_limit())
+        app.dependency_overrides.clear()
+# Clear the shared auth rate-limit Redis key before and after every auth API
+# test. Register and login intentionally use the same limiter key
+# (`rate:auth:testclient`), so without cleanup one test's requests would carry
+# over into later tests, causing nondeterministic 429 responses. The dedicated
+# rate-limit test still verifies the limiter itself by exhausting the limit
+# within a single test.
 
 def test_register_creates_user_without_exposing_password(client:TestClient)->None:
     email=f"agent-{time_ns()}@example.com"
@@ -273,3 +295,62 @@ def test_register_maps_database_unique_race_to_409(
 # Passing service tests does not guarantee the HTTP API behaves correctly, and
 # passing endpoint tests does not guarantee every business rule is independently
 # validated. Both layers are required for comprehensive production-grade testing.
+
+
+
+
+
+def create_verified_user()->tuple[int,str]:
+    async def seed()->tuple[int,str]:
+        engine=create_async_engine(
+            get_settings().database_url,
+            poolclass=NullPool,
+        )
+        session_factory=async_sessionmaker(engine,expire_on_commit=False)
+        user_id=time_ns()
+        email = f"user-{user_id}@example.com"
+
+        try:
+            async with session_factory() as session:
+                session.add(
+                    User(
+                        id=user_id,
+                        email=email,
+                        password_hash=hash_password("hello12345678"),
+                        email_verified_at=datetime.now(timezone.utc),
+                    )
+                )
+                await session.commit()
+        finally:
+            await engine.dispose()
+
+        return user_id, email
+
+    return asyncio.run(seed())
+# Helper used by login endpoint tests to seed the database with a real,
+# email-verified user. It creates and commits the user in its own async
+# database session so the login endpoint, which runs in a separate session,
+# can query and authenticate it. Unique IDs/emails avoid constraint
+# collisions across test runs. The helper returns the generated user ID and
+# email, and `asyncio.run()` bridges the async seeding logic into a normal
+# synchronous pytest test.
+
+
+def test_login_returns_token_pair_for_verified_user(
+    client: TestClient,
+) -> None:
+    _, email = create_verified_user()
+
+    response=client.post("/api/v1/auth/login",
+        json={
+            "email": email,
+            "password": "hello12345678",
+        },
+    )
+    assert response.status_code==200
+    assert response.json()=={
+        "access_token": response.json()["access_token"],
+        "refresh_token": response.json()["refresh_token"],
+        "token_type": "bearer",
+        "expires_in": 900,
+    }
