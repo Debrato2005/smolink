@@ -11,6 +11,7 @@ from app.repositories.auth_repository import (
     create_refresh_token_record,
     get_refresh_token_by_token_hash_for_update,
     revoke_refresh_token_family,
+    get_email_verification_token_by_hash_for_update,
 )
 from app.repositories.user_repository import (
     create_user,
@@ -254,3 +255,36 @@ async def rotate_refresh_token(
 #     the entire login session.
 #   - The user must log in again, creating a new token pair in a brand-new,
 #     unrelated refresh-token family.
+
+class InvalidOrExpiredTokenError(Exception):
+    pass
+async def verify_email(
+        *, #Everything after this is keyword-only
+        session:AsyncSession,
+        token:str,
+)->User:
+    settings = get_settings()
+    now = datetime.now(timezone.utc)
+    token_hash = hash_token_identifier(
+        token,
+        secret=settings.token_hash_secret,
+    )
+    token_record = await get_email_verification_token_by_hash_for_update(
+            session,
+            token_hash,
+        )
+    if (
+            token_record is None
+            or token_record.consumed_at is not None
+            or token_record.expires_at <= now
+        ):
+            raise InvalidOrExpiredTokenError
+    
+    user = await get_user_by_id(session, token_record.user_id)
+    if user is None:
+        raise InvalidOrExpiredTokenError
+
+    token_record.consumed_at = now
+    user.email_verified_at = now
+    
+    return user

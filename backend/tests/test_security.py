@@ -6,7 +6,7 @@ from datetime import timedelta
 
 import pytest
 
-from app.utils.security import InvalidAccessTokenError, create_access_token, decode_access_token, InvalidRefreshJwtError,create_refresh_token,decode_refresh_token
+from app.utils.security import InvalidAccessTokenError, create_access_token, decode_access_token, InvalidRefreshJwtError,create_refresh_token,decode_refresh_token,generate_opaque_token
 
 from uuid import UUID, uuid4
 
@@ -135,3 +135,11 @@ def test_refresh_decoder_rejects_access_token() -> None:
             audience="smolink-api",
         )
 #This test verifies that an access token cannot be used where a refresh token is expected.
+
+def test_generate_opaque_token_returns_unique_nonempty_values() -> None:
+    first = generate_opaque_token()
+    second = generate_opaque_token()
+
+    assert first
+    assert second
+    assert first != second

@@ -13,7 +13,10 @@ from app.repositories.auth_repository import (
     create_refresh_token_record,
     get_refresh_token_by_token_hash,
     revoke_refresh_token_family,
+     create_email_verification_token,
+    get_email_verification_token_by_hash_for_update,
 )
+from app.models.email_verification_token import EmailVerificationToken
 
 
 def test_refresh_token_repository_creates_and_looks_up_record() -> None:
@@ -124,3 +127,45 @@ def test_revoke_refresh_token_family_revokes_only_that_family() -> None:
 # Ensure revoke_refresh_token_family() only revokes refresh tokens belonging
 # to the target family by marking their revoked_at timestamp, without
 # affecting unrelated refresh-token families.
+
+def test_email_verification_token_repository_creates_and_locks_record()->None:
+    async def check()->None:
+        engine=create_async_engine(
+            get_settings().database_url,
+            poolclass=NullPool,
+        )
+        session_factory = async_sessionmaker(engine, expire_on_commit=False)
+        user_id = time_ns()
+        token_hash = f"verification-hash-{user_id}"
+        try:
+            async with session_factory() as session:
+                session.add(
+                    User(
+                        id=user_id,
+                        email=f"user-{user_id}@example.com",
+                        password_hash="password-hash",
+                    )
+                )
+                await session.flush()
+                
+                token = EmailVerificationToken(
+                    id=user_id + 1,
+                    user_id=user_id,
+                    token_hash=token_hash,
+                    expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+                )
+                await create_email_verification_token(session, token)
+                found = await get_email_verification_token_by_hash_for_update(
+                    session,
+                    token_hash,
+                )
+
+                assert found is not None
+                assert found.id == token.id
+                assert found.user_id == user_id
+
+                await session.rollback()
+        finally:
+            await engine.dispose()
+
+    asyncio.run(check())

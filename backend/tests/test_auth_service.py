@@ -24,6 +24,12 @@ from datetime import datetime, timedelta, timezone
 from app.repositories.auth_repository import get_refresh_token_by_token_hash
 from app.services.auth_service import issue_token_pair
 
+from app.models.email_verification_token import EmailVerificationToken
+from app.services.auth_service import verify_email
+from app.utils.security import generate_opaque_token
+
+from sqlalchemy import select
+
 def test_register_user_normalizes_email_and_hashes_password() -> None:
     async def check() -> None:
         engine = create_async_engine(
@@ -412,4 +418,54 @@ def test_issue_token_pair_persists_hashed_refresh_identifier() -> None:
 # so the client knows how long the access token is valid and when it should
 # proactively refresh it. Both represent the same lifetime, but `exp` is for
 # server-side validation while `expires_in` is for client-side scheduling.
+
+def test_verify_email_marks_user_and_consumes_token()->None:
+    async def check()->None:
+        settings=get_settings()
+        engine = create_async_engine(
+            settings.database_url,
+            poolclass=NullPool,
+        )
+        session_factory = async_sessionmaker(engine, expire_on_commit=False)
+        user_id = time_ns()
+        raw_token = generate_opaque_token()
+
+        try:
+            async with session_factory() as session:
+                user=User( 
+                    id=user_id,
+                    email=f"user-{user_id}@example.com",
+                    password_hash="password-hash",
+                )
+                token = EmailVerificationToken(
+                    id=user_id + 1,
+                    user_id=user_id,
+                    token_hash=hash_token_identifier(
+                        raw_token,
+                        secret=settings.token_hash_secret,
+                    ),
+                    expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+                )
+
+                session.add(user)
+                await session.flush()
+
+                session.add(token)
+                await session.flush()
+
+                verified_user = await verify_email(
+                    session=session,
+                    token=raw_token,
+                )
+                assert verified_user.id == user.id
+                assert user.email_verified_at is not None
+                assert token.consumed_at is not None
+
+                await session.rollback()
+        finally:
+            await engine.dispose()
+
+
+    asyncio.run(check())
+
 

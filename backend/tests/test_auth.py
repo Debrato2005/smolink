@@ -17,10 +17,18 @@ from sqlalchemy.exc import IntegrityError
 
 from datetime import datetime, timedelta, timezone
 
-from app.models.user import User
-from app.utils.security import hash_password, create_refresh_token
-
 from uuid import uuid4
+
+from app.models.user import User
+
+from app.models.email_verification_token import EmailVerificationToken
+from app.utils.security import (
+    generate_opaque_token,
+    hash_password,
+    hash_token_identifier,
+    create_refresh_token,
+)
+
 
 @pytest.fixture
 def client()->TestClient:
@@ -555,3 +563,97 @@ def test_refresh_rejects_token_without_a_persisted_record(
 
     assert response.status_code == 401
     assert response.json()["error"] == "invalid_refresh_token"
+
+def test_verify_email_rejects_invalid_token(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": "unknown-token"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": "invalid_or_expired_token",
+        "message": "Invalid or expired token",
+    }
+
+#helper
+def create_pending_verification(
+    *,
+    expires_at: datetime | None = None,
+) -> tuple[int, str]:
+    async def seed()->tuple[int,str]:
+        settings=get_settings()
+        engine=create_async_engine(settings.database_url,poolclass=NullPool)
+        session_factory=async_sessionmaker(engine,expire_on_commit=False)
+
+        user_id=time_ns()
+        raw_token=generate_opaque_token()
+
+        try:
+            async with session_factory() as session:
+                user=User(
+                    id=user_id,
+                    email=f"user-{user_id}@example.com",
+                    password_hash=hash_password("hello12345678"),
+                )
+                session.add(user)
+                await session.flush()
+
+                session.add(
+                    EmailVerificationToken(
+                        id=user_id + 1,
+                        user_id=user_id,
+                        token_hash=hash_token_identifier(
+                            raw_token,
+                            secret=settings.token_hash_secret,
+                        ),
+                        expires_at=expires_at or (datetime.now(timezone.utc) + timedelta(hours=24)),
+                    )
+              )
+                await session.commit()
+# commit() automatically performs a flush first, writing all pending SQL
+# statements to the database before permanently committing the transaction.              
+        finally:
+            await engine.dispose()
+
+        return user_id, raw_token
+
+    return asyncio.run(seed())
+
+def test_verify_email_marks_user_verified(client: TestClient) -> None:
+    _, raw_token = create_pending_verification()
+
+    response = client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": raw_token},
+    )
+    assert response.status_code == 200
+    assert response.json()["email_verified_at"] is not None
+
+
+def test_verify_email_rejects_reused_token(client: TestClient) -> None:
+    _, raw_token = create_pending_verification()
+
+    first = client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": raw_token},
+    )
+    second = client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": raw_token},
+    )
+
+    assert first.status_code == 200
+    assert second.status_code == 400
+    assert second.json()["error"] == "invalid_or_expired_token"
+
+def test_verify_email_rejects_expired_token(client:TestClient)->None:
+    _,rawtoken=create_pending_verification(
+        expires_at=datetime.now(timezone.utc)-timedelta(seconds=1),
+    )
+    response=client.post("/api/v1/auth/verify-email",
+                         json={"token":rawtoken},
+                         )
+
+    assert response.status_code == 400
+    assert response.json()["error"] == "invalid_or_expired_token"

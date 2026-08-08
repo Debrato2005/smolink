@@ -32,6 +32,9 @@ class TokenPairResponse(BaseModel):
 # "bearer". Unlike `str`, it prevents any other string from being assigned,
 # ensuring the response follows the OAuth 2.0 token response contract.
 
+class VerifyEmailRequest(BaseModel):
+    token: str = Field(min_length=1)
+    
 #without pydantic no validation it will be just type hints
 # also BaseModel parses an Parsing also includes type conversion.
 #The automatic creation of payload from the request body is what BaseModel enables in FastAPI. Without it, a plain class does not receive that automatic treatment.

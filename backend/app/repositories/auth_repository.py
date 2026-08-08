@@ -6,6 +6,8 @@ from app.models.refresh_token import RefreshToken
 from uuid import UUID
 from datetime import datetime
 
+from app.models.email_verification_token import EmailVerificationToken
+
 async def create_refresh_token_record(
     session: AsyncSession,
     token: RefreshToken,
@@ -96,3 +98,22 @@ async def revoke_refresh_token_family(
 # revoked (`revoked_at`) only if a previously used token is seen again,
 # indicating a replay attack or other session compromise.
 
+async def create_email_verification_token(
+    session: AsyncSession,
+    token: EmailVerificationToken,
+) -> EmailVerificationToken:
+    session.add(token)
+    await session.flush()
+    return token
+
+
+async def get_email_verification_token_by_hash_for_update(
+    session: AsyncSession,
+    token_hash: str,
+) -> EmailVerificationToken | None:
+    result = await session.execute(
+        select(EmailVerificationToken)
+        .where(EmailVerificationToken.token_hash == token_hash)
+        .with_for_update()
+    )
+    return result.scalar_one_or_none()

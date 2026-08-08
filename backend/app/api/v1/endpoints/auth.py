@@ -13,6 +13,7 @@ from app.schemas.auth import (
     RegisterRequest,
     TokenPairResponse,
     RefreshRequest,
+    VerifyEmailRequest
 )
 from app.services.auth_service import (
     AccountLockedError,
@@ -24,6 +25,8 @@ from app.services.auth_service import (
     register_user,
     InvalidRefreshTokenError,
     rotate_refresh_token,
+    InvalidOrExpiredTokenError,
+    verify_email,
 )
 from app.utils.snowflake import SnowflakeGenerator
 
@@ -168,3 +171,32 @@ async def refresh(
 # InvalidRefreshTokenError. Committing here preserves that security update. If
 # no database changes were made (e.g. malformed or expired token), commit is a
 # harmless no-op.
+
+@router.post("/verify-email", response_model=PublicUserResponse)
+async def verify_email_endpoint(
+    payload:VerifyEmailRequest,
+    session:AsyncSession=Depends(get_session),
+    _:None=Depends(limit_auth_write),
+)->PublicUserResponse | JSONResponse:
+    try:
+        user= await verify_email(
+            session=session,
+            token=payload.token,
+        )
+        await session.commit()
+        await session.refresh(user)
+    except InvalidOrExpiredTokenError:
+        await session.rollback()
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "error": "invalid_or_expired_token",
+                "message": "Invalid or expired token",
+            },
+        )
+
+    return PublicUserResponse.model_validate(user)
+# Convert the internal SQLAlchemy User model into the public response schema,
+# exposing only the fields defined by PublicUserResponse before returning JSON.
+# Map the internal database model to the public response model to avoid
+# exposing internal-only fields (e.g. password_hash, auth_version).

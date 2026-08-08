@@ -3,6 +3,8 @@ from pydantic import ValidationError
 
 from app.schemas.auth import LoginRequest, TokenPairResponse, RefreshRequest
 
+from app.schemas.auth import VerifyEmailRequest
+
 def test_login_request_accepts_valid_credentials() -> None:
     request=LoginRequest(
         email="User@Example.COM",
@@ -64,3 +66,16 @@ def test_refresh_request_requires_a_token() -> None:
 
     with pytest.raises(ValidationError):
         RefreshRequest(refresh_token="")
+
+
+# Verify the request model accepts a non-empty verification token and rejects
+# an empty one. FastAPI relies on this Pydantic validation before the endpoint
+# logic executes, automatically returning HTTP 422 for invalid request bodies.
+
+def test_verify_email_request_requires_a_token() -> None:
+    request = VerifyEmailRequest(token="verification-token")
+
+    assert request.token == "verification-token"
+
+    with pytest.raises(ValidationError):
+        VerifyEmailRequest(token="")

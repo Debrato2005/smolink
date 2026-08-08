@@ -9,6 +9,8 @@ import jwt
 import hashlib
 import hmac
 
+import secrets
+
 password_hasher=PasswordHasher() #object
 
 def hash_password(password:str)->str:
@@ -235,3 +237,6 @@ def hash_token_identifier(
 #   never stores the raw token identifier. Later, the server hashes the `jti`
 #   from a presented refresh token again and compares the hash to the stored
 #   value.
+
+def generate_opaque_token()->str:
+    return secrets.token_urlsafe(32)
