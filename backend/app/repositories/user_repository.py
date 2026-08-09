@@ -6,6 +6,7 @@ from app.models.user import User
 
 async def create_user(session: AsyncSession, user: User) -> User:
     session.add(user)
+    await session.flush()
     return user
 
 

@@ -29,6 +29,27 @@ from app.utils.security import (
     create_refresh_token,
 )
 
+# Automatically replace the real email sender for every route test. This keeps
+# tests deterministic and isolated by preventing outbound HTTP requests to
+# Resend while still allowing the application code to execute its normal email
+# dispatch path. Individual tests can override this patch to inspect the email
+# arguments or exercise different behaviors.
+@pytest.fixture(autouse=True)
+def suppress_verification_email(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_send_verification_email(
+        *,
+        recipient_email: str,
+        verification_token: str,
+        idempotency_key: str,
+    ) -> None:
+        return None
+
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.auth.send_verification_email",
+        fake_send_verification_email,
+    )
 
 @pytest.fixture
 def client()->TestClient:
@@ -657,3 +678,37 @@ def test_verify_email_rejects_expired_token(client:TestClient)->None:
 
     assert response.status_code == 400
     assert response.json()["error"] == "invalid_or_expired_token"
+
+def test_register_dispatches_verification_email(
+        client:TestClient,
+        monkeypatch:pytest.MonkeyPatch,)->None:
+        sent: dict[str,str]={}
+
+        async def fake_verification_mail_sent(
+                *,
+                recipient_email: str,
+                verification_token: str,
+                idempotency_key: str,) -> None:
+            sent["recipient_email"] = recipient_email
+            sent["verification_token"] = verification_token
+            sent["idempotency_key"] = idempotency_key
+# Idempotency key uniquely identifies this verification email request.
+# If the email send is retried (e.g. due to a timeout or transient failure),
+# the provider treats repeated requests with the same key as a single operation,
+# preventing duplicate verification emails from being delivered.
+
+        monkeypatch.setattr(
+            "app.api.v1.endpoints.auth.send_verification_email",
+            fake_verification_mail_sent)
+        email = f"user-{time_ns()}@example.com"
+        response = client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "hello12345678"},
+    )
+
+        assert response.status_code == 201
+        assert sent["recipient_email"] == email
+        assert sent["verification_token"]
+        assert sent["idempotency_key"] == f"verification:{response.json()['id']}"
+
+        

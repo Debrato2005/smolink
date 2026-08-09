@@ -13,6 +13,12 @@ def test_settings_reads_environment_variables(monkeypatch)-> None: #monkeypatch 
     monkeypatch.setenv("REFRESH_TOKEN_TTL_SECONDS", "2592000")
     monkeypatch.setenv("TOKEN_HASH_SECRET", "test-token-hash-secret")
 
+    monkeypatch.setenv("APP_PUBLIC_URL", "http://localhost:3000")
+    monkeypatch.setenv(
+            "EMAIL_FROM",
+        "Smolink <noreply@example.com>", )
+    monkeypatch.setenv("RESEND_API_KEY", "re_test_key")
+
     settings=Settings(_env_file=None)
 
     assert settings.database_url == ( "postgresql+asyncpg://smolink:smolink@localhost:5432/smolink")
@@ -29,3 +35,7 @@ def test_settings_reads_environment_variables(monkeypatch)-> None: #monkeypatch 
     assert settings.access_token_ttl_seconds == 900
     assert settings.refresh_token_ttl_seconds == 2_592_000
     assert settings.token_hash_secret == "test-token-hash-secret"
+
+    assert settings.app_public_url == "http://localhost:3000"
+    assert settings.email_from == "Smolink <noreply@example.com>"
+    assert settings.resend_api_key == "re_test_key"

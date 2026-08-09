@@ -80,8 +80,11 @@ in progress. Login issues signed access and refresh JWTs, persists only a keyed
 hash of the refresh JWT identifier, and applies the five-failure/15-minute
 account-lock policy. Refresh rotation locks and consumes one persisted token,
 issues its child in the same family, and revokes the family when a consumed
-token is replayed; focused verification is still pending. Logout, verification
-delivery, resets, current-user dependencies, and Google OIDC remain unfinished.
+token is replayed. Email-verification token consumption is implemented: a
+one-time, hashed, expiring token marks the account verified. Registration
+creates that token atomically and sends its raw value only in a Resend email
+after commit. Logout, resend-verification, resets, current-user dependencies,
+and Google OIDC remain unfinished.
 
 ### 10. All application APIs remain versioned under `/api/v1`
 Authentication routes live under `/api/v1/auth/...`; they are not root-level

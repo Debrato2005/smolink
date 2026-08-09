@@ -6,12 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models.refresh_token import RefreshToken
+from app.models.email_verification_token import EmailVerificationToken
 from app.models.user import User
 from app.repositories.auth_repository import (
     create_refresh_token_record,
     get_refresh_token_by_token_hash_for_update,
     revoke_refresh_token_family,
     get_email_verification_token_by_hash_for_update,
+    create_email_verification_token,
 )
 from app.repositories.user_repository import (
     create_user,
@@ -27,6 +29,7 @@ from app.utils.security import (
     normalize_email,
     verify_password,
     InvalidRefreshJwtError,
+    generate_opaque_token,
 )
 from app.utils.snowflake import SnowflakeGenerator
 
@@ -48,12 +51,20 @@ class InvalidRefreshTokenError(Exception):
 MAX_FAILED_LOGIN_ATTEMPTS = 5
 ACCOUNT_LOCK_DURATION = timedelta(minutes=15)
 
+VERIFICATION_TOKEN_TTL=timedelta(hours=24)
+
+@dataclass
+class RegistrationResult:
+    user:User
+    verification_token:str
+
+
 async def register_user(
         session:AsyncSession,
         email:str,
         password: str,
         generator: SnowflakeGenerator,
-)->User:
+)->RegistrationResult:
     normalized_email=normalize_email(email)
 
     if await get_user_by_email(session,normalized_email) is not None:
@@ -64,7 +75,26 @@ async def register_user(
         email=normalized_email,
         password_hash=hash_password(password),
     )
-    return await create_user(session,user)
+    await create_user(session,user)
+    await session.flush()
+
+    raw_token=generate_opaque_token()
+    verification_token=EmailVerificationToken(
+        id=generator.next_id(),
+        user_id=user.id,
+        token_hash=hash_token_identifier(
+            raw_token, secret=get_settings().token_hash_secret),
+            expires_at=datetime.now(timezone.utc)+VERIFICATION_TOKEN_TTL,
+        )
+    await create_email_verification_token(session,verification_token)
+
+    return RegistrationResult(
+        user=user,
+        verification_token=raw_token
+    )
+
+
+
 async def authenticate_user(
         *,
         session:AsyncSession,
@@ -288,3 +318,4 @@ async def verify_email(
     user.email_verified_at = now
     
     return user
+

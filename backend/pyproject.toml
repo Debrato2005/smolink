@@ -15,6 +15,7 @@ dependencies = [
     "sqlalchemy>=2.0.51",
     "user-agents>=2.2.0",
     "uvicorn[standard]>=0.51.0",
+    "httpx>=0.28.1",
 ]
 [tool.fastapi]
 entrypoint = "app.main:app"

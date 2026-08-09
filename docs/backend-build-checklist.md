@@ -126,8 +126,11 @@ The backend release is not the end of Smolink. After its API contracts are verif
 
 **Status:** the persistence foundation, Argon2id helpers, normalized-email
 registration, local-login service and route, JWT helpers, refresh-token record
-creation/rotation, and registration/login IP limiting are implemented. Focused
-verification is still in progress; do not mark the milestone complete. Follow
+creation/rotation, registration/login IP limiting, and email verification are
+implemented and their focused tests have passed. Registration atomically creates
+a one-time token, then sends a Resend verification email after commit. Resend-
+verification, password-reset delivery, and the remaining auth work are still
+pending; do not mark the milestone complete. Follow
 `docs/superpowers/specs/2026-08-01-authentication-authorization-design.md`.
 
 - [x] Add the reviewed auth migrations: verified/lock/auth-version user fields,
@@ -140,21 +143,22 @@ verification is still in progress; do not mark the milestone complete. Follow
 - [x] Add local-password login policy: generic invalid credentials, verified
   email requirement, five consecutive failures locking an account for 15
   minutes, and successful-login state reset.
-- [ ] Add repositories and services for identities, token state, email
-  verification, password resets, and account-lock state.
+- [ ] Complete repositories and services for identities, password resets, and
+  account-lock state. Email verification creates a one-time token during
+  registration and sends it through Resend after commit.
 - [x] Use Argon2id for password hashing and library-backed verification.
 - [x] Issue and validate issuer/audience-bound, short-lived JWT access and
   refresh tokens with minimal claims and configurable expiry/secrets; persist a
   keyed hash of each issued refresh-token identifier.
-- [ ] Rotate refresh tokens; on reuse of a rotated token, revoke its complete
-  token family. Resetting a password revokes every active family for that user.
-  The refresh implementation is present; leave this unchecked until its focused
-  rotation and reuse tests pass.
-- [ ] Verify `POST /api/v1/auth/register`: success, duplicate normalized email,
+- [x] Rotate refresh tokens; on reuse of a rotated token, revoke its complete
+  token family. Resetting a password must still revoke every active family for
+  that user.
+- [x] Verify `POST /api/v1/auth/register`: success, duplicate normalized email,
   validation, limiter, and database-race cases.
-- [ ] Add `/api/v1/auth/login`, `/refresh`, `/logout`, `/me`, `/verify-email`,
-  `/forgot-password`, and `/reset-password` endpoints.
-- [ ] Block unverified password accounts from login until email verification.
+- [x] Add `/api/v1/auth/login`, `/refresh`, and `/verify-email` endpoints.
+- [ ] Add `/api/v1/auth/logout`, `/me`, `/forgot-password`, and
+  `/reset-password` endpoints.
+- [x] Block unverified password accounts from login until email verification.
 - [ ] Add Google OAuth2/OIDC authorization-code flow with state, nonce, PKCE,
   ID-token validation, and verified-email auto-linking to matching local users.
 - [ ] Apply the IP limiter to the remaining auth writes and add per-account
@@ -264,5 +268,7 @@ verification is still in progress; do not mark the milestone complete. Follow
 | 2026-07-26 | Short-code utilities | User-reported utility test suite passed | Base62 encodes non-negative integers; Snowflake IDs use timestamp, worker ID, and sequence bits; aliases normalize to lowercase and accept only 3–64 lowercase letters, digits, and hyphens. |
 | 2026-07-28 | Guest URL creation | User-reported full suite → 40 passed | Versioned endpoint validates requests, creates guest URLs, persists a successful transaction at the endpoint boundary, returns the documented `409` alias-conflict envelope, and maps invalid alias/expiry business errors to `422`. |
 | 2026-07-31 | Strict guest-creation rate limiting | User-reported rate-limit tests passed | A Lua-backed Redis sliding window enforces 10 guest creations per IP per rolling minute. The endpoint returns `429` with `Retry-After` when limited and fails closed with `503` when Redis is unavailable. Test Redis clients are isolated per TestClient event loop. |
-| 2026-08-04 | Local login/JWT foundation | Focused API verification still in progress | Verified password accounts can receive an access/refresh token pair. Refresh JWT identifiers are stored only as keyed hashes; failed password attempts persist and lock an account after five failures for 15 minutes. |
-| 2026-08-04 | Refresh-token rotation implementation | Focused rotation/reuse verification pending | The refresh route consumes one token under a row lock, issues a child in the same family, and revokes the full family when a consumed token is replayed. |
+| 2026-08-04 | Local login/JWT foundation | User-reported focused auth tests passed | Verified password accounts can receive an access/refresh token pair. Refresh JWT identifiers are stored only as keyed hashes; failed password attempts persist and lock an account after five failures for 15 minutes. |
+| 2026-08-04 | Refresh-token rotation | User-reported focused auth tests passed | The refresh route consumes one token under a row lock, issues a child in the same family, and revokes the full family when a consumed token is replayed. |
+| 2026-08-08 | Email-verification token consumption | User-reported focused auth verification passed | The verification route atomically locks and consumes a hashed, expiring token, then sets `email_verified_at`; invalid, reused, and expired tokens return the documented `400` envelope. Registration does not yet issue or email verification tokens. |
+| 2026-08-09 | Registration verification-email delivery | User-reported focused sender and auth tests passed | Registration creates the token and user in one transaction, then sends a Resend message after commit. The raw token appears only in the email link fragment; sender tests mock the external provider. |

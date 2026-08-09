@@ -497,11 +497,17 @@ and identifier; access tokens also include `auth_version`.
 Login tracks failed attempts in Postgres. Five consecutive failed passwords
 lock an account for 15 minutes; a successful login clears that state. The
 shared `rate:auth:{ip}` rolling limit covers registration and login. Focused
-API verification remains in progress. `POST /api/v1/auth/refresh` validates a
+auth tests have passed for the implemented flows. `POST /api/v1/auth/refresh` validates a
 refresh JWT, locks its persisted record, marks it used, and creates a child
 record in the same family. Replaying a consumed token revokes every active
-record in that family. Verification/reset workflows, current-user dependencies,
-and Google OIDC remain unfinished.
+record in that family. `POST /api/v1/auth/verify-email` locks a hashed opaque
+token, rejects missing, expired, or previously consumed records, consumes a
+valid record, and sets `email_verified_at` in the same transaction.
+Registration creates the user and verification record in one transaction, then
+uses the Resend HTTP API after commit. The raw token is URL-encoded in the
+frontend link fragment, avoiding web-server request URLs; tests replace the
+sender so no external email is delivered. Resend-verification, reset workflows,
+current-user dependencies, and Google OIDC remain unfinished.
 
 `auth_repository.py` owns refresh-token persistence. Its lookup-for-rotation
 uses PostgreSQL `FOR UPDATE`, preventing concurrent refresh requests from both
@@ -510,14 +516,14 @@ record with a revocation timestamp. The route commits even after a refresh
 replay because that revocation must persist; ordinary invalid refresh tokens
 produce the same `401 invalid_refresh_token` envelope.
 
-The focused API tests cover successful rotation and reuse revocation. They must
-be run before the checklist rotation item is marked complete.
+Focused API tests cover successful rotation and reuse revocation, along with
+valid, invalid, expired, and missing-persisted-record refresh cases.
 
 Local accounts normalize email before uniqueness checks and use Argon2id
-password hashes. New password registrations remain unable to log in until a
-single-use, expiring verification token is consumed. Password reset tokens are
-also one-time and expiring; a successful reset invalidates all the user's
-refresh-token families.
+password hashes. Registration creates a single-use, expiring verification token
+and sends the raw value only in a post-commit Resend email. Password reset
+tokens are also one-time and expiring; a successful reset invalidates all the
+user's refresh-token families.
 
 Access and refresh JWTs have separate token types, expiry, issuer, audience,
 and minimal claims. A refresh token is represented by a persisted, hashed token

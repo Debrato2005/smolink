@@ -42,12 +42,13 @@ def test_register_user_normalizes_email_and_hashes_password() -> None:
 
         try:
             async with session_factory() as session:
-                user=await register_user(
+                registration=await register_user(
                     session=session,
                     email=f" {email.upper()} ", #Don't use fixed emails in integration tests.
                     password="a-secure-password",
                     generator=SnowflakeGenerator(worker_id=0),
                 )
+                user=registration.user
 
                 assert user.email==f"{email}"
                 assert user.password_hash is not None
@@ -469,3 +470,42 @@ def test_verify_email_marks_user_and_consumes_token()->None:
     asyncio.run(check())
 
 
+def test_register_user_creates_unconsumed_verification_token()->None:
+    async def check()->None:
+        engine=create_async_engine(get_settings().database_url,poolclass=NullPool)
+
+        session_factory=async_sessionmaker(engine,expire_on_commit=False)
+
+        now=datetime.now(timezone.utc)
+
+        try:
+            async with session_factory() as session:
+                registration = await register_user(
+                    session=session,
+                    email=f"user-{time_ns()}@example.com",
+                    password="a-secure-password",
+                    generator=SnowflakeGenerator(worker_id=0),
+                )
+                user = registration.user
+
+                result = await session.execute(
+                    select(EmailVerificationToken).where(
+                        EmailVerificationToken.user_id == user.id
+                    )
+                )
+                token=result.scalar_one()
+                
+                assert token.token_hash == hash_token_identifier(
+                registration.verification_token,
+                secret=get_settings().token_hash_secret,
+                )       
+
+                assert token.consumed_at is None
+                assert token.expires_at > now
+                assert len(token.token_hash) == 64
+
+                await session.rollback()
+        finally:
+            await engine.dispose()
+
+    asyncio.run(check())

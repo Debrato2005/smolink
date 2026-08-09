@@ -7,6 +7,8 @@ from app.api.v1.dependencies.rate_limit import limit_auth_write
 from app.core.config import get_settings
 from app.db.session import get_session
 
+from app.services.email_service import send_verification_email
+
 from app.schemas.auth import (
     LoginRequest,
     PublicUserResponse,
@@ -44,14 +46,22 @@ async def register(
      _: None = Depends(limit_auth_write)
 )->PublicUserResponse|JSONResponse:
     try:
-        user=await register_user(
+        registration=await register_user(
             session=session,
             email=str(payload.email),
             password=payload.password,
             generator=generator,
         )
+        user=registration.user
+        
         await session.commit()
         await session.refresh(user)
+
+        await send_verification_email(
+            recipient_email=user.email,
+            verification_token=registration.verification_token,
+            idempotency_key=f"verification:{user.id}",
+        )
         
     except EmailTakenError:
         return JSONResponse(

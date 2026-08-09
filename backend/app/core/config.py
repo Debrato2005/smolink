@@ -18,6 +18,10 @@ class Settings(BaseSettings): #Defines your application settings. Because it inh
 
     snowflake_worker_id: int = 0
 
+    app_public_url: str
+    email_from: str
+    resend_api_key: str
+
     model_config=SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

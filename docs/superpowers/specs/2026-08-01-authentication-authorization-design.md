@@ -16,8 +16,10 @@ Implemented: registration and local-login foundations, Argon2id password
 verification, five-failure/15-minute account locking, signed access/refresh
 JWT helpers, keyed refresh-JTI storage, and shared registration/login IP
 limiting. Refresh rotation is implemented with row locking, parent/child token
-records, and full-family revocation on reuse; focused verification is still in
-progress. Logout, email verification and reset flows, bearer-token
+records, and full-family revocation on reuse. Email-verification token
+consumption is implemented with a hashed, single-use, expiring token.
+Registration creates the token in its transaction and dispatches a Resend email
+after commit. Logout, resend-verification, reset flows, bearer-token
 dependencies, and Google OIDC are not yet implemented.
 
 ## Product decisions
