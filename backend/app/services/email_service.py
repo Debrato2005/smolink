@@ -16,6 +16,8 @@ async def send_verification_email(
 )->None:
     settings=get_settings()
 
+# quote() URL-encodes the reset token so it is safe inside the URL fragment;
+# escape() then HTML-escapes the complete URL so it is safe to embed in HTML.
     verification_url=(
         f"{settings.app_public_url.rstrip('/')}/verify-email"
         f"#token={quote(verification_token,safe='')}"
@@ -36,7 +38,7 @@ async def send_verification_email(
                 json={
                     "from": settings.email_from,
                     "to": [recipient_email],
-                    "subject": "Verify your Smolink email",
+                    "subject": "Verify your smolink email",
                     "html": (
                         "<p>Verify your email address:</p>"
                         f'<p><a href="{safe_url}">Verify email</a></p>'
@@ -52,3 +54,44 @@ async def send_verification_email(
 
     if response.is_error:
         raise EmailDeliveryError
+
+async def send_password_reset_email(
+        *,
+        recipient_email:str,
+        reset_token:str,
+        idempotency_key:str,
+)->None:
+    settings=get_settings()
+    reset_url = (
+        f"{settings.app_public_url.rstrip('/')}/reset-password"
+        f"#token={quote(reset_token, safe='')}"
+    )
+    safe_url = escape(reset_url, quote=True)
+
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            response=await client.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {settings.resend_api_key}",
+                    "Idempotency-Key": idempotency_key,
+                },  
+                json={
+                    "from":settings.email_from,
+                    "to": [recipient_email],
+                    # `to` expects a list of recipients, so the single recipient email is wrapped
+                    # in a list: ["user@example.com"].
+                    "subject":"Reset your smolink password",
+                    "html":(
+                        "<p>Reset your password:</p>"
+                        f'<p><a href="{safe_url}">Reset password</a></p>'
+                    ),
+                    "text": f"Reset your password: {reset_url}",
+                },
+            )
+    except httpx.HTTPError as error:
+        raise EmailDeliveryError from error
+
+    if response.is_error:
+        raise EmailDeliveryError
+

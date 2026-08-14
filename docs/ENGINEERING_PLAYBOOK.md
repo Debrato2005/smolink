@@ -5,6 +5,8 @@ This is the teaching/reference document behind Smolink — it explains *why* bac
 **Relationship to the other docs**, so nothing drifts out of sync:
 - `README.md` — the canonical architectural decisions, invariants, endpoint list, and phase-by-phase implementation roadmap.
 - **This file** — the conceptual "why," taught once, referenced everywhere else.
+- `docs/agent-tooling.md` — the shared agent skills and Graphify navigation
+  workflow used to explore and maintain this repository.
 
 If something here ever conflicts with `README.md`, the README wins — update this file to match, not the other way around.
 
@@ -21,6 +23,14 @@ If something here ever conflicts with `README.md`, the README wins — update th
 - [Part 9 — Quality Assurance & Testing](#part-9--quality-assurance--testing)
 - [Part 10 — DevOps & Deployment](#part-10--devops--deployment)
 - [Parts 11–14 — Planned (content pending)](#parts-1114--planned-content-pending)
+
+## Documentation and agent tooling
+
+The FastAPI and Python-testing skills capture project-specific implementation
+and verification conventions. Graphify maintains a generated map of code and
+documentation for scoped architecture queries; it does not supersede the
+source of truth or replace code review. See [agent-tooling.md](agent-tooling.md)
+for the commands and interpretation rules.
 
 ---
 

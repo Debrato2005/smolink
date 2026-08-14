@@ -126,10 +126,11 @@ The backend release is not the end of Smolink. After its API contracts are verif
 
 **Status:** the persistence foundation, Argon2id helpers, normalized-email
 registration, local-login service and route, JWT helpers, refresh-token record
-creation/rotation, registration/login IP limiting, and email verification are
-implemented and their focused tests have passed. Registration atomically creates
-a one-time token, then sends a Resend verification email after commit. Resend-
-verification, password-reset delivery, and the remaining auth work are still
+creation/rotation, logout, registration/login IP limiting, and email
+verification are implemented and their focused tests have passed. Registration
+atomically creates a one-time token, then sends a Resend verification email
+after commit. A resend-verification endpoint, password-reset delivery, and the
+remaining auth work are still
 pending; do not mark the milestone complete. Follow
 `docs/superpowers/specs/2026-08-01-authentication-authorization-design.md`.
 
@@ -156,8 +157,10 @@ pending; do not mark the milestone complete. Follow
 - [x] Verify `POST /api/v1/auth/register`: success, duplicate normalized email,
   validation, limiter, and database-race cases.
 - [x] Add `/api/v1/auth/login`, `/refresh`, and `/verify-email` endpoints.
-- [ ] Add `/api/v1/auth/logout`, `/me`, `/forgot-password`, and
-  `/reset-password` endpoints.
+- [x] Add `POST /api/v1/auth/logout`; it revokes the presented refresh-token
+  family and returns `204`.
+- [ ] Add `GET /api/v1/auth/me`, `/forgot-password`, and `/reset-password`
+  endpoints.
 - [x] Block unverified password accounts from login until email verification.
 - [ ] Add Google OAuth2/OIDC authorization-code flow with state, nonce, PKCE,
   ID-token validation, and verified-email auto-linking to matching local users.
@@ -209,6 +212,8 @@ pending; do not mark the milestone complete. Follow
 - [ ] Manually test: create guest URL, redirect, register/login, create owned URL, exhaust a limit, update/delete owned URL, QR response, analytics report.
 - [ ] Confirm all documented endpoint paths and status codes match implementation.
 - [ ] Update `README.md`, `ENGINEERING_PLAYBOOK.md`, and this checklist with final verified status.
+- [ ] Refresh Graphify with `graphify update .` after the verified source and documentation updates; run `/graphify .` when the architecture or documentation requires a new semantic map.
+- [ ] Confirm the skills and Graphify workflow in `docs/agent-tooling.md` still match the repository setup.
 - [ ] Commit: `docs: record backend implementation status`.
 
 ## Full-product phases after the two-day backend release
@@ -270,5 +275,6 @@ pending; do not mark the milestone complete. Follow
 | 2026-07-31 | Strict guest-creation rate limiting | User-reported rate-limit tests passed | A Lua-backed Redis sliding window enforces 10 guest creations per IP per rolling minute. The endpoint returns `429` with `Retry-After` when limited and fails closed with `503` when Redis is unavailable. Test Redis clients are isolated per TestClient event loop. |
 | 2026-08-04 | Local login/JWT foundation | User-reported focused auth tests passed | Verified password accounts can receive an access/refresh token pair. Refresh JWT identifiers are stored only as keyed hashes; failed password attempts persist and lock an account after five failures for 15 minutes. |
 | 2026-08-04 | Refresh-token rotation | User-reported focused auth tests passed | The refresh route consumes one token under a row lock, issues a child in the same family, and revokes the full family when a consumed token is replayed. |
-| 2026-08-08 | Email-verification token consumption | User-reported focused auth verification passed | The verification route atomically locks and consumes a hashed, expiring token, then sets `email_verified_at`; invalid, reused, and expired tokens return the documented `400` envelope. Registration does not yet issue or email verification tokens. |
+| 2026-08-08 | Email-verification token consumption | User-reported focused auth verification passed | The verification route atomically locks and consumes a hashed, expiring token, then sets `email_verified_at`; invalid, reused, and expired tokens return the documented `400` envelope. Registration issuance and delivery followed on 2026-08-09. |
 | 2026-08-09 | Registration verification-email delivery | User-reported focused sender and auth tests passed | Registration creates the token and user in one transaction, then sends a Resend message after commit. The raw token appears only in the email link fragment; sender tests mock the external provider. |
+| 2026-08-10 | Refresh-token logout | User-reported focused auth test passed | Logout validates the presented refresh JWT, revokes its persisted token family, and returns `204`; a subsequent refresh is rejected. |

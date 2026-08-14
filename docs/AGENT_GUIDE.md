@@ -52,20 +52,30 @@ perform only that authorized action and report the actual result.
 6. Preserve unrelated working-tree changes. Never use destructive Git commands
    to make the tree appear clean.
 
+### Repository skills and Graphify
+
+Use `.agents/skills/fastapi/` for FastAPI conventions and
+`.agents/skills/python-testing/` for Python testing work. Use
+`.agents/skills/graphify/` for questions that span files, layers, or
+architecture. When a graph exists, query it before broad source searches, but
+verify every `INFERRED` or `AMBIGUOUS` relationship in source. The commands,
+outputs, and generated-file policy are documented in
+[agent-tooling.md](agent-tooling.md).
+
 ## 3. Documentation Order
 
 Read these before changing behavior, in this order:
 
-1. [README.md](README.md) — source of truth for architecture decisions,
+1. [README.md](../README.md) — source of truth for architecture decisions,
    invariants, API contracts, and roadmap. Consult it for any design or API
    question; it wins if documents disagree.
-2. [docs/backend-build-checklist.md](docs/backend-build-checklist.md) — current
+2. [backend-build-checklist.md](backend-build-checklist.md) — current
    milestone, required scope, red-green steps, verification commands, and
    recorded progress. Consult it to determine what should happen next.
-3. [docs/codebase-walkthrough.md](docs/codebase-walkthrough.md) — current
+3. [codebase-walkthrough.md](codebase-walkthrough.md) — current
    implementation map and line-by-line explanations. Consult it before editing
    an unfamiliar file and update it when behavior changes.
-4. [docs/ENGINEERING_PLAYBOOK.md](docs/ENGINEERING_PLAYBOOK.md) — the reasoning
+4. [ENGINEERING_PLAYBOOK.md](ENGINEERING_PLAYBOOK.md) — the reasoning
    behind the architecture, backend practices, and future direction. Consult it
    when choosing between valid technical approaches or when a design decision
    needs context.

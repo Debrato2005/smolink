@@ -1,0 +1,476 @@
+{
+  "node_count": 380,
+  "raw_edge_count": 978,
+  "non_object_edges": 0,
+  "missing_endpoint_edges": 0,
+  "dangling_endpoint_edges": 277,
+  "self_loop_edges": 0,
+  "valid_candidate_edges": 701,
+  "exact_duplicate_edges": 0,
+  "directed_unique_endpoint_pairs": 670,
+  "directed_same_endpoint_collapsed_edges": 31,
+  "undirected_unique_endpoint_pairs": 670,
+  "undirected_same_endpoint_collapsed_edges": 31,
+  "same_endpoint_group_count": 31,
+  "relation_variant_groups": 22,
+  "source_file_variant_groups": 0,
+  "source_location_variant_groups": 2,
+  "context_variant_groups": 7,
+  "post_build_graph_type": "Graph",
+  "post_build_node_count": 380,
+  "post_build_edge_count": 670,
+  "post_build_error": "",
+  "producer_suppression": {
+    "path": "/home/debrato/.local/share/uv/tools/graphifyy/lib/python3.13/site-packages/graphify/extract.py",
+    "total_sites": 58,
+    "sites": [
+      {
+        "line": 1433,
+        "name": "seen_dyn_pairs",
+        "tuple_arity": 0,
+        "sample": "seen_dyn_pairs: set) -> bool:"
+      },
+      {
+        "line": 2413,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 2576,
+        "name": "seen_swift_base",
+        "tuple_arity": 0,
+        "sample": "seen_swift_base = False"
+      },
+      {
+        "line": 2611,
+        "name": "seen_swift_base",
+        "tuple_arity": 0,
+        "sample": "seen_swift_base = True"
+      },
+      {
+        "line": 3471,
+        "name": "seen_call_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_call_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 3472,
+        "name": "seen_dyn_import_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_dyn_import_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 3473,
+        "name": "seen_static_ref_pairs",
+        "tuple_arity": 3,
+        "sample": "seen_static_ref_pairs: set[tuple[str, str, str]] = set()"
+      },
+      {
+        "line": 3474,
+        "name": "seen_helper_ref_pairs",
+        "tuple_arity": 3,
+        "sample": "seen_helper_ref_pairs: set[tuple[str, str, str]] = set()"
+      },
+      {
+        "line": 3475,
+        "name": "seen_bind_pairs",
+        "tuple_arity": 3,
+        "sample": "seen_bind_pairs: set[tuple[str, str, str]] = set()"
+      },
+      {
+        "line": 3809,
+        "name": "seen_listen_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_listen_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 3891,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids = {n[\"id\"] for n in nodes}"
+      },
+      {
+        "line": 4300,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = {n[\"id\"] for n in nodes}"
+      },
+      {
+        "line": 4424,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 5298,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str],"
+      },
+      {
+        "line": 5413,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 5545,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = {file_nid}"
+      },
+      {
+        "line": 5585,
+        "name": "seen_refs",
+        "tuple_arity": 0,
+        "sample": "seen_refs: set[str] = set()"
+      },
+      {
+        "line": 5724,
+        "name": "seen_tbls",
+        "tuple_arity": 0,
+        "sample": "seen_tbls: set[str] = set()"
+      },
+      {
+        "line": 5819,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 6108,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 6363,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 6607,
+        "name": "seen_call_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_call_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 6704,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 6906,
+        "name": "seen_call_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_call_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 6997,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 7104,
+        "name": "seen_call_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_call_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 7167,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 7404,
+        "name": "seen_call_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_call_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 7507,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 9017,
+        "name": "seen_keys",
+        "tuple_arity": 0,
+        "sample": "seen_keys: set[tuple] = set()"
+      },
+      {
+        "line": 9069,
+        "name": "seen_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 9458,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 9641,
+        "name": "seen_calls",
+        "tuple_arity": 2,
+        "sample": "seen_calls: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 9693,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 9802,
+        "name": "seen_call_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_call_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 9950,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 10277,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 10278,
+        "name": "seen_call_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_call_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 10455,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 10603,
+        "name": "seen_call_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_call_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 10678,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 10679,
+        "name": "seen_edge_pairs",
+        "tuple_arity": 3,
+        "sample": "seen_edge_pairs: set[tuple[str, str, str]] = set()"
+      },
+      {
+        "line": 10778,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 10779,
+        "name": "seen_edge_pairs",
+        "tuple_arity": 3,
+        "sample": "seen_edge_pairs: set[tuple[str, str, str]] = set()"
+      },
+      {
+        "line": 10898,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 10992,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 11208,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 11302,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 11381,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 11482,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 11667,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 11815,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = set()"
+      },
+      {
+        "line": 11966,
+        "name": "seen_call_pairs",
+        "tuple_arity": 2,
+        "sample": "seen_call_pairs: set[tuple[str, str]] = set()"
+      },
+      {
+        "line": 12182,
+        "name": "seen_targets",
+        "tuple_arity": 0,
+        "sample": "seen_targets: set[str] = set()"
+      },
+      {
+        "line": 12340,
+        "name": "seen_ids",
+        "tuple_arity": 0,
+        "sample": "seen_ids: set[str] = {file_nid}"
+      },
+      {
+        "line": 12341,
+        "name": "seen_edges",
+        "tuple_arity": 3,
+        "sample": "seen_edges: set[tuple[str, str, str]] = set()"
+      },
+      {
+        "line": 12389,
+        "name": "seen_self",
+        "tuple_arity": 0,
+        "sample": "seen_self = False"
+      },
+      {
+        "line": 12392,
+        "name": "seen_self",
+        "tuple_arity": 0,
+        "sample": "seen_self = True"
+      }
+    ],
+    "error": ""
+  },
+  "examples": [
+    {
+      "source": "scripts_test_pypi_security_audit_find_workspace_root",
+      "target": "path",
+      "edge_count": 2,
+      "relations": [
+        "references"
+      ],
+      "source_files": [
+        ".agents/skills/python-testing/scripts/test_pypi_security_audit.py"
+      ],
+      "source_locations": [
+        "L23"
+      ],
+      "contexts": [
+        "parameter_type",
+        "return_type"
+      ]
+    },
+    {
+      "source": "scripts_test_uv_security_audit_find_workspace_root",
+      "target": "path",
+      "edge_count": 2,
+      "relations": [
+        "references"
+      ],
+      "source_files": [
+        ".agents/skills/python-testing/scripts/test_uv_security_audit.py"
+      ],
+      "source_locations": [
+        "L30"
+      ],
+      "contexts": [
+        "parameter_type",
+        "return_type"
+      ]
+    },
+    {
+      "source": "endpoints_auth_register",
+      "target": "jsonresponse",
+      "edge_count": 2,
+      "relations": [
+        "calls",
+        "references"
+      ],
+      "source_files": [
+        "backend/app/api/v1/endpoints/auth.py"
+      ],
+      "source_locations": [
+        "L48",
+        "L72"
+      ],
+      "contexts": [
+        "call",
+        "return_type"
+      ]
+    },
+    {
+      "source": "endpoints_auth_login",
+      "target": "schemas_auth_tokenpairresponse",
+      "edge_count": 2,
+      "relations": [
+        "calls",
+        "references"
+      ],
+      "source_files": [
+        "backend/app/api/v1/endpoints/auth.py"
+      ],
+      "source_locations": [
+        "L100",
+        "L144"
+      ],
+      "contexts": [
+        "call",
+        "return_type"
+      ]
+    },
+    {
+      "source": "endpoints_auth_login",
+      "target": "jsonresponse",
+      "edge_count": 2,
+      "relations": [
+        "calls",
+        "references"
+      ],
+      "source_files": [
+        "backend/app/api/v1/endpoints/auth.py"
+      ],
+      "source_locations": [
+        "L100",
+        "L119"
+      ],
+      "contexts": [
+        "call",
+        "return_type"
+      ]
+    }
+  ]
+}

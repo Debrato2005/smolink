@@ -50,6 +50,18 @@ def suppress_verification_email(
         "app.api.v1.endpoints.auth.send_verification_email",
         fake_send_verification_email,
     )
+    async def fake_send_password_reset_email(
+        *,
+        recipient_email: str,
+        reset_token: str,
+        idempotency_key: str,
+    ) -> None:
+        return None
+
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.auth.send_password_reset_email",
+        fake_send_password_reset_email,
+    )
 
 @pytest.fixture
 def client()->TestClient:
@@ -95,6 +107,7 @@ def client()->TestClient:
 # over into later tests, causing nondeterministic 429 responses. The dedicated
 # rate-limit test still verifies the limiter itself by exhausting the limit
 # within a single test.
+
 
 def test_register_creates_user_without_exposing_password(client:TestClient)->None:
     email=f"agent-{time_ns()}@example.com"
@@ -711,4 +724,69 @@ def test_register_dispatches_verification_email(
         assert sent["verification_token"]
         assert sent["idempotency_key"] == f"verification:{response.json()['id']}"
 
-        
+def test_logout_revokes_refresh_token_family(client:TestClient)->None:
+    _,email=create_verified_user() #helper function
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": "hello12345678"},
+    )
+    refresh_token = login.json()["refresh_token"]
+
+    logout = client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": refresh_token},
+    )#When logout revokes the family, the server marks that family as revoked.
+
+    assert logout.status_code == 204
+    assert logout.content == b"" #empty response body
+
+    refresh = client.post(#trying to use the same refresh token after logout.
+        "/api/v1/auth/refresh",
+        json={"refresh_token": refresh_token},
+    )
+    assert refresh.status_code == 401
+
+def test_me_returns_current_verified_user(client:TestClient)->None:
+    _,email=create_verified_user() #helper
+
+    login=client.post(
+        "api/v1/auth/login",
+        json={"email": email, "password": "hello12345678"},
+    )
+    access_token=login.json()["access_token"]
+
+    response = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code==200
+    assert response.json()["email"]==email
+    assert "password_hash" not in response.json()
+
+def test_me_requires_access_token(client:TestClient)->None:
+    response = client.get("/api/v1/auth/me")
+
+    assert response.status_code == 401
+
+
+def test_forgot_password_always_returns_202(client:TestClient)->None:
+    _,known_email=create_verified_user()
+
+    known = client.post(
+        "/api/v1/auth/forgot-password",
+        json={"email": known_email},
+    )
+
+    unknown = client.post(
+        "/api/v1/auth/forgot-password",
+        json={"email": "missing@example.com"},
+    )
+
+    assert known.status_code == 202
+    assert unknown.status_code == 202
+# b"" represents an empty bytes object, meaning the HTTP response has no body.
+    assert known.content == b""
+    assert unknown.content == b""
+# Always return the same 202 response for known and unknown emails so the
+# endpoint does not reveal whether an account exists (prevents account
+# enumeration). Registration should be handled separately by the frontend.

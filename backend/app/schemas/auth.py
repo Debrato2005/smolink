@@ -59,3 +59,6 @@ class VerifyEmailRequest(BaseModel):
 # - SQLAlchemy models -> Database tables.
 # - @dataclass -> Simple internal value objects (e.g. RateLimitResult).
 # - BaseModel -> API request/response schemas with automatic validation.
+
+class ForgotPasswordRequest(BaseModel):
+    email:EmailStr

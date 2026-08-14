@@ -2,6 +2,11 @@
 
 This file is the source of truth for anyone (human or AI) making changes to Smolink. It exists so decisions don't get re-litigated or silently reversed. If you're an AI assistant working on this repo, read this before touching code.
 
+Repository agent skills and the Graphify codebase-map workflow are documented
+in [docs/agent-tooling.md](docs/agent-tooling.md). They help navigate the
+project, but this README remains the canonical source for architecture,
+invariants, and API decisions.
+
 ## Project Vision
 
 Smolink is a URL shortener built to demonstrate real backend engineering judgment, not maximum technology usage. The measure of success is "did I make the right call for the constraints," not "how many distributed-systems buzzwords does this repo contain."
@@ -83,7 +88,8 @@ issues its child in the same family, and revokes the family when a consumed
 token is replayed. Email-verification token consumption is implemented: a
 one-time, hashed, expiring token marks the account verified. Registration
 creates that token atomically and sends its raw value only in a Resend email
-after commit. Logout, resend-verification, resets, current-user dependencies,
+after commit. Logout revokes the presented refresh-token family. A
+resend-verification endpoint, resets, current-user dependencies,
 and Google OIDC remain unfinished.
 
 ### 10. All application APIs remain versioned under `/api/v1`

@@ -8,12 +8,14 @@ from app.core.config import get_settings
 from app.models.refresh_token import RefreshToken
 from app.models.email_verification_token import EmailVerificationToken
 from app.models.user import User
+from app.models.password_reset_token import PasswordResetToken
 from app.repositories.auth_repository import (
     create_refresh_token_record,
     get_refresh_token_by_token_hash_for_update,
     revoke_refresh_token_family,
     get_email_verification_token_by_hash_for_update,
     create_email_verification_token,
+    create_password_reset_token,
 )
 from app.repositories.user_repository import (
     create_user,
@@ -319,3 +321,73 @@ async def verify_email(
     
     return user
 
+async def logout_refresh_token(
+        *,
+        session:AsyncSession,
+        refresh_token: str,
+        )->None:
+    settings=get_settings()
+    try:
+        claims=decode_refresh_token(
+            refresh_token,
+            secret=settings.jwt_secret,
+            issuer=settings.jwt_issuer,
+            audience=settings.jwt_audience
+        )
+        token_hash = hash_token_identifier(
+            str(claims["jti"]),
+            secret=settings.token_hash_secret,
+        )
+    except (InvalidRefreshJwtError, KeyError, TypeError) as error:
+        raise InvalidRefreshTokenError from error
+
+    token_record=await get_refresh_token_by_token_hash_for_update(
+        session,
+        token_hash,
+    )
+    if token_record is None:
+        raise InvalidRefreshTokenError
+
+    await revoke_refresh_token_family(
+        session,
+        family_id=token_record.family_id,
+        revoked_at=datetime.now(timezone.utc)
+        )
+
+PASSWORD_RESET_TOKEN_TTL=timedelta(hours=1)
+
+@dataclass
+class PasswordResetRequestResult:
+    user:User
+    reset_token:str
+    token_id:int
+
+async def request_password_reset(
+        *, #Everything after * must be passed by keyword.
+        session:AsyncSession,
+        email:str,
+        generator:SnowflakeGenerator,
+)->PasswordResetRequestResult|None:
+    user=await get_user_by_email(
+        session,
+        normalize_email(email),
+    )    
+#If the account doesn't exist or doesn't have a local password, don't create a password-reset token.
+    if user is None or user.password_hash is None:
+        return None
+
+    raw_token=generate_opaque_token()
+    token=PasswordResetToken(
+        id=generator.next_id(),
+        user_id=user.id,
+        token_hash=hash_token_identifier(
+            raw_token,secret=get_settings().token_hash_secret,),
+            expires_at=datetime.now(timezone.utc)+PASSWORD_RESET_TOKEN_TTL,)
+
+    await create_password_reset_token(session, token)
+
+    return PasswordResetRequestResult(
+        user=user,
+        reset_token=raw_token,
+        token_id=token.id
+    )

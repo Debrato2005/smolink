@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +7,11 @@ from app.api.v1.dependencies.rate_limit import limit_auth_write
 from app.core.config import get_settings
 from app.db.session import get_session
 
-from app.services.email_service import send_verification_email
+from app.services.email_service import (
+    EmailDeliveryError,
+    send_verification_email,
+    send_password_reset_email,
+)
 
 from app.schemas.auth import (
     LoginRequest,
@@ -15,7 +19,8 @@ from app.schemas.auth import (
     RegisterRequest,
     TokenPairResponse,
     RefreshRequest,
-    VerifyEmailRequest
+    VerifyEmailRequest,
+    ForgotPasswordRequest
 )
 from app.services.auth_service import (
     AccountLockedError,
@@ -29,15 +34,21 @@ from app.services.auth_service import (
     rotate_refresh_token,
     InvalidOrExpiredTokenError,
     verify_email,
+    logout_refresh_token,
+    request_password_reset
 )
 from app.utils.snowflake import SnowflakeGenerator
+
+from app.api.v1.dependencies.auth import get_current_user
+from app.models.user import User
 
 router=APIRouter(prefix="/auth", tags=["auth"])
 generator = SnowflakeGenerator(
     worker_id=get_settings().snowflake_worker_id,
 )
-@router.post(
-    "/register",
+#@router.post("/register") registers the function underneath
+#  it as the handler for a POST request to /register
+@router.post( "/register",
     response_model=PublicUserResponse,
     status_code=status.HTTP_201_CREATED,)
 async def register(
@@ -142,8 +153,7 @@ async def login(
         expires_in=token_pair.expires_in,
     )
 
-@router.post(
-    "/refresh",
+@router.post("/refresh",
     response_model=TokenPairResponse
 )
 async def refresh(
@@ -210,3 +220,67 @@ async def verify_email_endpoint(
 # exposing only the fields defined by PublicUserResponse before returning JSON.
 # Map the internal database model to the public response model to avoid
 # exposing internal-only fields (e.g. password_hash, auth_version).
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT,response_model=None)
+async def logout(
+    payload:RefreshRequest,
+    session: AsyncSession=Depends(get_session),
+    _:None=Depends(limit_auth_write),
+    )->Response|JSONResponse:
+    try:
+        await logout_refresh_token(
+            session=session,
+            refresh_token=payload.refresh_token,
+        )
+        await session.commit()
+    except InvalidRefreshTokenError:
+        await session.rollback()
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={
+                "error": "invalid_refresh_token",
+                "message": "Invalid refresh token",
+            },
+        )
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/me", response_model=PublicUserResponse)
+async def me(
+    user:User=Depends(get_current_user),
+)->PublicUserResponse:
+    return PublicUserResponse.model_validate(user)
+
+@router.post(
+    "/forgot-password",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=None,
+)
+async def forgot_password(
+    payload:ForgotPasswordRequest,
+    session:AsyncSession=Depends(get_session),
+    _:None=Depends(limit_auth_write)
+)-> Response:
+
+    result=await request_password_reset(
+        session=session,
+        email=str(payload.email),
+        generator=generator,
+    )
+    await session.commit()
+
+    if result is not None:
+        try:
+            await send_password_reset_email(
+                recipient_email=result.user.email,
+# `result` contains the User object, not a separate email field, so the
+# user's email is accessed through `result.user.email`.
+                reset_token=result.reset_token,
+                idempotency_key=f"password-reset:{result.token_id}",
+            )
+        except EmailDeliveryError:
+            pass
+                
+    return Response(status_code=status.HTTP_202_ACCEPTED)
+            

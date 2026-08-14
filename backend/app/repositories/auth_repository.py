@@ -8,6 +8,8 @@ from datetime import datetime
 
 from app.models.email_verification_token import EmailVerificationToken
 
+from app.models.password_reset_token import PasswordResetToken
+
 async def create_refresh_token_record(
     session: AsyncSession,
     token: RefreshToken,
@@ -117,3 +119,12 @@ async def get_email_verification_token_by_hash_for_update(
         .with_for_update()
     )
     return result.scalar_one_or_none()
+
+
+async def create_password_reset_token(
+        session:AsyncSession,
+        token:PasswordResetToken,
+)->PasswordResetToken:
+    session.add(token)
+    await session.flush()
+    return token
