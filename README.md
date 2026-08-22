@@ -88,9 +88,12 @@ issues its child in the same family, and revokes the family when a consumed
 token is replayed. Email-verification token consumption is implemented: a
 one-time, hashed, expiring token marks the account verified. Registration
 creates that token atomically and sends its raw value only in a Resend email
-after commit. Logout revokes the presented refresh-token family. A
-resend-verification endpoint, resets, current-user dependencies,
-and Google OIDC remain unfinished.
+after commit. Logout revokes the presented refresh-token family. Current-user
+lookup and the forgot-password request flow are implemented: the latter stores
+only a hashed, one-hour reset token, sends its raw value only in a post-commit
+email, and always returns `202` to avoid account enumeration. A
+resend-verification endpoint, reset-token consumption/password change, optional
+current-user support, and Google OIDC remain unfinished.
 
 ### 10. All application APIs remain versioned under `/api/v1`
 Authentication routes live under `/api/v1/auth/...`; they are not root-level

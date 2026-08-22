@@ -29,6 +29,8 @@ from app.utils.security import (
     create_refresh_token,
 )
 
+from app.models.password_reset_token import PasswordResetToken
+
 # Automatically replace the real email sender for every route test. This keeps
 # tests deterministic and isolated by preventing outbound HTTP requests to
 # Resend while still allowing the application code to execute its normal email
@@ -790,3 +792,76 @@ def test_forgot_password_always_returns_202(client:TestClient)->None:
 # Always return the same 202 response for known and unknown emails so the
 # endpoint does not reveal whether an account exists (prevents account
 # enumeration). Registration should be handled separately by the frontend.
+
+# Prevent account enumeration: return the same generic response whether an
+# email/account exists or not, so attackers cannot use the endpoint as an
+# oracle to discover valid registered users for phishing or credential attacks.
+
+def create_pending_password_reset() -> tuple[str, str]:
+    async def seed() -> tuple[str, str]:
+        settings = get_settings()
+        engine = create_async_engine(
+            settings.database_url,
+            poolclass=NullPool,
+        )
+        session_factory = async_sessionmaker(
+            engine,
+            expire_on_commit=False,
+        )
+        user_id = time_ns()
+        email = f"user-{user_id}@example.com"
+        raw_token = generate_opaque_token()
+
+        try:
+            async with session_factory() as session:
+                session.add(
+                    User(
+                        id=user_id,
+                        email=email,
+                        password_hash=hash_password("old-password-123"),
+                        email_verified_at=datetime.now(timezone.utc),
+                    )
+                )
+                
+                await session.flush() 
+
+                session.add(
+                    PasswordResetToken(
+                        id=user_id + 1,
+                        user_id=user_id,
+                        token_hash=hash_token_identifier(
+                            raw_token,
+                            secret=settings.token_hash_secret,
+                        ),
+                        expires_at=datetime.now(timezone.utc)
+                        + timedelta(hours=1),
+                    )
+                )
+                await session.commit()
+        finally:
+            await engine.dispose()
+
+        return email, raw_token
+
+    return asyncio.run(seed())
+
+def test_reset_password_changes_password_and_revokes_sessions(
+        client:TestClient,
+)->None:
+    email,raw_token=create_pending_password_reset()
+
+    response=client.post(
+        "/api/v1/auth/reset-password",
+        json={
+            "token":raw_token,
+            "new_password":"new_password123",
+        },
+    )
+    assert response.status_code==204
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": "new_password123"},
+    )
+    assert login.status_code == 200
+

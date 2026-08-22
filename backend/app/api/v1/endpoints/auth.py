@@ -20,7 +20,8 @@ from app.schemas.auth import (
     TokenPairResponse,
     RefreshRequest,
     VerifyEmailRequest,
-    ForgotPasswordRequest
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
 )
 from app.services.auth_service import (
     AccountLockedError,
@@ -35,7 +36,8 @@ from app.services.auth_service import (
     InvalidOrExpiredTokenError,
     verify_email,
     logout_refresh_token,
-    request_password_reset
+    request_password_reset,
+    reset_password,
 )
 from app.utils.snowflake import SnowflakeGenerator
 
@@ -283,4 +285,33 @@ async def forgot_password(
             pass
                 
     return Response(status_code=status.HTTP_202_ACCEPTED)
-            
+
+@router.post(
+    "/reset-password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None
+)    
+async def reset_password_endpoint(
+    payload : ResetPasswordRequest,
+    session : AsyncSession=Depends(get_session),
+    _: None=Depends(limit_auth_write)
+)->Response:
+    try:
+        await reset_password(
+            session=session,
+            token=payload.token,
+            new_password=payload.new_password,
+        )
+        await session.commit()
+
+    except InvalidOrExpiredTokenError:
+        await session.rollback()
+        return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "error":"invalid_or_expired_token",
+                "message":"Invalid or expired token",
+            },
+        )
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

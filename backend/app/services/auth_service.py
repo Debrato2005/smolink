@@ -16,7 +16,9 @@ from app.repositories.auth_repository import (
     get_email_verification_token_by_hash_for_update,
     create_email_verification_token,
     create_password_reset_token,
-)
+    get_password_reset_token_by_hash_for_update,
+    revoke_all_refresh_token_families,
+    )
 from app.repositories.user_repository import (
     create_user,
     get_user_by_email,
@@ -390,4 +392,47 @@ async def request_password_reset(
         user=user,
         reset_token=raw_token,
         token_id=token.id
+    )
+
+async def reset_password(
+        *,
+        session:AsyncSession,
+        token:str,
+        new_password:str,
+)->None:
+    settings=get_settings()
+    now=datetime.now(timezone.utc)
+    token_hash=hash_token_identifier(
+        token,
+        secret=settings.token_hash_secret,
+    )
+    token_record=await get_password_reset_token_by_hash_for_update(
+        session,
+        token_hash,
+    )
+
+    if( 
+        token_record is None
+        or token_record.consumed_at is not None
+        or token_record.expires_at<=now
+    ):
+        raise InvalidOrExpiredTokenError
+
+    user=await get_user_by_id(
+        session,
+        token_record.user_id
+    )
+    if user is None:
+        raise InvalidOrExpiredTokenError
+
+    token_record.consumed_at=now
+    user.password_hash=hash_password(new_password)
+    user.failed_login_count=0
+    user.locked_until=None
+    user.auth_version+=1
+
+    await revoke_all_refresh_token_families(
+        session,
+        user_id=user.id,
+        revoked_at=now,
     )

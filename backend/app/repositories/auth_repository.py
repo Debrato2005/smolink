@@ -128,3 +128,34 @@ async def create_password_reset_token(
     session.add(token)
     await session.flush()
     return token
+# `token` is a PasswordResetToken ORM object, so SQLAlchemy already knows the
+# target `password_reset_tokens` table and column mappings from the model.
+# `session.add(token)` marks it for insertion, and `flush()` sends the INSERT
+# to Postgres without committing the transaction yet.
+
+async def get_password_reset_token_by_hash_for_update(
+        session:AsyncSession,
+        token_hash:str,
+)->PasswordResetToken|None:
+    result=await session.execute(
+        select(PasswordResetToken)
+        .where(PasswordResetToken.token_hash==token_hash)
+        .with_for_update()
+    )
+    return result.scalar_one_or_none()
+
+async def revoke_all_refresh_token_families(
+        session:AsyncSession,
+        *,
+        user_id:int,
+        revoked_at:datetime,
+)->None:
+    await session.execute(
+        update(RefreshToken)
+        .where(
+            RefreshToken.user_id==user_id,
+            RefreshToken.revoked_at.is_(None),
+        )
+        .values(revoked_at=revoked_at)
+    )
+    

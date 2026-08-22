@@ -129,9 +129,11 @@ registration, local-login service and route, JWT helpers, refresh-token record
 creation/rotation, logout, registration/login IP limiting, and email
 verification are implemented and their focused tests have passed. Registration
 atomically creates a one-time token, then sends a Resend verification email
-after commit. A resend-verification endpoint, password-reset delivery, and the
-remaining auth work are still
-pending; do not mark the milestone complete. Follow
+after commit. Current-user lookup and the forgot-password request flow are also
+implemented: matching password accounts receive a one-time, hashed reset token
+by post-commit email, while every request returns `202`. Reset-token
+consumption/password change, a resend-verification endpoint, and the remaining
+auth work are still pending; do not mark the milestone complete. Follow
 `docs/superpowers/specs/2026-08-01-authentication-authorization-design.md`.
 
 - [x] Add the reviewed auth migrations: verified/lock/auth-version user fields,
@@ -144,8 +146,12 @@ pending; do not mark the milestone complete. Follow
 - [x] Add local-password login policy: generic invalid credentials, verified
   email requirement, five consecutive failures locking an account for 15
   minutes, and successful-login state reset.
-- [ ] Complete repositories and services for identities, password resets, and
-  account-lock state. Email verification creates a one-time token during
+- [x] Add the forgot-password request workflow: create a one-time, hashed,
+  one-hour reset token for matching password accounts, send it after commit,
+  and return the same `202` result for all requests.
+- [ ] Complete identity and password-reset consumption services, including
+  password replacement, reset-token consumption, auth-version changes, and
+  refresh-family revocation. Email verification creates a one-time token during
   registration and sends it through Resend after commit.
 - [x] Use Argon2id for password hashing and library-backed verification.
 - [x] Issue and validate issuer/audience-bound, short-lived JWT access and
@@ -159,19 +165,20 @@ pending; do not mark the milestone complete. Follow
 - [x] Add `/api/v1/auth/login`, `/refresh`, and `/verify-email` endpoints.
 - [x] Add `POST /api/v1/auth/logout`; it revokes the presented refresh-token
   family and returns `204`.
-- [ ] Add `GET /api/v1/auth/me`, `/forgot-password`, and `/reset-password`
-  endpoints.
+- [x] Add `GET /api/v1/auth/me` and `POST /api/v1/auth/forgot-password`.
+- [ ] Add `POST /api/v1/auth/reset-password` to consume the reset token, set a
+  new password, and revoke active sessions.
 - [x] Block unverified password accounts from login until email verification.
 - [ ] Add Google OAuth2/OIDC authorization-code flow with state, nonce, PKCE,
   ID-token validation, and verified-email auto-linking to matching local users.
 - [ ] Apply the IP limiter to the remaining auth writes and add per-account
   progressive backoff/temporary lockout to failed local-password logins.
-- [ ] Add `OAuth2PasswordBearer`, `get_current_user()`, and
-  `get_optional_current_user()`; update URL creation to select the guest or
-  authenticated-user rate-limit scope.
+- [ ] Add `get_optional_current_user()` and update URL creation to select the
+  guest or authenticated-user rate-limit scope.
 - [ ] Cover registration, duplicate email, login, invalid/expired JWTs,
-  refresh rotation/reuse, lockout, verification, reset, Google linking,
-  authorization, and unavailable dependencies with unit and integration tests.
+  refresh rotation/reuse, lockout, verification, reset-token consumption,
+  Google linking, authorization, and unavailable dependencies with unit and
+  integration tests.
 - [ ] Run: `uv run pytest tests/test_auth.py -q -s` and `uv run pytest -q -s`.
 - [ ] Commit: `feat: add production authentication and authorization`.
 
