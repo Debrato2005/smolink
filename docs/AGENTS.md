@@ -6,8 +6,9 @@ Smolink is a backend-first URL shortener. The Python application is in
 `backend/app/`: `api/` contains versioned FastAPI routes, `core/` holds shared
 configuration, `db/` owns the async engine and declarative base, `schemas/`
 contains Pydantic request/response types, and `services/` and `repositories/`
-separate business rules from SQL access. Put new SQLAlchemy table models in
-`backend/app/models/` as the data-model milestone is completed.
+separate business rules from SQL access. SQLAlchemy URL, analytics, and durable
+authentication models live in `backend/app/models/`; add future tables there
+and expose their metadata for Alembic discovery.
 
 Tests live in `backend/tests/` and follow the source feature they cover. Alembic
 configuration and migrations live in `backend/alembic/`. Architecture decisions

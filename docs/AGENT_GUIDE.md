@@ -71,7 +71,9 @@ Read these before changing behavior, in this order:
    question; it wins if documents disagree.
 2. [backend-build-checklist.md](backend-build-checklist.md) — current
    milestone, required scope, red-green steps, verification commands, and
-   recorded progress. Consult it to determine what should happen next.
+   recorded progress. Consult it to determine what should happen next. The
+   latest verified baseline is 115 passing tests on 2026-08-24; later entries
+   supersede this number as the suite grows.
 3. [codebase-walkthrough.md](codebase-walkthrough.md) — current
    implementation map and line-by-line explanations. Consult it before editing
    an unfamiliar file and update it when behavior changes.

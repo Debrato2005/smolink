@@ -12,7 +12,10 @@ from app.utils.snowflake import SnowflakeGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.v1.dependencies.rate_limit import limit_guest_creation
+from app.api.v1.dependencies.rate_limit import limit_url_creation
+
+from app.api.v1.dependencies.auth import get_optional_current_user
+from app.models.user import User
 
 router=APIRouter(prefix="/urls",tags=["urls"])#A router (APIRouter) in FastAPI is a tool used to organize code, group endpoints, and split large projects into multiple files
 generator=SnowflakeGenerator(worker_id=get_settings().snowflake_worker_id,)
@@ -22,17 +25,19 @@ generator=SnowflakeGenerator(worker_id=get_settings().snowflake_worker_id,)
     response_model=CreateUrlResponse,
     status_code=status.HTTP_201_CREATED, #If function succeeds instead of default 200
 )
-async def create_url(  payload: CreateUrlRequest,
-                     session: AsyncSession=Depends(get_session), #session should be an AsyncSession object with default value after =
-                     _: None = Depends(limit_guest_creation), #by convention, _ means: "I know this variable exists, but I intentionally won't use it."
-                     )->CreateUrlResponse|JSONResponse:
+async def create_url(  
+    payload: CreateUrlRequest,
+    session: AsyncSession=Depends(get_session), #session should be an AsyncSession object with default value after =
+    current_user: User | None = Depends(get_optional_current_user),
+    _: None = Depends(limit_url_creation), #by convention, _ means: "I know this variable exists, but I intentionally won't use it."
+     )->CreateUrlResponse|JSONResponse:
     try:
         url=await create_short_url(
             session=session,
             destination=str(payload.destination),
             alias=payload.alias,
             expires_at=payload.expires_at,
-            owner_id=None,
+            owner_id=current_user.id if current_user is not None else None,
             generator=generator,
         )
         await session.commit() #important look down at comment as well as in test_url_creation

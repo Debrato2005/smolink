@@ -4,33 +4,125 @@ from redis.asyncio import Redis
 from app.core.rate_limit import SlidingWindowRateLimiter
 from app.core.redis import get_redis_client
 
+from app.api.v1.dependencies.auth import get_optional_current_user
+from app.models.user import User
 
-async def limit_guest_creation(
+async def limit_url_creation(
     request: Request,
+
+    # Optional authentication:
+    #
+    # - no Bearer token  -> current_user = None
+    # - valid Bearer token -> current_user = User(...)
+    # - invalid Bearer token -> 401 before this limiter continues
+    #
+    # We need this because URL creation supports BOTH guests and logged-in users.
+    current_user: User | None = Depends(get_optional_current_user),
+
+    # Redis stores the rate-limit counters.
+    # FastAPI injects the Redis client through get_redis_client().
     client: Redis = Depends(get_redis_client),
 ) -> None:
-    client_ip = request.client.host if request.client is not None else "unknown"
+
+    # Decide WHICH rate-limit bucket this request belongs to.
+    if current_user is None:
+
+        # Guest users do not have a user ID, so rate-limit them by IP address.
+        #
+        # Example:
+        #     request.client.host == "192.168.1.10"
+        #
+        # In TestClient this is usually:
+        #     "testclient"
+        client_ip = (
+            request.client.host
+            if request.client is not None
+            else "unknown"
+        )
+
+        # Each guest IP gets its own Redis key.
+        #
+        # Example:
+        #     rate:create:guest:192.168.1.10
+        #
+        # Therefore requests from one guest IP increment the same counter.
+        key = f"rate:create:guest:{client_ip}"
+
+        # Guests may create at most 10 URLs within the rate-limit window.
+        limit = 10
+
+    else:
+
+        # Logged-in users have a stable database user ID,
+        # so rate-limit by user ID instead of IP.
+        #
+        # Example:
+        #     user.id == 123
+        #
+        # Redis key:
+        #     rate:create:user:123
+        #
+        # This means the same account gets the same rate-limit bucket
+        # even if its IP address changes.
+        key = f"rate:create:user:{current_user.id}"
+
+        # Authenticated users receive a larger allowance.
+        limit = 30
 
     try:
+
+        # Check/update the sliding-window counter in Redis.
+        #
+        # `key` decides WHO is being limited:
+        #
+        #     guest -> rate:create:guest:<ip>
+        #     user  -> rate:create:user:<user_id>
+        #
+        # `limit` decides HOW MANY requests are allowed:
+        #
+        #     guest -> 10
+        #     user  -> 30
+        #
+        # `window_seconds=60` means these limits apply over a 60-second window.
         result = await SlidingWindowRateLimiter(client).check(
-            f"rate:create:guest:{client_ip}",
-            10,
-            60,
+            key=key,
+            limit=limit,
+            window_seconds=60,
         )
+
     except Exception as error:
+
+        # If Redis/rate limiting itself fails, we cannot safely determine
+        # whether the request should be allowed.
+        #
+        # Return 503 Service Unavailable instead of pretending the user is
+        # under/over the limit or exposing an internal exception.
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         ) from error
 
+    # The limiter returns a RateLimitResult.
+    #
+    # result.allowed == True
+    #     -> dependency returns normally
+    #     -> FastAPI proceeds to the /urls endpoint
+    #
+    # result.allowed == False
+    #     -> reject the request with HTTP 429
     if not result.allowed:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Rate limit exceeded",
-            headers={"Retry-After": str(result.retry_after)},
-        )
 
+            # Tell the client approximately how many seconds it should wait
+            # before retrying.
+            headers={
+                "Retry-After": str(result.retry_after)
+            },
+        )
 async def limit_auth_write(request:Request, client: Redis=Depends(get_redis_client),
                            )->None:
+    
     client_ip=request.client.host if request.client is not None else "unknown"
 
     try :

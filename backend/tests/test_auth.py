@@ -797,7 +797,11 @@ def test_forgot_password_always_returns_202(client:TestClient)->None:
 # email/account exists or not, so attackers cannot use the endpoint as an
 # oracle to discover valid registered users for phishing or credential attacks.
 
-def create_pending_password_reset() -> tuple[str, str]:
+def create_pending_password_reset(
+    *,
+    expires_at: datetime | None = None,
+) -> tuple[str, str]:
+    
     async def seed() -> tuple[str, str]:
         settings = get_settings()
         engine = create_async_engine(
@@ -833,9 +837,9 @@ def create_pending_password_reset() -> tuple[str, str]:
                             raw_token,
                             secret=settings.token_hash_secret,
                         ),
-                        expires_at=datetime.now(timezone.utc)
-                        + timedelta(hours=1),
-                    )
+                        expires_at=expires_at or (
+                            datetime.now(timezone.utc) + timedelta(hours=1)
+                            ),)
                 )
                 await session.commit()
         finally:
@@ -864,4 +868,122 @@ def test_reset_password_changes_password_and_revokes_sessions(
         json={"email": email, "password": "new_password123"},
     )
     assert login.status_code == 200
+
+def test_reset_password_rejects_reused_token(
+        client:TestClient
+)->None:
+    _,raw_token=create_pending_password_reset()
+    payload={
+        "token":raw_token,
+        "new_password":"new-password-123"
+    }
+    assert client.post("/api/v1/auth/reset-password", json=payload).status_code == 204
+
+    response = client.post("/api/v1/auth/reset-password", json=payload)
+
+    assert response.status_code == 400
+    assert response.json()["error"] == "invalid_or_expired_token"
+
+def test_reset_password_rejects_invalid_token(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/auth/reset-password",
+        json={
+            "token": "unknown-token",
+            "new_password": "new-password-123",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"] == "invalid_or_expired_token"
+
+def test_reset_password_revokes_existing_refresh_sessions(
+        client:TestClient,
+)->None:
+    email,raw_token=create_pending_password_reset()
+
+    login=client.post("/api/v1/auth/login",
+                      json={
+                          "email":email,
+                          "password":"old-password-123" #because in helper fuuntion we used this
+                      },
+    )
+    refresh_token=login.json()["refresh_token"]
+
+    reset = client.post(
+        "/api/v1/auth/reset-password",
+        json={
+            "token": raw_token,
+            "new_password": "new-password-123",
+        },
+    )
+    assert reset.status_code == 204
+
+    refresh = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": refresh_token},
+    )
+    assert refresh.status_code == 401
+
+def test_reset_password_rejects_expired_token(
+    client: TestClient,
+) -> None:
+    _, raw_token = create_pending_password_reset(
+        expires_at=datetime.now(timezone.utc) - timedelta(seconds=1),
+    )
+
+    response = client.post(
+        "/api/v1/auth/reset-password",
+        json={
+            "token": raw_token,
+            "new_password": "new-password-123",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"] == "invalid_or_expired_token"
+
+def test_resend_verification_invalidates_previous_token(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sent_tokens: list[str] = []
+
+    async def capture_verification_email(
+        *,
+        recipient_email: str,
+        verification_token: str,
+        idempotency_key: str,
+    ) -> None:
+        sent_tokens.append(verification_token)
+
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.auth.send_verification_email",
+        capture_verification_email,
+    )
+
+    email = f"user-{time_ns()}@example.com"
+
+    register = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "hello12345678",
+        },
+    )
+    resend = client.post(
+        "/api/v1/auth/resend-verification",
+        json={"email": email},
+    )
+
+    assert register.status_code == 201
+    assert resend.status_code == 202
+    assert len(sent_tokens) == 2
+
+    old_token_response = client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": sent_tokens[0]},
+    )
+
+    assert old_token_response.status_code == 400
+    assert old_token_response.json()["error"] == "invalid_or_expired_token"
 

@@ -33,10 +33,10 @@ The backend release is not the end of Smolink. After its API contracts are verif
 
 ## Current verified state
 
-- **Last verified:** 2026-07-18
+- **Last verified:** 2026-08-24
 - **Command:** `cd backend && uv run pytest -q -s`
-- **Result:** `2 passed`; one third-party FastAPI/Starlette test-client deprecation warning.
-- **Current files changed locally:** application entry point, typed settings, environment example, tests, dependency lockfiles, and local Compose infrastructure. These are not committed yet.
+- **Result:** `115 passed, 9 warnings` in `11.36s`.
+- **Current milestone:** authenticated URL ownership and guest/user creation-rate scopes are verified; Google OAuth2/OIDC configuration is the next RED slice.
 
 ## Day 1 — Foundation, persistence, and URL creation
 
@@ -132,8 +132,9 @@ atomically creates a one-time token, then sends a Resend verification email
 after commit. Current-user lookup and the forgot-password request flow are also
 implemented: matching password accounts receive a one-time, hashed reset token
 by post-commit email, while every request returns `202`. Reset-token
-consumption/password change, a resend-verification endpoint, and the remaining
-auth work are still pending; do not mark the milestone complete. Follow
+consumption/password change, resend verification, optional-authenticated URL
+ownership, and guest/user creation-limit selection are implemented; Google OIDC
+and the remaining auth work are still pending. Follow
 `docs/superpowers/specs/2026-08-01-authentication-authorization-design.md`.
 
 - [x] Add the reviewed auth migrations: verified/lock/auth-version user fields,
@@ -149,10 +150,11 @@ auth work are still pending; do not mark the milestone complete. Follow
 - [x] Add the forgot-password request workflow: create a one-time, hashed,
   one-hour reset token for matching password accounts, send it after commit,
   and return the same `202` result for all requests.
-- [ ] Complete identity and password-reset consumption services, including
-  password replacement, reset-token consumption, auth-version changes, and
-  refresh-family revocation. Email verification creates a one-time token during
-  registration and sends it through Resend after commit.
+- [x] Complete password-reset consumption: replace the password, consume the
+  token, clear lock state, increment `auth_version`, and revoke every active
+  refresh-token family.
+- [x] Complete identity services. Email verification creates a one-time token
+  during registration and sends it through Resend after commit.
 - [x] Use Argon2id for password hashing and library-backed verification.
 - [x] Issue and validate issuer/audience-bound, short-lived JWT access and
   refresh tokens with minimal claims and configurable expiry/secrets; persist a
@@ -166,15 +168,20 @@ auth work are still pending; do not mark the milestone complete. Follow
 - [x] Add `POST /api/v1/auth/logout`; it revokes the presented refresh-token
   family and returns `204`.
 - [x] Add `GET /api/v1/auth/me` and `POST /api/v1/auth/forgot-password`.
-- [ ] Add `POST /api/v1/auth/reset-password` to consume the reset token, set a
+- [x] Add `POST /api/v1/auth/resend-verification`; always return `202`, replace
+  active tokens only for an unverified password account, and apply the auth
+  write limiter.
+- [x] Add `POST /api/v1/auth/reset-password` to consume the reset token, set a
   new password, and revoke active sessions.
 - [x] Block unverified password accounts from login until email verification.
 - [ ] Add Google OAuth2/OIDC authorization-code flow with state, nonce, PKCE,
   ID-token validation, and verified-email auto-linking to matching local users.
 - [ ] Apply the IP limiter to the remaining auth writes and add per-account
   progressive backoff/temporary lockout to failed local-password logins.
-- [ ] Add `get_optional_current_user()` and update URL creation to select the
-  guest or authenticated-user rate-limit scope.
+- [x] Add `get_optional_current_user()` and assign authenticated URL ownership
+  without breaking guest creation.
+- [x] Update URL creation to select the guest-IP or authenticated-user
+  rate-limit scope.
 - [ ] Cover registration, duplicate email, login, invalid/expired JWTs,
   refresh rotation/reuse, lockout, verification, reset-token consumption,
   Google linking, authorization, and unavailable dependencies with unit and
@@ -285,3 +292,7 @@ auth work are still pending; do not mark the milestone complete. Follow
 | 2026-08-08 | Email-verification token consumption | User-reported focused auth verification passed | The verification route atomically locks and consumes a hashed, expiring token, then sets `email_verified_at`; invalid, reused, and expired tokens return the documented `400` envelope. Registration issuance and delivery followed on 2026-08-09. |
 | 2026-08-09 | Registration verification-email delivery | User-reported focused sender and auth tests passed | Registration creates the token and user in one transaction, then sends a Resend message after commit. The raw token appears only in the email link fragment; sender tests mock the external provider. |
 | 2026-08-10 | Refresh-token logout | User-reported focused auth test passed | Logout validates the presented refresh JWT, revokes its persisted token family, and returns `204`; a subsequent refresh is rejected. |
+| 2026-08-22 | Password-reset consumption | `uv run pytest` → 112 passed, 9 warnings | Reset tokens are single-use and expiring; a valid reset replaces the password, clears lockout, increments `auth_version`, and revokes existing refresh sessions. |
+| 2026-08-23 | Verification-email resend | User-reported focused auth tests passed | Resend returns an enumeration-safe `202`, consumes prior unused verification tokens, creates one replacement, and sends it after commit. |
+| 2026-08-23 | Optional-authenticated URL ownership | User-reported ownership test passed | Guest URLs remain ownerless and valid Bearer tokens assign `owner_id`; per-user limiter selection remains pending. |
+| 2026-08-24 | Authenticated URL-creation rate limiting | `uv run pytest -q -s` → 115 passed, 9 warnings | Guest creation uses 10/IP/minute and authenticated creation uses an independent 30/user/minute rolling Redis window; both return `429` with `Retry-After`. |

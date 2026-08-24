@@ -158,4 +158,16 @@ async def revoke_all_refresh_token_families(
         )
         .values(revoked_at=revoked_at)
     )
-    
+
+async def consume_active_email_verification_tokens(
+        session:AsyncSession,
+        *,
+        user_id:int,
+        consumed_at:datetime
+)->None:
+    await session.execute(update(EmailVerificationToken)
+                          .where(EmailVerificationToken.user_id==user_id,
+                                 EmailVerificationToken.consumed_at.is_(None),)
+                                 .values(consumed_at=consumed_at))
+
+

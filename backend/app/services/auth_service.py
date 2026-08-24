@@ -18,6 +18,7 @@ from app.repositories.auth_repository import (
     create_password_reset_token,
     get_password_reset_token_by_hash_for_update,
     revoke_all_refresh_token_families,
+    consume_active_email_verification_tokens,
     )
 from app.repositories.user_repository import (
     create_user,
@@ -435,4 +436,55 @@ async def reset_password(
         session,
         user_id=user.id,
         revoked_at=now,
+    )
+
+@dataclass
+class VerificationResendResult:
+    user: User
+    verification_token: str
+    token_id: int
+
+
+async def request_verification_resend(
+    *,
+    session: AsyncSession,
+    email: str,
+    generator: SnowflakeGenerator,
+) -> VerificationResendResult | None:
+    user = await get_user_by_email(
+        session,
+        normalize_email(email),
+    )
+
+    if (
+        user is None
+        or user.password_hash is None
+        or user.email_verified_at is not None
+    ):
+        return None
+
+    now = datetime.now(timezone.utc)
+
+    await consume_active_email_verification_tokens(
+        session,
+        user_id=user.id,
+        consumed_at=now,
+    )
+
+    raw_token = generate_opaque_token()
+    token = EmailVerificationToken(
+        id=generator.next_id(),
+        user_id=user.id,
+        token_hash=hash_token_identifier(
+            raw_token,
+            secret=get_settings().token_hash_secret,
+        ),
+        expires_at=now + VERIFICATION_TOKEN_TTL,
+    )
+    await create_email_verification_token(session, token)
+
+    return VerificationResendResult(
+        user=user,
+        verification_token=raw_token,
+        token_id=token.id,
     )

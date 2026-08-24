@@ -10,7 +10,7 @@ It supersedes the earlier minimal-auth checklist item, while preserving optional
 authentication for URL creation. It does not add roles, organizations, API keys,
 custom domains, or external identity providers beyond Google.
 
-## Implementation status (2026-08-04)
+## Implementation status (2026-08-22)
 
 Implemented: registration and local-login foundations, Argon2id password
 verification, five-failure/15-minute account locking, signed access/refresh
@@ -19,8 +19,12 @@ limiting. Refresh rotation is implemented with row locking, parent/child token
 records, and full-family revocation on reuse. Email-verification token
 consumption is implemented with a hashed, single-use, expiring token.
 Registration creates the token in its transaction and dispatches a Resend email
-after commit. Logout, resend-verification, reset flows, bearer-token
-dependencies, and Google OIDC are not yet implemented.
+after commit. Logout, bearer-token current-user lookup, forgot-password, and
+reset-password are implemented. Reset consumes the token, replaces the hash,
+clears lock state, increments `auth_version`, and revokes refresh families.
+Resend verification is implemented with enumeration-safe responses and token
+replacement. Optional authentication assigns authenticated URL ownership and
+selects the per-user creation limit. Google OIDC remains pending.
 
 ## Product decisions
 
@@ -52,6 +56,7 @@ All domain errors use the project envelope:
 | POST | `/api/v1/auth/logout` | authenticated refresh token/session reference | `204` |
 | GET | `/api/v1/auth/me` | Bearer access token → public user | `200`, `401` |
 | POST | `/api/v1/auth/verify-email` | `{token}` → public user | `200`, `400 invalid_or_expired_token` |
+| POST | `/api/v1/auth/resend-verification` | `{email}` → empty response | always `202`; replaces active tokens only for an unverified password account |
 | POST | `/api/v1/auth/forgot-password` | `{email}` → empty response | always `202` |
 | POST | `/api/v1/auth/reset-password` | `{token,new_password}` | `204`, `400 invalid_or_expired_token`, `422` |
 | GET | `/api/v1/auth/google/start` | redirect to Google | `302` |
@@ -71,6 +76,12 @@ The token-pair response is:
 Passwords are never returned, logged, placed in JWTs, or included in error
 messages. The public user response contains only `id`, `email`,
 `email_verified_at`, `created_at`, and `updated_at`.
+
+Resend verification never reveals account state. Unknown, already verified,
+and OIDC-only accounts receive the same empty `202` response as eligible
+unverified password accounts. For an eligible account, the service consumes
+all prior unused verification tokens, creates one replacement token, commits,
+then sends the raw token by email. The route uses the shared auth-write limiter.
 
 ## Persistence model
 

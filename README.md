@@ -92,8 +92,16 @@ after commit. Logout revokes the presented refresh-token family. Current-user
 lookup and the forgot-password request flow are implemented: the latter stores
 only a hashed, one-hour reset token, sends its raw value only in a post-commit
 email, and always returns `202` to avoid account enumeration. A
-resend-verification endpoint, reset-token consumption/password change, optional
-current-user support, and Google OIDC remain unfinished.
+resend-verification endpoint now replaces prior unused tokens and sends a new
+one without revealing account state. Optional current-user support assigns
+authenticated URL ownership while preserving guest creation. Guest creation
+uses the 10-per-IP limiter and authenticated creation uses the independent
+30-per-user limiter. Google OIDC remains unfinished. Password reset consumes a
+one-time token, replaces the Argon2id hash, clears lock state, increments
+`auth_version`, and revokes every active refresh-token family.
+
+Latest backend verification: `uv run pytest -q -s` completed with 115 passing
+tests and 9 dependency warnings on 2026-08-24.
 
 ### 10. All application APIs remain versioned under `/api/v1`
 Authentication routes live under `/api/v1/auth/...`; they are not root-level
@@ -142,6 +150,7 @@ new per-route exception-mapping patterns.
 | `POST` | `/api/v1/auth/logout` | Revoke the current refresh-token family |
 | `GET` | `/api/v1/auth/me` | Retrieve the authenticated current user |
 | `POST` | `/api/v1/auth/verify-email` | Consume an email-verification token |
+| `POST` | `/api/v1/auth/resend-verification` | Request a replacement verification email without account enumeration |
 | `POST` | `/api/v1/auth/forgot-password` | Request a password-reset email without account enumeration |
 | `POST` | `/api/v1/auth/reset-password` | Consume a reset token and revoke active sessions |
 | `GET` | `/api/v1/auth/google/start` | Begin Google OAuth2/OIDC authorization-code flow |

@@ -22,6 +22,7 @@ from app.schemas.auth import (
     VerifyEmailRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
+    ResendVerificationRequest,
 )
 from app.services.auth_service import (
     AccountLockedError,
@@ -38,6 +39,7 @@ from app.services.auth_service import (
     logout_refresh_token,
     request_password_reset,
     reset_password,
+    request_verification_resend,
 )
 from app.utils.snowflake import SnowflakeGenerator
 
@@ -315,3 +317,32 @@ async def reset_password_endpoint(
         )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.post(
+    "/resend-verification",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=None,
+)
+async def resend_verification(
+    payload: ResendVerificationRequest,
+    session: AsyncSession = Depends(get_session),
+    _: None = Depends(limit_auth_write),
+) -> Response:
+    result = await request_verification_resend(
+        session=session,
+        email=str(payload.email),
+        generator=generator,
+    )
+    await session.commit()
+
+    if result is not None:
+        try:
+            await send_verification_email(
+                recipient_email=result.user.email,
+                verification_token=result.verification_token,
+                idempotency_key=f"verification-resend:{result.token_id}",
+            )
+        except EmailDeliveryError:
+            pass
+
+    return Response(status_code=status.HTTP_202_ACCEPTED)

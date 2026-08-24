@@ -66,6 +66,21 @@ async def get_current_user(
 
     return user
 
+optional_oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/api/v1/auth/login",
+    auto_error=False,
+)
+async def get_optional_current_user(
+    token: str | None = Depends(optional_oauth2_scheme),
+    session: AsyncSession = Depends(get_session),
+)->User|None:
+    if token is None:
+        return None
+
+    return await get_current_user(
+        token=token,
+        session=session,
+    )
 
 
 
@@ -230,3 +245,40 @@ async def get_current_user(
 #     Service
 #         → BUSINESS LOGIC
 #         → "What should we do for this user?"
+
+
+# Optional authentication for URL creation:
+#
+# Smolink allows both guests and logged-in users to create URLs.
+#
+# Normal OAuth2PasswordBearer uses auto_error=True, so if no
+# Authorization header is present it immediately returns 401.
+#
+# Here we use auto_error=False so:
+#
+#   no Authorization header
+#       -> token = None
+#       -> get_optional_current_user() returns None
+#       -> request is treated as a guest
+#       -> owner_id = None
+#
+#   Authorization: Bearer <valid access token>
+#       -> token is extracted
+#       -> get_current_user() validates the JWT
+#       -> returns the authenticated User
+#       -> owner_id = user.id
+#
+#   Authorization: Bearer <invalid token>
+#       -> get_current_user() rejects it
+#       -> 401 Unauthorized
+#
+# This is needed because using Depends(get_current_user) directly would
+# make authentication mandatory and would break guest URL creation.
+#
+# The authenticated URL ownership test sends a valid Bearer token and
+# then loads the created URL from PostgreSQL to verify that:
+#
+#     url.owner_id == logged_in_user.id
+#
+# Without wiring optional authentication into /urls, the endpoint would
+# keep passing owner_id=None, so that ownership test would fail.

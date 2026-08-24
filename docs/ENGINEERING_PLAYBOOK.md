@@ -528,7 +528,7 @@ Real components working together — e.g. `POST /api/v1/urls` exercising service
 
 ## 51. API Testing
 
-For every endpoint, test: correct request, invalid request, unauthorized, forbidden, missing resource, duplicate resource, and unexpected failure. Concretely for Smolink: `POST /api/v1/urls` → `201`; duplicate alias → `409`; malformed body → `422`; `GET /api/v1/me/urls` without a JWT → `401`; deleting someone else's URL → `403`; redirect on an expired link → `410`; on a missing one → `404`; exceeding an auth or creation limit → `429` with `Retry-After`; and a Redis outage during a rate-limited write → `503` while a redirect still falls back to Postgres.
+For every endpoint, test: correct request, invalid request, unauthorized, forbidden, missing resource, duplicate resource, and unexpected failure. Concretely for Smolink: `POST /api/v1/urls` → `201`; guest creation stores no owner and uses the IP bucket, while authenticated creation stores `owner_id` and uses the independent user bucket; duplicate alias → `409`; malformed body → `422`; `GET /api/v1/me/urls` without a JWT → `401`; deleting someone else's URL → `403`; redirect on an expired link → `410`; on a missing one → `404`; exceeding an auth or creation limit → `429` with `Retry-After`; and a Redis outage during a rate-limited write → `503` while a redirect still falls back to Postgres.
 
 ## 52. Debugging Strategy
 

@@ -17,6 +17,10 @@ from redis.asyncio import Redis
 
 from app.core.redis import get_redis_client
 
+from app.models.url import Url
+from app.models.user import User
+from app.utils.security import hash_password
+
 #TestClient does not create a fake database. It only creates a fake HTTP client.
 
 @pytest.fixture
@@ -147,7 +151,262 @@ def test_guest_url_creation_returns_503_when_limiter_is_unavailable(client: Test
 # errors into HTTP 503 Service Unavailable instead of exposing the exception
 # or crashing the application.
 
-        
+#SEED USER outside now so that other functions can use it as well
+# Helper used only to create the prerequisite test user directly in the DB.
+# We seed the user instead of registering through the API because this test
+ # is about URL ownership, not registration/email-verification behavior.
+async def seed_verified_user()-> tuple[int, str]:
+
+        # Create a temporary async SQLAlchemy engine connected to the test DB.
+        engine = create_async_engine(
+            get_settings().database_url,
+            poolclass=NullPool,
+        )
+
+        # Create a factory that can generate AsyncSession objects.
+        # expire_on_commit=False keeps ORM object attributes available after commit.
+        session_factory = async_sessionmaker(
+            engine,
+            expire_on_commit=False,
+        )
+
+        # Generate a unique user ID so this test is unlikely to collide
+        # with users created by other tests.
+        user_id = time_ns()
+
+        # Create a unique email for the same reason.
+        email = f"user-{user_id}@example.com"
+
+        try:
+            # Open a temporary database session.
+            async with session_factory() as session:
+
+                # Create an already-verified user directly in PostgreSQL.
+                # email_verified_at is set so this user is allowed to log in.
+                session.add(
+                    User(
+                        id=user_id,
+                        email=email,
+                        password_hash=hash_password("hello12345678"),
+                        email_verified_at=datetime.now(timezone.utc),
+                    )
+                )
+
+                # Persist the seeded user so the later TestClient request,
+                # which uses a different DB session, can see this user.
+                await session.commit()
+
+        finally:
+            # Dispose of the temporary database engine even if an error occurs.
+            await engine.dispose()
+
+        # Return the values needed by the synchronous part of the test.
+        return user_id, email
+
+
+def test_authenticated_url_creation_assigns_owner(
+    client: TestClient,
+) -> None:
+
+    # seed_user() is async, but the test itself is synchronous.
+    # asyncio.run() creates an event loop, executes the helper,
+    # and gives us back the created user's ID and email.
+    user_id, email = asyncio.run(seed_verified_user())
+
+
+    # Log in normally through the real /login endpoint.
+    # This tests the actual authentication flow rather than manually creating a JWT.
+    login = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": email,
+            "password": "hello12345678",
+        },
+    )
+
+    # Make sure login succeeded before continuing.
+    assert login.status_code == 200
+
+
+    # Create a URL while acting as the logged-in user.
+    response = client.post(
+        "/api/v1/urls",
+
+        # Login returned an access JWT.
+        # The client sends it using the standard HTTP Authorization header:
+        #
+        # Authorization: Bearer <access_token>
+        #
+        # FastAPI's OAuth2PasswordBearer extracts this token, and the backend
+        # validates it to determine which user is making the request.
+        headers={
+            "Authorization": f"Bearer {login.json()['access_token']}",
+        },
+
+        # Request body for URL creation.
+        json={
+            "destination": "https://example.com"
+        },
+    )
+
+    # Confirm that the URL was created successfully.
+    assert response.status_code == 201
+
+
+    # We now want to verify something that is not necessarily visible in the
+    # API response: the database URL row's owner_id.
+    #
+    # Because this test function is synchronous but SQLAlchemy DB operations
+    # are async, we wrap the DB query inside another async helper.
+    async def load_owner_id() -> int | None:
+
+        # Create another temporary async DB engine.
+        engine = create_async_engine(
+            get_settings().database_url,
+            poolclass=NullPool,
+        )
+
+        try:
+            # Create and open an AsyncSession.
+            async with async_sessionmaker(engine)() as session:
+
+                # response.json() converts the /urls JSON response into
+                # a Python dictionary.
+                #
+                # ["id"] gets the ID of the URL that was just created.
+                #
+                # session.get(Url, id) loads that exact URL row from PostgreSQL
+                # using its primary key.
+                url = await session.get(
+                    Url,
+                    response.json()["id"],
+                )
+
+                # If the API returned 201 but somehow no DB row exists,
+                # fail the test immediately instead of accessing None.owner_id.
+                assert url is not None
+
+                # Return the owner_id stored on the URL row.
+                return url.owner_id
+
+        finally:
+            # Always close/dispose the temporary DB engine.
+            await engine.dispose()
+
+
+    # Run the async DB helper from this synchronous test.
+    #
+    # Then check that:
+    #
+    # URL.owner_id == ID of the user who logged in
+    #
+    # This proves authenticated URL creation correctly associates
+    # the newly created URL with its authenticated owner.
+    assert asyncio.run(load_owner_id()) == user_id
+    # Authenticated URL ownership flow:
+#
+# Goal:
+# - Guests can still create URLs.
+# - Logged-in users can create URLs that are linked to their account.
+#
+# The ownership test:
+# 1. Seeds a verified user in the DB.
+# 2. Logs in and gets an access token.
+# 3. Sends:
+#       Authorization: Bearer <access_token>
+#    when creating the URL.
+# 4. Loads that URL directly from PostgreSQL.
+# 5. Checks:
+#       url.owner_id == logged_in_user.id
+#
+# The test originally failed because /urls always used:
+#       owner_id=None
+# so every URL was stored as anonymous even when a valid token was sent.
+#
+# We cannot simply use Depends(get_current_user) on /urls because that would
+# make authentication mandatory and break guest URL creation.
+#
+# Therefore we add optional authentication:
+#
+# optional_oauth2_scheme = OAuth2PasswordBearer(..., auto_error=False)
+#
+# auto_error=False means:
+#   no Authorization header -> token=None instead of automatic 401
+#
+# get_optional_current_user() then behaves as:
+#   no token      -> return None          (guest)
+#   valid token   -> get_current_user() -> User
+#   invalid token -> get_current_user() -> 401
+#
+# /urls receives:
+#   current_user: User | None = Depends(get_optional_current_user)
+#
+# Then ownership is assigned with:
+#   owner_id = current_user.id if current_user is not None else None
+#
+# Therefore:
+#   guest request      -> owner_id=None
+#   authenticated user -> owner_id=user.id
+#
+# This change only completes URL ownership.
+#
+# Rate limiting is still using limit_guest_creation for everyone.
+# Next step:
+#   guest             -> rate limit by IP
+#   authenticated user -> rate limit by user ID
+#############################################################################################################################
+
+def test_authenticated_creation_uses_30_per_user_limit(
+        client:TestClient,
+)->None:
+    user_id, email = asyncio.run(seed_verified_user())
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": email,
+            "password": "hello12345678",
+        },
+    )
+    assert login.status_code == 200
+
+    headers={
+        "Authorization":f"Bearer {login.json()["access_token"]}"
+    }
+    keys = [
+        "rate:create:guest:testclient",
+        f"rate:create:user:{user_id}",
+    ]
+    async def clear_limits()->None:
+        redis_client=Redis.from_url(get_settings().redis_url)
+        try:
+            await redis_client.delete(*keys)
+        finally:
+            await redis_client.aclose()
+
+    asyncio.run(clear_limits())
+
+    try:
+        for request_number in range(1, 31):
+            response = client.post(
+                "/api/v1/urls",
+                headers=headers,
+                json={"destination": "https://example.com"},
+            )
+            assert response.status_code == 201, (
+                f"request {request_number}: {response.text}"
+            )
+
+        response = client.post(
+            "/api/v1/urls",
+            headers=headers,
+            json={"destination": "https://example.com"},
+        )
+
+        assert response.status_code == 429
+        assert int(response.headers["Retry-After"]) > 0
+    finally:
+        asyncio.run(clear_limits())
 # Why the "different event loop" error happened
 #
 # - `engine = create_async_engine(...)` is a global object, created once when
