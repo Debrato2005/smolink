@@ -19,6 +19,13 @@ def test_settings_reads_environment_variables(monkeypatch)-> None: #monkeypatch 
         "Smolink <noreply@example.com>", )
     monkeypatch.setenv("RESEND_API_KEY", "re_test_key")
 
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "google-client-id")
+    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "google-client-secret")
+    monkeypatch.setenv(
+    "GOOGLE_REDIRECT_URI",
+    "http://localhost:8000/api/v1/auth/google/callback",
+)
+
     settings=Settings(_env_file=None)
 
     assert settings.database_url == ( "postgresql+asyncpg://smolink:smolink@localhost:5432/smolink")
@@ -39,3 +46,9 @@ def test_settings_reads_environment_variables(monkeypatch)-> None: #monkeypatch 
     assert settings.app_public_url == "http://localhost:3000"
     assert settings.email_from == "Smolink <noreply@example.com>"
     assert settings.resend_api_key == "re_test_key"
+
+    assert settings.google_client_id == "google-client-id"
+    assert settings.google_client_secret == "google-client-secret"
+    assert settings.google_redirect_uri == (
+    "http://localhost:8000/api/v1/auth/google/callback"
+)

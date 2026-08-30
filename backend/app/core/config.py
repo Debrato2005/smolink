@@ -22,12 +22,16 @@ class Settings(BaseSettings): #Defines your application settings. Because it inh
     email_from: str
     resend_api_key: str
 
+    google_client_id: str
+    google_client_secret: str
+    google_redirect_uri: str 
+
     model_config=SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
-        )
-    
+        )   
+
 @lru_cache #Caches the result of the next function. This prevents repeatedly reading environment variables for every request.
 def get_settings() -> Settings:
     return Settings()
