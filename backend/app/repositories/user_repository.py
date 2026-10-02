@@ -1,3 +1,6 @@
+# JWT sub identifies a user by ID, not email.
+# Services and authentication dependencies load current account state by this ID.
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,6 +30,3 @@ async def get_user_by_id(
         select(User).where(User.id == user_id)
     )
     return result.scalar_one_or_none()
-# Refresh tokens identify the user by the JWT `sub` (user ID) claim rather than
-# email. After validating the refresh token, we load the corresponding user by
-# ID to verify the account is still valid before issuing a new token pair.

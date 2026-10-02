@@ -1,3 +1,8 @@
+# id is an application-generated numeric identifier.
+# short_code is the public lookup value: Base62 code or custom alias.
+# An alias cannot be derived from id, so both fields are stored.
+# owner_id can be NULL for guest URLs and after user deletion.
+
 from datetime import datetime
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -8,17 +13,17 @@ class Url(Base):
     __tablename__ = "urls"
 
     id: Mapped[int] = mapped_column(
-        BigInteger,  #snowflake 
+        BigInteger,
         primary_key=True,
-        autoincrement=False, #So id is the internal numeric identifier; short_code is the public redirect value. We store both because aliases cannot be derived from the ID, and redirects query short_code directly.
+        autoincrement=False,
     )
     short_code: Mapped[str] = mapped_column(
-        String(64), #snowflake+base62(on url_id)
+        String(64),
         unique=True,
         index=True,
         nullable=False,
     )
-    destination: Mapped[str] = mapped_column( #destination is simply the long/original URL.
+    destination: Mapped[str] = mapped_column(
         String(2048),
         nullable=False,
     )

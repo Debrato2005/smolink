@@ -1,4 +1,13 @@
-#The window is recomputed on every request.
+# Redis EVAL makes pruning, counting, allowance, insertion, and expiry atomic.
+# Sorted-set members combine a timestamp and UUID. Scores are milliseconds.
+# Scores through the cutoff are removed before counting.
+# Allowed requests reset PEXPIRE. Rejected requests do not add a member.
+# check() returns allowed, count, and retry_after in a frozen dataclass.
+# Dataclasses generate initialization, representation, and equality methods.
+# frozen=True prevents normal attribute assignment after creation.
+# An explicit now_ms enables deterministic tests, including a zero timestamp.
+# Denied retry time rounds upward to seconds, with a minimum of one second.
+
 import math
 import time
 from dataclasses import dataclass
@@ -28,9 +37,6 @@ redis.call("PEXPIRE", key, window)
 
 return {1, count + 1, 0}
 """
-# Immutable value object representing the outcome of a rate-limit check.
-# @dataclass automatically generates __init__, __repr__, and __eq__,
-# while frozen=True prevents the result from being modified after creation.
 @dataclass(frozen=True)
 class RateLimitResult:
     allowed:bool
@@ -42,8 +48,7 @@ class SlidingWindowRateLimiter:
 
     async def check( self , key:str, limit:int, window_seconds:int, now_ms:int|None=None,
                     )-> RateLimitResult:
-        current_ms= (now_ms if now_ms is not None else time.time_ns()//1000000) #bcz ns to ms
-        #Default arguments in Python are evaluated once, when the function is defined, not every time it's called.
+        current_ms= (now_ms if now_ms is not None else time.time_ns()//1000000)
         window_ms=window_seconds*1000
         allowed,count,oldest=await self._client.eval(
             SLIDING_WINDOW_SCRIPT,
@@ -66,69 +71,3 @@ class SlidingWindowRateLimiter:
         return RateLimitResult(allowed=False,
                                count=int(count),
                                retry_after=retry_after)
-
-
-# Remove all requests that have fallen outside the sliding window, then count
-# the remaining requests. If the limit has already been reached, retrieve the
-# oldest request's timestamp and return it so the caller can calculate how
-# long the client must wait before retrying. Otherwise, record the current
-# request, reset the key's expiration time to automatically clean up inactive
-# rate-limit entries, and return a successful result with the updated request
-# count.
-
-
-# -----------------------------------------------------------------------------
-# Sliding Window Rate Limiter
-#
-# This module implements a Redis-backed sliding window rate limiter using a
-# Redis Sorted Set (ZSET). Each incoming request is stored with its timestamp
-# as the score and a unique member value. Before processing a new request, all
-# timestamps outside the configured time window are removed, ensuring that only
-# recent requests are counted.
-#
-# The core rate-limiting logic is implemented as a Lua script and executed
-# atomically inside Redis using EVAL. Performing pruning, counting, checking
-# the limit, and inserting the new request in a single Redis operation prevents
-# race conditions that could occur if multiple clients updated the same key
-# simultaneously.
-#
-# Each Redis key represents an independent rate limit (for example, a user,
-# client IP, or API key). Expired request timestamps are pruned on every
-# request using ZREMRANGEBYSCORE, while PEXPIRE automatically removes inactive
-# keys after an entire window has passed, preventing Redis from accumulating
-# empty Sorted Sets.
-#
-# The check() method returns a RateLimitResult indicating whether the request
-# is allowed, the number of requests currently within the sliding window, and
-# the number of seconds the client should wait before retrying when the limit
-# is exceeded.
-# -----------------------------------------------------------------------------
-
-# Client
-#    │
-#    ▼
-# check(key, limit, window)
-#    │
-#    ▼
-# Determine current time
-#    │
-#    ▼
-# Call Redis Lua script
-#    │
-#    ▼
-# Lua:
-#    │
-#    ├── Remove expired timestamps
-#    ├── Count remaining requests
-#    ├── Is limit reached?
-#    │      │
-#    │      ├── Yes → Return oldest timestamp
-#    │      │
-#    │      └── No → Add request + refresh TTL
-#    │
-#    ▼
-# Python receives (allowed, count, oldest)
-#    │
-#    ├── Allowed → return RateLimitResult
-#    │
-#    └── Rejected → compute Retry-After → return RateLimitResult

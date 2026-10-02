@@ -1,3 +1,5 @@
+# Revocation must affect the target family and leave unrelated families active.
+
 import asyncio
 from datetime import datetime, timedelta, timezone
 from time import time_ns
@@ -124,9 +126,6 @@ def test_revoke_refresh_token_family_revokes_only_that_family() -> None:
             await engine.dispose()
 
     asyncio.run(check())
-# Ensure revoke_refresh_token_family() only revokes refresh tokens belonging
-# to the target family by marking their revoked_at timestamp, without
-# affecting unrelated refresh-token families.
 
 def test_email_verification_token_repository_creates_and_locks_record()->None:
     async def check()->None:

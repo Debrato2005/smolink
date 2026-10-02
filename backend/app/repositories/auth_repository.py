@@ -1,3 +1,11 @@
+# Repositories issue SQL and flush pending changes without commit.
+# session.add() registers a model. flush() sends its INSERT in the transaction.
+# FOR UPDATE serializes consumption of the same token row within transactions.
+# Rotation sets used_at and creates a child through the service.
+# Family revocation sets revoked_at on active records in one family.
+# Password reset revokes active records across all of the user's families.
+# Access JWTs can be reused until expiry or an auth_version change.
+
 from sqlalchemy import select,update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,9 +46,6 @@ async def get_refresh_token_by_token_hash_for_update(
         .with_for_update()
     )
     return result.scalar_one_or_none()
-# Fetch and lock the refresh-token row for this transaction. `FOR UPDATE`
-# prevents concurrent refresh requests from simultaneously rotating the same
-# token, ensuring only one request can consume it successfully.
 
 async def revoke_refresh_token_family(
         session:AsyncSession,
@@ -55,50 +60,6 @@ async def revoke_refresh_token_family(
         .values(revoked_at=revoked_at)
     )
 
-
-
-
-# Refresh token rotation flow:
-#
-# Login:
-#   - User authenticates with email/password.
-#   - Server issues a new access token (short-lived) and a new refresh token
-#     (long-lived), starting a new refresh-token family.
-#
-# Refresh:
-#   - When the access token expires, the client sends the current refresh token.
-#   - The server decodes the JWT claims (sub, family_id, jti), hashes the jti,
-#     and looks up the corresponding database record.
-#   - The refresh token must exist, belong to the correct user/family, not be
-#     expired, revoked, or previously used.
-#   - The token is marked as used and rotated into a brand-new refresh token
-#     (same family) plus a new access token.
-#
-# Replay protection:
-#   - A refresh token is single-use. If a previously used refresh token is ever
-#     presented again, it indicates a possible token theft/replay attack.
-#   - The server immediately revokes the entire refresh-token family so neither
-#     the attacker nor the legitimate client can continue using any descendant
-#     refresh tokens. The user must authenticate again.
-#
-# Lifetime:
-#   - Access tokens are short-lived (e.g. 15 minutes) and are never reused.
-#   - Refresh tokens have a maximum lifetime (e.g. 30 days), but in normal use
-#     they are consumed long before expiry because each successful refresh
-#     replaces them with a new refresh token.
-
-# Fetch and lock the refresh-token row for this transaction. `FOR UPDATE`
-# prevents concurrent refresh requests from simultaneously rotating the same
-# token, ensuring only one request can consume it successfully.
-
-# Revoke every active refresh token in the same token family. This is used when
-# a replay attack is detected (a previously consumed refresh token is reused),
-# ensuring no descendant refresh tokens in that session remain valid.
-
-# Normal refresh rotation marks only the presented refresh token as `used_at`
-# and issues a new active refresh token in the same family. The family is
-# revoked (`revoked_at`) only if a previously used token is seen again,
-# indicating a replay attack or other session compromise.
 
 async def create_email_verification_token(
     session: AsyncSession,
@@ -128,10 +89,6 @@ async def create_password_reset_token(
     session.add(token)
     await session.flush()
     return token
-# `token` is a PasswordResetToken ORM object, so SQLAlchemy already knows the
-# target `password_reset_tokens` table and column mappings from the model.
-# `session.add(token)` marks it for insertion, and `flush()` sends the INSERT
-# to Postgres without committing the transaction yet.
 
 async def get_password_reset_token_by_hash_for_update(
         session:AsyncSession,
@@ -169,5 +126,3 @@ async def consume_active_email_verification_tokens(
                           .where(EmailVerificationToken.user_id==user_id,
                                  EmailVerificationToken.consumed_at.is_(None),)
                                  .values(consumed_at=consumed_at))
-
-

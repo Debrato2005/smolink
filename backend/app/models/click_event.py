@@ -1,3 +1,6 @@
+# The composite index supports date-range queries for one URL.
+# Store derived user-agent dimensions and a keyed IP hash, not raw values.
+
 from datetime import datetime
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, func
@@ -9,7 +12,7 @@ from app.db.base import Base
 class ClickEvent(Base):
     __tablename__ = "click_events"
     __table_args__ = (
-        Index("ix_click_events_url_id_clicked_at", "url_id", "clicked_at"), #sometimes you frequently search using multiple columns together
+        Index("ix_click_events_url_id_clicked_at", "url_id", "clicked_at"),
     )
 
     id: Mapped[int] = mapped_column(

@@ -1,3 +1,8 @@
+# autoincrement=False requires the application to supply each ID.
+# The email column allows 320 characters and has a unique index.
+# Local accounts have an Argon2id password hash.
+# Nullable password_hash supports planned Google-only accounts without a password.
+
 from datetime import datetime
 from sqlalchemy import BigInteger, DateTime, Integer, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -7,9 +12,9 @@ class User(Base):
     __tablename__="users"
     id: Mapped[int]=mapped_column(BigInteger, 
                                   primary_key=True, 
-                                  autoincrement=False, #false when distributed
+                                  autoincrement=False,
                                   )
-    email: Mapped[str]=mapped_column(String(320), #bcz max 320 chars is standard
+    email: Mapped[str]=mapped_column(String(320),
                                      unique=True,
                                      index=True,
                                      nullable=False,
@@ -44,8 +49,3 @@ class User(Base):
         server_default=text("1"),
         nullable=False,
     )
-    
-# password_hash is nullable because not every user authenticates with a local
-# password. Users who sign in only through Google OAuth2/OIDC won't have a
-# password hash stored. Local accounts require a password_hash; Google-only
-# accounts can legitimately have NULL.

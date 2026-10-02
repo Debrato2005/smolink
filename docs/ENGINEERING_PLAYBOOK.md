@@ -1,600 +1,545 @@
 # Smolink Engineering Playbook
 
-This is the teaching/reference document behind Smolink — it explains *why* backend systems are built the way they are, using Smolink as the running example. It is intentionally framework-agnostic where possible: the concepts apply to FastAPI, Django, Express, Spring Boot, or anything else.
-
-**Relationship to the other docs**, so nothing drifts out of sync:
-- `README.md` — the canonical architectural decisions, invariants, endpoint list, and phase-by-phase implementation roadmap.
-- **This file** — the conceptual "why," taught once, referenced everywhere else.
-- `docs/agent-tooling.md` — the shared agent skills and Graphify navigation
-  workflow used to explore and maintain this repository.
-
-If something here ever conflicts with `README.md`, the README wins — update this file to match, not the other way around.
-
-## Table of Contents
-
-- [Part 1 — Project Foundation](#part-1--project-foundation)
-- [Part 2 — Backend Fundamentals](#part-2--backend-fundamentals)
-- [Part 3 — Data Layer](#part-3--data-layer)
-- [Part 4 — Business Logic](#part-4--business-logic)
-- [Part 5 — API Layer](#part-5--api-layer)
-- [Part 6 — Core Smolink Features](#part-6--core-smolink-features)
-- [Part 7 — Performance & Scalability](#part-7--performance--scalability)
-- [Part 8 — Frontend Architecture & Integration](#part-8--frontend-architecture--integration)
-- [Part 9 — Quality Assurance & Testing](#part-9--quality-assurance--testing)
-- [Part 10 — DevOps & Deployment](#part-10--devops--deployment)
-- [Parts 11–14 — Planned (content pending)](#parts-1114--planned-content-pending)
-
-## Documentation and agent tooling
-
-The FastAPI and Python-testing skills capture project-specific implementation
-and verification conventions. Graphify maintains a generated map of code and
-documentation for scoped architecture queries; it does not supersede the
-source of truth or replace code review. See [agent-tooling.md](agent-tooling.md)
-for the commands and interpretation rules.
-
----
-
-# Part 1 — Project Foundation
-
-*Before writing code: what are we building, and why? No implementation details in this section.*
-
-## Vision
-
-Smolink is a production-inspired URL shortener built from scratch, where the point isn't the working app — it's understanding the engineering behind it. Every technology introduced must solve a real problem at the point it's introduced; the repo's commit history should read as the evolution from a minimal REST API to a distributed-systems-informed backend.
-
-## Objectives
-
-**Primary:** backend engineering, REST API design, software architecture, database design, auth, caching, containerization, CI/CD, cloud deployment, monitoring, distributed systems, production practices.
-
-**Secondary:** portfolio project, personal engineering reference, interview discussion piece, backend experimentation platform.
-
-## Problem Statement & Target Users
-
-Long URLs are hard to share; Smolink maps them to compact, unique identifiers.
-
-| | Guests | Registered users |
-|---|---|---|
-| Shorten URLs | ✅ | ✅ |
-| Custom alias, expiration, QR | ✅ | ✅ |
-| Personal dashboard, history | ❌ | ✅ |
-| Analytics | ❌ | ✅ |
-| Search, pagination, API keys | ❌ | ✅ |
-
-Auth *enhances* the experience; it is never required to shorten a URL.
-
-## Functional Requirements
-
-URL shortening · redirects · custom aliases · expiration · QR generation · optional auth · analytics (click count, browser, device, OS, timestamp, referrer, country-future) · dashboard.
-
-## Non-Functional Requirements
-
-- **Performance:** redirects must be fast; Redis exists specifically to keep the hot path off Postgres.
-- **Scalability:** architecture should tolerate multiple app instances, load balancing, a shared cache, and eventual sharding — without requiring all of that on day one.
-- **Reliability:** the system should degrade gracefully when a component fails (e.g. Redis down → fall back to Postgres, don't 500).
-- **Maintainability:** one responsibility per component; business logic stays independent of infrastructure.
-- **Security:** hashed passwords, JWT auth, validated input, parameterized queries/ORM (no raw string SQL).
-- **Observability:** metrics exposed, errors logged, performance measurable.
-
-## Engineering Principles
-
-1. **Build incrementally** — never introduce a technology before it solves a real problem.
-2. **Simplicity first** — the simplest architecture that solves *today's* problem; no premature optimization.
-3. **Separation of concerns** — one responsibility per layer.
-4. **Postgres is the source of truth** — Redis is cache, never authoritative.
-5. **Stateless backend** — no in-memory session state, so instances stay horizontally scalable.
-6. **Explicit design** — every endpoint, table, and module has a documented reason to exist.
-7. **Production mindset** — even as a learning project, follow production-quality practice where practical.
-
-## Technology Stack
-
-Python · FastAPI · Pydantic · async SQLAlchemy · Alembic · PostgreSQL · Redis (cache and ephemeral rate-limit counters) · JWT · Argon2 · Kafka *(later)* · Docker · Docker Compose · NGINX · GitHub Actions · Prometheus · Grafana · Oracle Cloud (Ubuntu VM).
-
-## High-Level Architecture
-
-**v1:** `Internet → NGINX → FastAPI → PostgreSQL`
-
-**Evolved:** `Internet → NGINX → Load Balancer → FastAPI instances → Redis → PostgreSQL → Kafka → Analytics Worker → Prometheus/Grafana`
-
-The architecture is meant to grow *alongside* the project, not be built in full upfront.
-
-## Project Constraints
-
-These are treated as fixed unless consciously revisited — see `README.md` for the maintained, canonical version of this list:
-
-- Guests can shorten URLs; auth is optional, never mandatory.
-- PostgreSQL is the source of truth; Redis is cache-only.
-- Snowflake ID + Base62 is the short-code strategy.
-- Architecture starts as a modular monolith.
-- Built incrementally — not feature-complete from day one.
-
----
-
-# Part 2 — Backend Fundamentals
-
-*Concepts that hold regardless of framework — FastAPI, Django, Express, Spring Boot, Go Fiber, Laravel all share these.*
-
-## 0. How the Internet Works
-
-Understanding what happens between a click and a response makes HTTP and REST intuitive rather than magic. When someone visits `https://smolink.com/abc123`:
-
-1. **DNS resolution** — the browser resolves `smolink.com` to an IP address.
-2. **TCP connection** — a three-way handshake establishes a reliable connection to that IP on port 443 (HTTPS) or 80 (HTTP).
-3. **TLS handshake** — for HTTPS, client and server negotiate encryption before any data is exchanged.
-4. **HTTP request sent** — the browser sends `GET /abc123` over the now-encrypted connection.
-5. **Reverse proxy (NGINX)** — receives the request first, terminates TLS, and forwards it to the FastAPI process over the internal network.
-6. **FastAPI handles it** — routes, validates, executes business logic, queries Redis/Postgres, returns a response.
-7. **Response travels back** — FastAPI → NGINX → TCP → browser, which then follows the redirect.
-
-Knowing this sequence is what makes concepts like "why do we need a reverse proxy," "why does HTTPS matter for login," and "what does a 502 actually mean" concrete instead of abstract.
-
-## 9. HTTP Fundamentals
-
-Every request has: **method, path, headers, body, query parameters.** Every response has: **status code, headers, body.**
-
-| Method | Purpose | Modifies data? |
-|---|---|---|
-| GET | Retrieve | No |
-| POST | Create | Yes |
-| PUT | Replace entire resource | Yes |
-| PATCH | Partial update — **preferred in Smolink** | Yes |
-| DELETE | Remove | Yes |
-
-**Status codes actually used in Smolink:**
-
-| Code | Meaning | Example |
-|---|---|---|
-| 200 | OK | Successful GET |
-| 201 | Created | Short URL created |
-| 204 | No Content | Successful DELETE |
-| 302 | Temporary redirect | Smolink's redirect (destinations can change) |
-| 400 | Bad request | Invalid URL |
-| 401 | Unauthenticated | Missing/invalid JWT |
-| 403 | Forbidden | Authenticated but not the owner |
-| 404 | Not found | Unknown short code |
-| 409 | Conflict | Alias already taken |
-| 410 | Gone | Link expired |
-| 422 | Validation failed | FastAPI/Pydantic auto-response |
-| 429 | Too many requests | Rate limit hit |
-| 500 | Server error | Unexpected failure |
-
-## 10. REST API Design
-
-Think in **nouns, not verbs**: `/api/v1/urls` not `/createURL`. Resources are acted on via HTTP methods, not baked into the path.
-
-**Statelessness:** every request carries everything needed to process it (this is *why* Smolink uses JWT instead of server-side sessions — it lets multiple FastAPI instances work correctly without shared session state).
-
-**Idempotency:** GET/PUT/DELETE are idempotent (repeating them leaves the same end state); POST is not (each call typically creates something new).
-
-## 11. Request Lifecycle
-
-```
-React → POST /api/v1/urls → NGINX → FastAPI Router
-      → Pydantic validation → Service layer → Repository layer
-      → PostgreSQL → back up through Repository → Service
-      → API route → JSON response → React
-```
-
-Every request in Smolink follows this same pipeline — no shortcuts, no layer-skipping.
-
-## 12. Folder Structure
-
-Reconciled with the current `README.md`: Smolink uses shared top-level layers,
-not a parallel folder tree per domain. Domain ownership is enforced by
-interfaces: a domain uses its own repository and must not query another
-domain's repository directly.
-
-```
-app/
-├── api/v1/endpoints/    # route handlers, grouped by domain file
-├── api/v1/dependencies/ # shared FastAPI dependencies
-├── core/                # config, Redis, security helpers
-├── db/                  # engine, sessions, declarative base
-├── models/              # SQLAlchemy tables
-├── repositories/        # SQL access, grouped by domain ownership
-├── schemas/             # Pydantic request/response contracts
-├── services/            # business workflows, grouped by domain
-└── utils/               # pure helpers
-```
-
-A domain never imports another domain's repository directly. If one needs
-another's data or behavior, it uses that domain's service interface.
-
-## 13. Layered Architecture (within each module)
-
-```
-Request → API layer → Service layer → Repository layer → Database
-```
-
-| Layer | Does | Never does |
-|---|---|---|
-| API | Receive HTTP, call service, return response | SQL, business rules |
-| Service | Business rules, coordinates repositories | HTTP, SQL |
-| Repository | DB operations only | HTTP, business decisions |
-| Database | Storage, source of truth | — |
-
-This separation is what makes testing tractable — you can unit-test a service function without spinning up HTTP or a real database.
-
-## 14. Dependency Injection
-
-FastAPI provides objects (DB session, current user, settings, logger) automatically via `Depends()` rather than each route manually constructing them. Less duplication, easier to swap real dependencies for test doubles.
-
-## 15. Configuration Management
-
-Never hardcode secrets. `.env` holds real values (never committed); `.env.example` is the template contributors copy. At minimum, configure the database URL, Redis URL, JWT signing secret, JWT issuer/audience, access/refresh TTLs, a distinct refresh-token-hash secret, public base URL, and IP-hash secret. `pyproject.toml` holds dependencies/metadata, not secrets. Configuration loads once at startup and is reused — not re-read per request.
-
----
-
-# Part 3 — Data Layer
-
-*What data exists, how it's stored, validated, retrieved, and by whom.*
-
-```
-HTTP Request → Pydantic Schema → Service → Repository → SQLAlchemy Model → PostgreSQL
-```
-
-## 16. Database Design
-
-Design the data model **before** the API — changing a database schema later is expensive; changing a route handler is not.
-
-**Entities (initial):** `users`, `urls`, `click_events`. **Later:** `api_keys`.
-
-- **Primary keys:** Smolink uses Snowflake IDs (see §32), not naive auto-increment (predictable, and doesn't work cleanly across multiple instances without coordination).
-- **Foreign keys:** store `owner_id` on `urls`, not duplicated user data;
-  deleting a user sets that nullable field to `NULL`, while deleting a URL
-  cascades to its click events in v1.
-- **Constraints:** unique `short_code` (generated code or custom alias), unique email, `NOT NULL` on required fields — the database is the last line of defense against bad data.
-- **Indexes:** the redirect path (`GET /{short_code}`) is the single most latency-sensitive query in the system — index `short_code`. Indexes speed reads at the cost of extra storage and slightly slower writes; add them where a real query pattern justifies it, not everywhere.
-- **Normalization:** avoid duplicating data (e.g. don't store `username` on every `url` row — join through `user_id`).
-
-**Choosing data types (Smolink-specific):**
-
-| Field | Type | Why |
-|---|---|---|
-| `expires_at` | `TIMESTAMP WITH TIME ZONE` | Users and servers may be in different time zones; storing without TZ creates silent bugs the moment the app or a user crosses one |
-| Snowflake IDs | `BIGINT` | 64-bit by design; `INTEGER` overflows |
-| `short_code` | `VARCHAR(n)` with a sane max length | Stores either the generated Base62 code or a custom alias; bounded and indexed for redirects |
-| `total_clicks` | `BIGINT` | Fast aggregate for dashboard lists without scanning raw click events |
-| `last_clicked_at` | `TIMESTAMP WITH TIME ZONE` | Fast "last activity" value for an owned URL |
-| `click_events.ip_hash` | fixed-length keyed hash | Supports limited abuse analysis without ever retaining a raw IP address |
-| `click_events.(url_id, clicked_at)` | composite index | Supports a URL's date-range analytics queries |
-| Future analytics metadata | `JSONB` | Schema-flexible for fields you don't want to migrate for every new tracked attribute (e.g. UTM params) — but don't reach for this before you have an actual variable-shape field |
-
-## 17. SQLAlchemy Models
-
-Models represent tables: columns, relationships, indexes, constraints. A model knows a `URL` has an `expires_at` column — it does **not** know how short codes are generated. That's the service layer's job.
-
-## 18. Pydantic Schemas
-
-**Models represent the database. Schemas represent the API. Never conflate them** — a `User` model has `password_hash`; a `UserResponse` schema must not, or you leak it to every client that fetches a user. Typical schema variants: `Create`, `Update`, `Response`, `Public`, `Internal`.
-
-## 19. Repository Pattern
-
-All SQL lives here, nowhere else. A repository does: insert, update, delete, search, paginate, filter. It never generates Snowflake IDs, validates business rules, returns HTTP responses, hashes passwords, or issues JWTs — those belong to the service layer. This isolation is what lets the database be swapped or mocked without touching business logic.
-
-## 20. Database Migrations (Alembic)
-
-Never hand-edit a production schema. Every change is a version-controlled migration:
-
-```
-Modify SQLAlchemy model → generate migration → review it → apply it → schema updated
-```
-
-Never: edit production tables manually, delete migration history, or modify an already-deployed migration (write a new one instead).
-
----
-
-# Part 4 — Business Logic
-
-*The service layer is the brain — where "what should happen" gets decided.*
-
-## 21. Service Layer
-
-Without it, routes balloon into 500-line functions doing validation, ID generation, encoding, DB writes, and cache updates all at once. The service layer exists to absorb that: it validates business rules, coordinates repositories, calls Redis, generates IDs/QR codes, and owns workflow decisions. It never writes SQL, receives HTTP requests, returns HTTP responses, or imports FastAPI.
-
-## 22. Utility Layer
-
-Pure, reusable, no side effects — Base62 encoding, the Snowflake generator, password hashing, date helpers, validators. Test: *could another project reuse this with zero modification?* If yes → utility. If it needs the database or app context → service.
-
-## 23. Validation Strategy — defense in depth, never just one layer
-
-| Level | Where | Example | Trustworthy alone? |
-|---|---|---|---|
-| 1 | Frontend | Empty field check | No — improves UX only |
-| 2 | Pydantic schema | URL/email format, types | Mostly, but not business-aware |
-| 3 | Service layer | "Alias already exists," "user owns this URL" | This is where business rules live |
-| 4 | Database constraints | Unique alias, foreign keys, NOT NULL | Yes — last line of defense |
-
-## 24. Error Handling
-
-Predictable failure beats surprising failure. Use custom exceptions (`AliasAlreadyExists`, `URLExpired`, `UserNotFound`) caught by a **global exception handler** rather than scattering `try/except` through every route — this gives consistent response shapes and centralized logging for free.
-
-## 25. Logging
-
-Never `print()` in production. Levels: `DEBUG` (dev detail) → `INFO` (normal ops: user logged in, URL created) → `WARNING` (recoverable: Redis down, falling back to DB) → `ERROR` (operation failed) → `CRITICAL` (app can't continue). Log structured data (timestamp, user, request ID, endpoint, status, duration), not bare strings. **Never log** passwords, JWT secrets, API keys, or other sensitive headers/PII.
-
----
-
-# Part 5 — API Layer
-
-*The receptionist, not the department that solves the problem.*
-
-```
-Browser → HTTP → API layer → Service layer → Repository → Database → back up → HTTP response
-```
-
-## 26. Route Organization
-
-One file per domain (`urls.py`, `auth.py`, `users.py`, `analytics.py`, `health.py`) — never one 2000-line `main.py`. Routes receive, validate shape, call service, return response. They never write SQL, generate IDs, validate business rules, hash passwords, issue JWTs, or call Redis directly.
-
-## 27. API Endpoints
-
-Resource-oriented, not action-oriented: `GET /api/v1/me/urls` not `/getUserURLs`. **The full, current endpoint list lives in `README.md`** — don't let this section drift into a second copy of it.
-
-## 28. Authentication & Authorization
-
-**Authentication** = who are you (JWT after login). **Authorization** = are you allowed (e.g. deleting someone else's URL → `403`, not `401`). Guests can create/redirect/QR-generate; they cannot access dashboard, delete, or view analytics — those require a JWT.
-
-```
-Register → verify email → login → receive access + refresh tokens
-→ access token sent as Authorization: Bearer <token>
-→ OAuth2PasswordBearer → JWT validation → current-user lookup → protected route
-```
-
-Smolink's production auth design keeps authorization state enforceable in
-Postgres instead of treating a JWT as permanent proof. Access JWTs are short
-lived and contain minimal identity, issuer, audience, expiry, token type, and
-identifier claims. Refresh JWTs are rotated and tracked in a persisted token
-family; reuse of a consumed token revokes the complete family. Logout and
-password reset therefore have immediate effect on future token refreshes.
-
-Password accounts use normalized unique emails and Argon2id hashes. A new
-account must verify its email before it may log in. Failed password logins are
-limited by both request IP and account state, using progressive backoff or a
-temporary lockout to resist distributed brute-force attacks. Password reset
-and email-verification tokens are one-time, time-limited, and stored only as
-hashes.
-
-Google sign-in is an OAuth2/OpenID Connect authorization-code flow. The
-backend validates state, PKCE, nonce, issuer, audience, signature, expiry, and
-Google's verified-email claim before issuing Smolink tokens. If that verified
-email already belongs to a local password account, the Google provider subject
-is linked to it; no duplicate user is created.
-
-## 29. File Uploads *(future)*
-
-Not needed for v1. Later candidates: QR logo upload, CSV import for bulk shortening, custom favicon. Involves multipart form handling, streaming, and storage — deliberately deferred.
-
-## 30. API Versioning
-
-Smolink starts with the `/api/v1/` prefix. If external consumers later require a breaking change, the new behavior goes under `/api/v2/...` while `/api/v1/...` remains available for existing clients.
-
----
-
-# Part 6 — Core Smolink Features
-
-For every feature: why it exists, what it needs from the DB, what the request flow looks like, and what breaks it.
-
-## 31. URL Shortening
-
-`POST /api/v1/urls` → validate schema → validate business rules (alias available, expiry sane) → generate ID → encode → persist → return short URL. Works identically for guests and logged-in users; the only difference is whether `user_id` is populated.
-
-## 32. Snowflake IDs
-
-Why not auto-increment? Auto-increment is predictable and requires DB coordination across multiple instances. A Snowflake ID packs **timestamp + machine ID + sequence number** into a 64-bit integer — unique, roughly sortable by creation time, and generated without a database round-trip, which matters once there's more than one FastAPI instance. Each running instance must receive a distinct worker ID from `0` through `1023`; use `0` locally and inject a unique value through deployment configuration before multiple instances exist.
-
-## 33. Base62 Encoding
-
-Converts the (large) Snowflake integer into a short, URL-safe string using `[0-9A-Za-z]` (62 characters) — compact, no special characters that need escaping, human-typeable.
-
-## 34. Custom Aliases
-
-Validated as 3–64 lowercase letters, digits, or hyphens, then checked against
-**reserved words** (`api`, `docs`, `health`, `login`, `me`, `openapi.json`,
-`redoc`, `register`). Authentication routes are versioned under `/api/v1/auth`,
-so they cannot shadow root short codes; the legacy auth names remain reserved
-conservatively. On conflict: `409`, and per the decision in `README.md`, **no
-separate availability-check endpoint** — the create call's `409` is sufficient
-for v1.
-
-## 35. Expiring Links
-
-`expires_at` is a nullable timestamp. Enforced **at read time** on the redirect path (`WHERE expires_at IS NULL OR expires_at > now()`), returning `410 Gone` if expired — not via a scheduled job. Redis TTL is set to match `expires_at` on write so the cache self-evicts at the same moment.
-
-**Data retention policy** (decided in this project's own design discussion, not in the original source material): expiring a link is not the same as deleting it. The `url` row and its aggregate stats (`total_clicks`, `last_clicked_at`) persist indefinitely unless the user explicitly deletes the link via `DELETE /api/v1/me/urls/{id}`. Only raw, granular `click_events` are candidates for a cron-based prune job, and only after a long retention window (e.g. 90 days) — because that's disposable detail, not the aggregate. **Principle: raw event data is disposable, aggregates are not.**
-
-## 36. Redirect Flow
-
-The single most performance-critical endpoint in the system.
-
-```
-GET /{short_code} → NGINX → FastAPI → Redis
-  cache hit  → record click event, then 302
-  cache miss → PostgreSQL → populate Redis → record click event, then 302
-```
-
-Uses `302` (temporary) rather than `301` (permanent) initially, since destination URLs may be edited — a `301` risks browsers caching a redirect that's no longer accurate.
-
-## 37. QR Code Generation
-
-`GET /api/v1/urls/{short_code}/qr` → generate PNG → return image. Future: logo embedding, color customization, SVG output.
-
-## 38. Click Analytics
-
-Captured per redirect: timestamp, browser, OS, device, referrer, user-agent, and a keyed IP hash (never a raw IP). The first backend release stores events synchronously and provides owner-only date-range reports with daily, browser, OS, device, and referrer breakdowns. Measure redirect latency; only when synchronous capture demonstrably harms it should events move to Kafka and a separate analytics worker. This remains the one genuine service-extraction candidate because it is naturally async and decoupled from the redirect response.
-
----
-
-# Part 7 — Performance & Scalability
-
-*Production-inspired, not strictly necessary at current scale — the goal is understanding when each optimization earns its keep.*
-
-## 39. Redis Caching — Cache-Aside Pattern
-
-```
-Request → Redis → hit? → yes: return
-                       → no: PostgreSQL → write to Redis → return
-```
-
-**Cached:** `short_code → destination_url` initially; later, dashboard stats and hot analytics. **Invalidation:** on update, write the DB first, then delete the stale cache key — never write-through to Redis as if it were authoritative. If the redirect cache is unavailable, log the failure and read from Postgres. Postgres remains the source of truth at all times.
-
-## 40. Background Tasks
-
-Move slow work out of the request/response path: QR generation, email verification, analytics aggregation, cleanup. Start with FastAPI's built-in `BackgroundTasks`; graduate to Kafka workers only once there's a real throughput or reliability reason to.
-
-## 41. Rate Limiting
-
-Use an atomic Redis sliding-window log: a Lua script removes timestamps outside the rolling minute, counts the remaining entries, records an allowed request, and calculates the retry time on rejection. Registration and login share 5 attempts per IP per rolling minute; guest URL creation allows 10 requests per IP per rolling minute; authenticated URL creation allows 30 requests per user per rolling minute. Redirects and `/health` are not rate-limited. Exceeded limits return `429` with `Retry-After`. Unlike redirect caching, the limiter fails closed: if Redis is unavailable for a protected write, return `503` rather than silently disabling abuse protection. These keys are ephemeral enforcement data, not a durable source of truth.
-
-IP limits alone cannot detect distributed password attacks. The auth service also
-persists failed-login state per account and applies progressive delay or
-temporary lockout after consecutive failures. Successful login resets that
-account's failure state. This durable security state belongs in Postgres, not
-Redis.
-
-## 42. Async Programming
-
-Use `async`/`await` for I/O-bound work (DB, Redis, outbound HTTP, file I/O) — while one request waits on I/O, the event loop serves others. **Not** a tool for CPU-bound work (heavy computation still blocks the event loop regardless of `async`).
-
-## 43. Performance Optimization — measure before optimizing
-
-Fix order, in priority: **slow SQL → indexes → caching → Python-level optimization → horizontal scaling.** Metrics worth tracking: average and p95/p99 response time, requests/sec, DB query time, Redis hit ratio, CPU/memory. Never optimize based on a hunch — profile first.
-
----
-
-# Part 8 — Frontend Architecture & Integration
-
-*The frontend talks to the backend exclusively over HTTP APIs — never directly to Postgres or Redis.*
-
-## 44. Frontend Project Structure
-
-```
-frontend/src/
-├── assets/       # images, fonts, icons
-├── components/   # reusable UI (Button, Modal, QR dialog, Copy button...)
-├── pages/        # one per route: Home, Dashboard, Login, Register, Analytics, 404
-├── layouts/      # Navbar, Sidebar, Footer, Protected layout wrapper
-├── services/     # API calls only — urlService.ts, authService.ts, analyticsService.ts
-├── hooks/        # useAuth, useTheme, useDebounce, usePagination
-├── contexts/     # global state: auth, theme, notifications
-├── router/       # path → page mapping
-├── types/        # TS interfaces: URL, User, Analytics, JWT
-└── utils/        # copy-to-clipboard, date formatting, client-side URL validation
-```
-
-`services/` is the only place `fetch`/`axios` calls live — never scattered across components. One shared base URL (env-driven: `localhost:8000` in dev, the production domain in prod), shared error handling, shared auth header injection.
-
-## 45. Frontend ↔ Backend Communication
-
-```
-User action → React component → service function → fetch() → FastAPI → JSON → React state → re-render
-```
-
-## 46. Authentication Flow
-
-Guests skip this entirely (create → receive short URL → done). Registered: register/login → receive access token → store client-side → attach as `Authorization: Bearer <token>` on every request to a protected route. If unauthenticated and hitting a protected page (`/dashboard`, `/profile`), redirect to `/login`.
-
-## 47. Frontend Error Handling
-
-| Backend response | Frontend behavior |
+This reference explains backend concepts through Smolink. Many concepts also
+apply to Django, Express, Spring Boot, and other frameworks.
+
+Use the [README](../README.md) for architecture decisions and target contracts.
+Use the [walkthrough](codebase-walkthrough.md) for implemented behavior and the
+[development guide](development.md) for procedures. The
+[checklist](backend-build-checklist.md) records verification and next milestones.
+[Agent tooling](agent-tooling.md) explains skills and Graphify.
+
+The sections below include future designs. A dependency or design example
+does not establish implementation. Resolve status against source and the
+walkthrough. If a design conflicts with a README decision, record and resolve
+the conflict before implementation.
+
+## Contents
+
+- [Project foundation](#project-foundation)
+- [Backend fundamentals](#backend-fundamentals)
+- [Data layer](#data-layer)
+- [Business logic](#business-logic)
+- [API layer](#api-layer)
+- [URL features](#url-features)
+- [Performance and scale](#performance-and-scale)
+- [Frontend design](#frontend-design)
+- [Testing and debugging](#testing-and-debugging)
+- [Deployment](#deployment)
+- [Future reference topics](#future-reference-topics)
+
+## Project foundation
+
+Smolink maps long URLs to compact lookup codes. The project develops backend
+engineering judgment through incremental implementation. Each technology needs
+a current problem or a specific learning objective.
+
+Primary learning areas include Representational State Transfer (REST) APIs,
+architecture, database design,
+authentication, caching, containers, continuous integration and delivery
+(CI/CD), cloud deployment, monitoring, and distributed systems. The repository
+also serves as a portfolio, personal reference, and experimentation project.
+
+The target guest experience includes URL creation, aliases, expiry, redirects,
+and QR codes. Registered users also receive owner management and analytics.
+Search and pagination belong to owned URL listing. API keys and country-based
+analytics remain future options. Authentication is optional for creation.
+
+| Requirement | Design direction |
 |---|---|
-| `409` | "Alias already taken" |
-| `422` | Highlight the invalid field |
-| `401` | Token expired → redirect to login |
-| `500` | Generic toast: "Something went wrong" |
+| Redirect performance | Cache lookups and measure redirect latency |
+| Scale | Support multiple instances when needed. Coordinate IDs and shared state first |
+| Reliability | Use PostgreSQL when redirect caching fails. Fail protected writes closed when limiting fails |
+| Maintainability | Separate HTTP, policy, and SQL ownership |
+| Security | Hash passwords, validate input and tokens, use parameterized SQL |
+| Observability | Plan logs, metrics, and measured performance |
 
-Always show a loading state on submit (prevents double-clicks/double-submits) and an explicit empty state ("No shortened URLs yet") rather than a blank screen.
+The backend uses Python, FastAPI, Pydantic, async SQLAlchemy, Alembic,
+PostgreSQL, Redis, JSON Web Tokens (JWTs), Argon2id, and HTTPX. Docker Compose
+runs the local database services. QR and user-agent dependencies are installed,
+but their endpoint features remain pending.
 
-## 48. State Management
+React, NGINX, GitHub Actions, Prometheus, Grafana, and an Oracle Cloud Ubuntu
+virtual machine belong to later product and deployment work. Kafka and an
+analytics worker require evidence that synchronous capture harms redirects.
 
-**Local** (one component: input value, modal open/closed) vs. **global** (shared: current user, theme, auth) vs. **server state** (lives in Postgres, fetched into React: dashboard, analytics, URL list — this is the state most likely to go stale and need explicit refetch/invalidation logic).
+## Backend fundamentals
 
----
+### Network request lifecycle
 
-# Part 9 — Quality Assurance & Testing
+For a future HTTPS deployment behind NGINX, a typical HTTP/1.1 or HTTP/2
+redirect request follows this sequence:
 
-*A feature isn't done when it compiles — it's done when it's verified and protected against regression.*
+1. The Domain Name System (DNS) resolves the application hostname to an IP address.
+2. The browser establishes a Transmission Control Protocol (TCP) connection, normally on port `443` for HTTPS.
+3. Transport Layer Security (TLS) negotiates encryption before application data exchange.
+4. The browser sends a request such as `GET /abc123`.
+5. NGINX terminates TLS and forwards the request to FastAPI.
+6. FastAPI resolves the URL and returns a redirect response.
+7. The browser follows the redirect destination.
 
-## Testing Pyramid
+This example describes the planned deployment. Local development connects
+directly to FastAPI. HTTP/3 uses a different transport sequence.
 
-Unit tests (many) → integration tests (fewer) → manual testing (least, for things automation covers poorly: animations, responsiveness, accessibility).
+### HTTP and REST
 
-## 49. Unit Testing
+A request can carry a method, path, headers, body, and query parameters.
+A response carries a status, headers, and an optional body.
 
-Tests one function in isolation — no real DB, no HTTP, no Redis; dependencies are mocked. Good candidates: `generate_short_code()`, the Base62 encoder, URL validators, business-rule functions.
+| Method | Intended action | Idempotent semantics |
+|---|---|---|
+| `GET` | Read a resource | Yes |
+| `POST` | Create or process a resource | Not guaranteed |
+| `PUT` | Replace a resource | Yes |
+| `PATCH` | Update selected fields | Depends on the operation |
+| `DELETE` | Remove a resource | Yes |
 
-## 50. Integration Testing
+Idempotency concerns the intended resource effect. Repeated requests can still
+produce different statuses, logs, or analytics events. Smolink plans `PATCH`
+for destination and expiry updates. Keep resource names in paths and use HTTP
+methods for actions. Authentication flows have their documented action paths.
 
-Real components working together — e.g. `POST /api/v1/urls` exercising service → repository → actual test database → response, end to end.
+Use the README for endpoint status and response contracts. Current examples
+include `201` for URL creation, `409` for an alias conflict, `422` for request
+validation, and `429` for a denied limit. Future redirects use `302`, unknown
+codes use `404`, and expired links use `410`. A limiter outage returns `503`.
 
-## 51. API Testing
+JWTs do not make Smolink's authentication fully stateless. Refresh lifecycle
+state and current-user authorization remain in PostgreSQL. Shared persistence
+lets multiple instances use that state without private in-memory sessions.
 
-For every endpoint, test: correct request, invalid request, unauthorized, forbidden, missing resource, duplicate resource, and unexpected failure. Concretely for Smolink: `POST /api/v1/urls` → `201`; guest creation stores no owner and uses the IP bucket, while authenticated creation stores `owner_id` and uses the independent user bucket; duplicate alias → `409`; malformed body → `422`; `GET /api/v1/me/urls` without a JWT → `401`; deleting someone else's URL → `403`; redirect on an expired link → `410`; on a missing one → `404`; exceeding an auth or creation limit → `429` with `Retry-After`; and a Redis outage during a rate-limited write → `503` while a redirect still falls back to Postgres.
+### Layers and dependencies
 
-## 52. Debugging Strategy
+The usual persisted workflow is:
 
-Reproduce → identify which layer (frontend/API/service/repository/DB/Redis) → read logs (don't guess) → inspect the actual request (headers, body, JWT, params) → inspect the DB state → fix only once the cause is understood → **add a regression test for every bug fixed.**
-
-**Common mistakes to avoid:** testing only happy paths, skipping auth tests, one giant test function instead of focused ones, testing implementation details instead of observable behavior. Coverage isn't the goal — meaningful tests on critical paths (auth, money-adjacent logic, business rules) are worth more than 100% coverage of trivial getters.
-
-Tests must be isolated: never rely on test order, leftover database rows, or
-shared Redis keys. Use unique test data and reset fixed external-state keys in
-fixture setup and cleanup.
-
----
-
-# Part 10 — DevOps & Deployment
-
-*Making the application reliable, repeatable, secure, and reachable — not just "runnable on my laptop."*
-
+```text
+HTTP → API schema → service → repository → SQLAlchemy model → PostgreSQL
 ```
-Local dev → Git → GitHub → Docker → Docker Compose → Oracle Cloud VM → NGINX → HTTPS → public
+
+Health checks need no repository. Cache hits and dependency failures can take
+other paths. The pipeline does not imply that every request queries every layer.
+
+| Layer | Owns | Excludes |
+|---|---|---|
+| API | HTTP translation, request dependencies, transaction boundary | SQL and business policy |
+| Schema | Input/output shape and validation | Persistence workflows |
+| Service | Business rules and workflow coordination | HTTP responses and direct SQL |
+| Repository | Queries, inserts, updates, deletes | Business policy and transaction commit |
+| Database | Durable records and constraints | HTTP behavior |
+
+Smolink uses shared layer directories, with files grouped by domain.
+A domain accesses another domain through its service interface. Do not add a
+second directory layout per domain.
+
+FastAPI `Depends()` resolves request dependencies such as sessions, users,
+and limiters. Overrides let tests replace those resources. A database session
+belongs to one request. A generator is reusable local state, but its sequence
+must be coordinated with other generators.
+
+### Configuration
+
+Typed settings read environment variables and a local `.env` file.
+`get_settings()` caches the first instance. Package metadata belongs in
+`pyproject.toml`. Secrets belong in deployment configuration or an ignored
+local environment file. Use the development guide for setup and the
+walkthrough for each setting's meaning.
+
+## Data layer
+
+### Schema design
+
+Model durable relationships before exposing API contracts. Schema changes can
+require migration and data conversion. The initial entities are `User`, `Url`,
+and `ClickEvent`. Auth adds identity, refresh, opaque-token, and authorization
+request records. `api_keys` remains a future entity.
+
+- Numeric primary keys use Snowflake IDs. They require generator coordination.
+- `urls.owner_id` references `users.id` without duplicating user data.
+- `short_code` and normalized email are unique.
+- Required fields use `NOT NULL`. Services also enforce policy.
+- Indexes support observed or planned queries and cost storage and write work.
+
+| Data | Current type or representation | Purpose |
+|---|---|---|
+| Snowflake primary keys | `BIGINT` | Store application-generated integers |
+| `expires_at`, `last_clicked_at` | Timezone-aware timestamps | Compare expiry and report activity |
+| `short_code` | `VARCHAR(64)` | Store a generated code or alias |
+| `total_clicks` | `Integer` | Planned aggregate without scanning events |
+| `ip_hash` | Keyed hash string | Planned limited abuse analysis without raw IP storage |
+| `(url_id, clicked_at)` | Composite index | Date-range click queries |
+| Future variable analytics fields | Possible `JSONB` | Only if variable-shape metadata is needed |
+
+Timezone-aware timestamps represent instants. They do not retain a user's
+original timezone name. SQLAlchemy `onupdate=func.now()` applies through its
+update path. It is not an independent database trigger.
+
+User deletion sets URL ownership to `NULL`. URL deletion permanently cascades
+to click events in v1. Restoration would require a new product decision.
+
+### Models, schemas, and repositories
+
+SQLAlchemy models define tables, fields, indexes, and constraints. A `Url`
+model does not generate a short code. That operation belongs to the service.
+Pydantic schemas define API data and validation. `PublicUserResponse` excludes
+password hashes and internal authentication state.
+Common schema roles include create input, update input, public response, and
+internal data. Separate those roles when their fields or access rules differ.
+
+Repositories own SQL operations such as insert, lookup, filtering, and updates.
+They do not hash passwords, issue tokens, generate IDs, return HTTP responses,
+or commit. `flush()` sends pending SQL within a transaction. The route's
+`commit()` makes a completed workflow durable.
+Keeping SQL behind repositories lets tests replace persistence without changing
+business policy. Real database tests still establish constraint behavior.
+
+### Migrations
+
+Use the [migration procedure](development.md#new-migrations). Review generated
+operations before execution. Do not edit an applied migration or manually
+alter a deployed schema. Create a new revision instead.
+
+## Business logic
+
+Services enforce policy and coordinate repositories. Examples include future
+expiry checks, alias selection, password login, and refresh rotation. Keep
+SQL and HTTP response translation in their owning layers.
+
+Utilities supply reusable operations such as Base62, password hashing, alias
+validation, and ID generation. Some are pure functions. Random-token helpers
+and the Snowflake generator have randomness or local state. A utility must not
+require a database session or FastAPI request.
+
+### Validation
+
+| Boundary | Check | Limitation |
+|---|---|---|
+| Frontend | Empty fields and immediate feedback | Clients can bypass it |
+| Pydantic | URL/email format, type, password length | Does not establish ownership or uniqueness |
+| Service | Expiry, account state, aliases, ownership | Concurrent requests can race |
+| Database | Unique values and foreign keys | Does not replace all business rules |
+
+### Errors and logs
+
+Domain exceptions identify expected failures. The URL service uses
+`AliasTakenError` and `InvalidExpiryError`. Current routes map these failures
+locally. Global domain handlers are a target, not an implemented facility.
+Keep expected client failures distinct from unexpected server errors.
+
+Planned structured logs include timestamp, request ID, endpoint, status, and
+duration. Choose a level for the event: `DEBUG` for diagnostic detail, `INFO`
+for normal operations, `WARNING` for recoverable failures, `ERROR` for failed
+operations, and `CRITICAL` when the application cannot continue.
+Never log passwords, tokens, secrets, sensitive headers, or unnecessary
+personally identifiable information (PII).
+Use a logger for production diagnostics. Do not substitute `print()` for
+structured application logs.
+
+## API layer
+
+Group routes by domain file. The current files include `urls.py` and `auth.py`.
+`/health` remains inline in `main.py`. Future user or analytics files are
+examples of organization, not existing modules.
+
+Use the README's single endpoint table. Public code lookup and numeric owner
+management routes have different access rules. Preserve `/api/v1` when adding
+application APIs. Introduce `/api/v2` for a breaking contract and keep existing
+clients' version available.
+
+### Authentication and authorization
+
+Authentication identifies the requester. Authorization checks permitted actions.
+Missing or invalid access tokens return `401`. Wrong-owner operations are
+planned to return `403`. Guests can create URLs. Redirect and QR access are
+planned to remain public. Management and analytics require an authenticated owner.
+
+Local authentication follows:
+
+```text
+Register → verify email → login → receive access and refresh JWTs
+Bearer access JWT → validate claims → load current user → protected route
 ```
 
-## 53. Git Workflow
+Access tokens include identity and validation claims. Current-user lookup also
+checks verification and `auth_version`. Refresh records support rotation,
+reuse detection, and revocation. Logout blocks future refreshes. Password reset
+also invalidates old access tokens through `auth_version`.
 
-Commits represent one meaningful change (`Implement URL shortening`, not `fix`/`update`/`changes`). Branch strategy: `main` initially; `feature/*` branches once the project has enough surface area to need them.
+Passwords use Argon2id. Five consecutive failed password attempts lock an
+account for 15 minutes. Successful verified login resets failure state.
+Verification and reset tokens are one-time and expiring. See the
+[authentication design](superpowers/specs/2026-08-01-authentication-authorization-design.md)
+for target details and remaining gaps.
 
-## 54. Docker
+Google OpenID Connect (OIDC) is planned. It requires state binding, PKCE
+(Proof Key for Code Exchange), nonce, signature and claim checks, and verified
+email. Matching verified email links to an existing local user. This policy
+does not establish that Google sign-in works today.
 
-Solves "works on my laptop, fails on the server" by packaging the app with its exact dependencies and runtime, so it behaves identically everywhere it runs.
+The security checks answer different questions in the planned flow:
 
-## 55. Docker Compose
+| Mechanism | Check | Purpose |
+|---|---|---|
+| State and browser binding | Returned state matches the authorization attempt bound to this browser | Correlate the callback and resist login CSRF (cross-site request forgery) |
+| Nonce | ID-token nonce matches the stored nonce for this attempt | Reject an ID token from another authentication attempt |
+| PKCE | Google's token endpoint checks the verifier against the original S256 challenge | Require the verifier when exchanging the code |
+| Expiry | Current time is before `expires_at` | Limit the lifetime of an abandoned attempt |
+| Consumption | `consumed_at` is still `NULL` before consumption | Reject reuse of the same attempt |
 
-Runs backend + Redis + PostgreSQL + NGINX together with one command, handling inter-container networking, volumes, and env vars — instead of starting each service manually.
+For example, Alice starts a login bound to her browser. Bob sends Alice a
+callback for Bob's login. Matching Bob's state to a database row is insufficient.
+Smolink must also check the binding to Alice's initiating browser.
 
-## 56. Environment Variables
+If the current attempt expects nonce `NEW_VALUE`, an ID token containing
+`OLD_VALUE` fails the nonce check. Signature validation alone does not replace
+that check.
 
-`.env` for real secrets (database URL, JWT secret, Redis URL) — **never committed.** `.env.example` is the committed template with placeholder values, so contributors know what's needed without seeing real credentials.
+For S256 PKCE, the challenge is Base64url of SHA-256 of the ASCII verifier,
+without padding. The challenge is public. The verifier remains secret until
+the code exchange. An intercepted code alone does not satisfy the verifier check.
+Google also enforces its authorization code's expiry and single-use lifecycle.
+Smolink's authorization-attempt record has a separate consumption lifecycle.
 
-## 57. NGINX Reverse Proxy
+An attempt created at `10:00` with the target ten-minute lifetime expires at
+`10:10`. A callback at `10:20` fails expiry validation. These examples describe
+the target protections, not an implemented Google flow.
 
-Sits in front of FastAPI: terminates HTTPS, routes requests, handles compression and security headers, and will handle load balancing once there's more than one FastAPI instance.
+IP and account limits also address different scopes. Distributed attempts can
+use many IP addresses. PostgreSQL account-failure state tracks consecutive
+password failures against the same account across those addresses.
 
-## 58. HTTPS
+File uploads remain outside v1. Possible later features include QR logos,
+CSV imports, and custom favicons. They require upload validation and storage.
 
-Without it, credentials travel in plaintext and are readable by anything on the network path. TLS certificates (e.g. via Let's Encrypt through NGINX) are non-negotiable for anything handling login.
+## URL features
 
-## Deployment Checklist
+### Shortening, IDs, and aliases
 
-Backend builds · frontend builds · containers start · DB reachable · Redis reachable · NGINX configured · HTTPS enabled · env vars loaded · `/health` responds · logs visible.
+URL creation validates input, checks expiry, generates an ID, chooses a code,
+and persists a URL. `owner_id` distinguishes guest and owned URLs. Guest and
+user requests also use separate rate-limit scopes.
 
-## Common Production Problems
+Base62 represents an integer with digits and letters. The implementation's
+alphabet is `0-9`, then `a-z`, then `A-Z`. This ordering matters for encoding.
+Generated codes are not secret access credentials.
 
-| Symptom | Likely cause |
+Aliases normalize to lowercase and allow 3–64 letters, digits, or hyphens.
+Reserved names protect root routes. Legacy auth names remain reserved.
+A conflict returns `409`. There is no separate availability check in v1.
+
+### Planned expiry and redirects
+
+Creation rejects non-future expiry. The redirect feature will check expiry at
+read time. It must distinguish an unknown code (`404`) from an existing
+expired URL (`410`). Filtering expired rows out of the only lookup would lose
+that distinction.
+
+Cache entries must carry `url_id`, destination, and expiry. Their lifetime must
+not exceed link expiry or the configured cache lifetime. Update and delete
+must write the database first, then invalidate stale cache entries.
+
+The planned redirect flow is:
+
+```text
+GET /{short_code}
+  cache hit  → check expiry → record click → 302
+  cache miss → PostgreSQL → check expiry → cache → record click → 302
+  cache error → PostgreSQL fallback
+```
+
+`302` permits destination changes without a permanent browser redirect.
+A redirect does not delete an expired URL. The row and aggregates remain until
+explicit URL deletion, or cascading rules apply. Raw event pruning is a future
+option after a documented retention window, such as 90 days. That example is
+not an implemented retention policy.
+Under this target, URL rows and aggregates persist without an automatic expiry
+deletion schedule. Raw event retention and aggregate retention are separate
+decisions. A future raw-event prune must preserve the aggregate counters.
+
+### Planned QR and analytics
+
+The QR route will generate a PNG for the public short URL. Logo embedding,
+colors, and SVG are later options. PNG generation remains on demand in the
+current target. Moving it to background work needs a separate contract.
+
+Click capture will derive browser, operating system, and device from the
+user-agent header. It stores those derived values, referrer, click time, and a
+keyed IP hash. The schema does not store raw user-agent text or raw IP.
+Owner reports will include totals, daily series, and dimension breakdowns.
+Measure synchronous capture before extracting an analytics consumer.
+
+## Performance and scale
+
+### Cache-aside and failure policy
+
+Cache-aside reads Redis first and PostgreSQL on a miss. Cache failure also
+falls back to PostgreSQL. Redis never replaces the durable URL record.
+Dashboard caching is a later option. It requires its own invalidation design.
+
+Rate-limit state has a different purpose. The atomic Redis log rejects a
+protected write when its allowance is exhausted. An unavailable limiter returns
+`503`, so writes cannot bypass abuse controls during an outage.
+Per-account password lock state remains durable in PostgreSQL.
+
+### Rate-limit algorithm comparison
+
+| Algorithm | Mechanism | Tradeoff |
+|---|---|---|
+| Fixed window | One counter per time bucket | Small state. Adjacent buckets can allow a boundary burst |
+| Sliding-window log | Timestamp per allowed request | Exact window enforcement. State grows with accepted requests |
+| Sliding-window counter | Weighted current and previous counts | Less state than a log. Counts approximate the window |
+| Token bucket | Refill tokens at a fixed rate | Allows bounded bursts with a long-term rate |
+| Leaky bucket | Process queued work at a constant rate | Smooths traffic but can increase queue latency |
+
+For example, a fixed limit of 100 per minute can allow 100 requests just before
+one boundary and 100 just after it. Smolink chose the sliding-window log for
+its protected writes. Token buckets are a different policy, not the current
+recommendation for this implementation.
+
+### Async work and background tasks
+
+`async`/`await` lets other requests progress while compatible I/O waits.
+CPU work and blocking libraries can still block an event loop. The `async`
+keyword alone does not make password hashing or computation nonblocking.
+
+The current email sender awaits HTTPX after database commit. It does not use
+FastAPI `BackgroundTasks`. In-process background tasks can handle suitable
+non-durable work. Reliable retries or measured throughput needs can justify a
+worker. Do not silently move verification or required capture out of an atomic
+workflow.
+
+### Measurement
+
+Inspect slow SQL first, then indexes, caching, application CPU costs, and
+scaling needs. Measure average and p95/p99 response time, requests per second,
+database time, cache hit ratio, CPU, and memory. This order is a diagnostic
+starting point, not a guarantee that every problem has the same cause.
+
+## Frontend design
+
+The frontend remains planned. It communicates through HTTP APIs and must not
+connect directly to PostgreSQL or Redis.
+
+Suggested React directories include `assets`, `components`, `pages`, `layouts`,
+`services`, `hooks`, `contexts`, `router`, `types`, and `utils`. Centralize
+API calls, base URL, error parsing, and access-token attachment in services.
+Use the backend's implemented endpoints when integrating each page.
+
+| Planned directory | Responsibility and examples |
 |---|---|
-| Container won't start | Missing env variable |
-| DB unreachable | Wrong connection string |
-| 502 Bad Gateway | NGINX can't reach FastAPI |
-| App crashes | Check logs first, always |
-| HTTPS not working | Certificate misconfiguration |
+| `assets/` | Images, fonts, and icons |
+| `components/` | Shared buttons, dialogs, copy controls, and other interface elements |
+| `pages/` | Home, Dashboard, Login, Register, Analytics, and 404 pages |
+| `layouts/` | Navbar, sidebar, footer, and protected-page wrapper |
+| `services/` | API calls, such as `urlService.ts`, `authService.ts`, and `analyticsService.ts` |
+| `hooks/` | Reusable behavior, such as `useAuth`, `useTheme`, `useDebounce`, and `usePagination` |
+| `contexts/` | Shared authentication, theme, and notification state |
+| `router/` | Mapping from paths to pages |
+| `types/` | TypeScript contracts for URLs, users, analytics, and tokens |
+| `utils/` | Clipboard, date formatting, and client-side validation helpers |
 
----
+An interface action calls a service, which sends the request and parses the
+response. Updating React state then triggers rendering. Keep `fetch` or `axios`
+calls in services. Use one environment-backed API base URL.
 
-# Parts 11–14 — Planned (content pending)
+Guests can create without login. Local accounts must register, verify email,
+and log in before protected pages. Define a token storage and refresh policy
+before frontend implementation. Attach Bearer access tokens to protected
+requests and to URL creation when assigning ownership.
+Redirect an unauthenticated visitor from a protected page to login. Guests
+can complete URL creation without that login flow.
 
-Structure reserved, not yet written up — filling these in is future work, not a fabricated placeholder:
+| API outcome | Planned interface behavior |
+|---|---|
+| `409` alias conflict | Show that the alias is already taken |
+| `422` | Identify invalid fields |
+| `401` | Handle invalid/expired authentication and require login when needed |
+| `403` | Explain denied access |
+| `429` | Show retry guidance from `Retry-After` |
+| `503` | Show temporary service failure |
+| Unexpected server failure | Show a generic error without internal details |
 
-- **Part 11 — Cloud Deployment:** Oracle Cloud specifics, VM setup, PostgreSQL/Redis deployment, monitoring, backup strategy.
-- **Part 12 — Distributed Systems:** scaling FastAPI, load balancing, Kafka, horizontal scaling, database sharding, relevant CAP theorem tradeoffs, future microservices extraction.
-- **Part 13 — Coding Standards:** naming conventions, file responsibilities, code style, design patterns in use, common mistakes, PR review checklist.
-- **Part 14 — Feature Development Workflow:** the end-to-end lifecycle of shipping a feature, worked through concretely for shortening, auth, Redis, and analytics as they were each added.
+Show submission progress and prevent duplicate submissions. Show an explicit
+empty state instead of a blank dashboard. Distinguish local component state,
+shared application state, and server state. Server state needs refresh and
+invalidation when the backend changes.
+
+The checklist records design tools, component libraries, motion, accessibility,
+and performance requirements. It is the authoritative plan for that work.
+
+## Testing and debugging
+
+Use unit tests for isolated utilities and policy. Use integration tests for
+real database constraints, Redis behavior, and composed workflows. Use API
+tests for public contracts. Manual testing supplements automation for layout,
+motion, keyboard interaction, and accessibility.
+
+For each endpoint, test relevant success, validation, authentication,
+authorization, missing-resource, conflict, and dependency-failure outcomes.
+Some URL-management and redirect cases remain targets because the routes do
+not exist yet. Existing creation tests distinguish guest and user ownership
+and limits. Auth tests cover local token and account workflows.
+The testing pyramid suggests many focused unit tests and fewer broader
+integration tests. Use manual checks for behavior automation covers poorly.
+This is a starting mix, not a required test count or ratio.
+
+Test behavior instead of mirroring implementation. Keep test data unique and
+clear fixed Redis keys in fixtures. Each async resource must be created,
+used, and closed within a compatible event loop. Test order must not determine
+success. Coverage percentages do not establish contract correctness.
+
+For a reproducible bug:
+
+1. Reproduce the failure with a focused case.
+2. Identify the failing layer from the traceback and logs.
+3. Inspect the request and relevant persisted state without exposing secrets.
+4. Add a regression test that expresses the incorrect observable outcome.
+5. Fix the established cause.
+6. Run the focused test and relevant shared verification.
+
+Use the development guide for commands. Do not claim a test passed without
+execution evidence or an explicit user-reported qualification.
+
+## Deployment
+
+Production deployment remains planned. Local Compose currently starts only
+PostgreSQL and Redis. Later deployment needs application images, frontend
+builds, NGINX, TLS, secrets, backups, and observability.
+
+Docker images package a runtime and dependencies. They improve repeatability,
+but architecture, host settings, and external services can still differ.
+Compose can coordinate containers, networking, volumes, and environment values.
+That capability does not imply the current file starts the complete product.
+
+NGINX will terminate HTTPS, route requests, and apply relevant headers and
+compression. Configure trusted proxy boundaries before enabling production IP
+limits. Add load balancing only when multiple instances exist. Use HTTPS for
+credentials in transit. Certificate renewal needs its own verification.
+
+Keep commits focused on one meaningful change. Use the branch convention
+requested for the task. The project plan starts on `main`, then uses `feature/*`
+branches as its feature scope grows. An explicit task convention takes priority.
+Never commit real secrets or local volumes.
+
+Release checks must cover builds, container health, database migrations,
+Redis, proxy routing, TLS, settings, `/health`, logs, and recovery procedures.
+The checklist tracks this work. No production runbook exists yet.
+
+| Symptom | Possible cause or first check |
+|---|---|
+| Container does not start | Inspect logs for required configuration or runtime failures |
+| Database cannot connect | Check network, health, credentials, and connection URL |
+| `502 Bad Gateway` | Check proxy connectivity to FastAPI |
+| Application crashes | Read the traceback and process logs |
+| HTTPS fails | Check certificate, hostname, expiry, and proxy configuration |
+
+These are diagnostic leads, not confirmed causes. Use observed evidence before
+changing configuration.
+
+## Future reference topics
+
+- Cloud deployment: Oracle Cloud configuration, backups, restore, and monitoring.
+- Distributed systems: multiple instances, load balancing, Kafka, sharding, and CAP tradeoffs.
+- Coding standards: names, ownership, patterns, and review rules.
+- Feature workflow: worked examples for shortening, authentication, Redis, and analytics.
+
+These topics remain unwritten. Do not describe them as implemented operations.

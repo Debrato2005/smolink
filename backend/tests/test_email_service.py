@@ -1,3 +1,9 @@
+# FakeClient captures Resend requests without outbound HTTP.
+# FakeSettings also replaces get_settings() so captured headers use test secrets.
+# Mocking HTTP alone can expose a real API key in a failed assertion.
+# Tests check headers, recipients, HTML escaping, and token fragments.
+# pytest-asyncio supplies the event loop for marked async tests.
+
 import asyncio
 
 import pytest
@@ -88,11 +94,6 @@ def test_send_verification_email_hides_provider_failure(
             )
         )
 
-# Tests the password-reset email service without making a real Resend request.
-# A FakeClient replaces httpx.AsyncClient and captures the outgoing URL,
-# headers, and JSON payload. The test then verifies the required Resend
-# headers and that the reset token is URL-encoded inside the URL fragment.
-# @pytest.mark.asyncio lets the test directly await the async email service.
 @pytest.mark.asyncio
 async def test_send_password_reset_email_uses_fragment_token(
     monkeypatch:pytest.MonkeyPatch,
@@ -117,11 +118,6 @@ async def test_send_password_reset_email_uses_fragment_token(
         "app.services.email_service.httpx.AsyncClient",
         lambda **_: FakeClient(),
     )
-# The real API key was exposed because the test only mocked the HTTP client,
-# not the application's settings. get_settings() therefore loaded the real
-# RESEND_API_KEY from .env, the email service put it in the Authorization
-# header, and the FakeClient captured it in `sent`, which pytest printed when
-# the assertion failed. FakeSettings must replace get_settings() as well.
     from app.services.email_service import send_password_reset_email
 
     await send_password_reset_email(
@@ -135,4 +131,3 @@ async def test_send_password_reset_email_uses_fragment_token(
         "Idempotency-Key": "reset:123",
     }
     assert "#token=reset%20token" in str(sent["json"])
-    

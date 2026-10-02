@@ -1,3 +1,7 @@
+# Import each concrete model to register its table with Base.metadata.
+# These imports also expose models through app.models.
+# __all__ lists the intended public model names for wildcard imports.
+
 from app.models.click_event import ClickEvent
 from app.models.url import Url
 from app.models.user import User
@@ -14,9 +18,3 @@ __all__ = ["ClickEvent",
            "EmailVerificationToken",
            "PasswordResetToken",
            "OAuthAuthorizationRequest"]
-
-# __init__.py marks this directory as a Python package and defines its public
-# API by re-exporting commonly used model classes. This allows imports such as
-# `from app.models import User, Url, AuthIdentity` instead of importing each
-# model from its individual module. The __all__ list documents which models are
-# intended to be publicly exposed by the package.

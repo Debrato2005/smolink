@@ -1,228 +1,308 @@
-# Smolink — Engineering Context
+# Smolink Engineering Context
 
-This file is the source of truth for anyone (human or AI) making changes to Smolink. It exists so decisions don't get re-litigated or silently reversed. If you're an AI assistant working on this repo, read this before touching code.
+Smolink is a backend-first URL shortener and an engineering learning project.
+This README defines its architecture decisions, invariants, and target API
+contracts. Read it before changing code. Record a replacement decision and its
+reason before changing an existing decision.
 
-Repository agent skills and the Graphify codebase-map workflow are documented
-in [docs/agent-tooling.md](docs/agent-tooling.md). They help navigate the
-project, but this README remains the canonical source for architecture,
-invariants, and API decisions.
+## Documentation
 
-## Project Vision
+| Document | Use |
+|---|---|
+| [Development guide](docs/development.md) | Local setup, tests, migrations, and troubleshooting |
+| [Codebase walkthrough](docs/codebase-walkthrough.md) | Current implementation and file responsibilities |
+| [Backend build checklist](docs/backend-build-checklist.md) | Milestones and dated verification records |
+| [Engineering Playbook](docs/ENGINEERING_PLAYBOOK.md) | Design reasoning and future concepts |
+| [Agent Guide](docs/AGENT_GUIDE.md) | Agent workflow and change rules |
+| [Agent tooling](docs/agent-tooling.md) | Skills, writing conventions, and Graphify |
+| [Authentication design](docs/superpowers/specs/2026-08-01-authentication-authorization-design.md) | Approved authentication target and known implementation gaps |
 
-Smolink is a URL shortener built to demonstrate real backend engineering judgment, not maximum technology usage. The measure of success is "did I make the right call for the constraints," not "how many distributed-systems buzzwords does this repo contain."
+The initial data-model design and rate-limiter plan under `docs/superpowers/`
+record earlier milestones. Their status notes, example code, and commands
+reflect those dates. Use the walkthrough and development guide for current work.
 
-## Core Principles
+## Project principles and scope
 
-1. Every technology in the stack must solve a problem that actually exists at this project's scale — not a problem it might have at Google scale.
-2. Architecture evolves in phases (see README roadmap). Don't jump ahead — e.g. don't add Kafka before there's a real async workload for it to carry.
-3. Prefer boring, well-understood tools over novel ones, except where the novelty *is* the point (e.g. exploring Rust for a specific hot path is a legitimate learning goal — exploring five different queue technologies is not).
-4. Every architectural decision recorded here has a stated reason. If you want to change one, update the reason, don't just delete it.
+1. Add a technology when it solves a current problem at this project's scale.
+2. Follow the roadmap. Add Kafka only after measurements justify an asynchronous workload.
+3. Prefer tools with understood behavior and maintenance costs.
+4. Keep a specific learning goal when exploring a new tool, such as Rust for a measured latency bottleneck.
+5. Record the reason for each architecture decision.
 
-## Non-Goals
+Smolink starts as a modular monolith. It does not target hypothetical traffic
+such as millions of requests per second. Service extraction requires evidence
+of an asynchronous, independent boundary. Live alias checks, custom domains,
+and team workspaces are deferred.
 
-- This is **not** attempting full microservices. Services are extracted only when a boundary is genuinely async/decoupled (see Architecture Decisions below).
-- This is **not** optimizing for hypothetical scale (millions of req/s). It's optimizing for demonstrating that the author understands the tradeoffs involved in getting there.
-- Live alias-availability checking, custom domains, team workspaces — all explicitly deferred, not forgotten.
+## Architecture decisions
 
-## Architecture Decisions
+### 1. Layered modular monolith
 
-### 1. Layered modular monolith, not microservices (current)
-**Reasoning:** The redirect path (hot, read-heavy, latency-sensitive) and the creation path (cold, write-light) have different traffic profiles, but a cache layer in front of one service captures most of that benefit without network-separated services. Splitting `shortener`/`redirect` into separate services would add a network hop to a codepath that should be sub-millisecond — a regression, not an upgrade.
+Redirects are read-heavy and sensitive to latency. URL creation writes less
+frequently. A cache can serve redirect lookups within one application.
+Separate shortener and redirect services would add a network call. The earlier
+design aims for a sub-millisecond application redirect path. This is an
+unmeasured target, not an established latency guarantee.
 
-**What's a real extraction candidate:** analytics/click-tracking. It is naturally async and decoupled. The first backend release records click events synchronously; if measurement shows that this harms redirect latency, the redirect handler can publish events to a queue and a separate consumer can aggregate them.
+Analytics is a candidate for later extraction. The first release plans to
+record click events synchronously. If measurements show an unacceptable
+redirect delay, the redirect handler can publish events to a queue for a
+separate consumer.
 
-The current repository uses shared top-level API, schema, service, repository,
-and model packages. Domain boundaries are enforced by ownership and interfaces,
-not by one directory tree per domain: a domain must not directly query another
-domain's repository. Do not introduce a parallel domain-folder layout while the
-shared-layer layout remains canonical.
+The repository uses shared API, schema, service, repository, and model packages.
+It does not use a separate directory tree for each domain. Domain interfaces
+control data access. A domain must use another domain's service interface
+instead of directly querying that domain's repository.
 
-**Domain boundaries inside the monolith** (each owns its own data access; no cross-module DB queries):
-- `shortener` — encode/decode, collision handling, custom aliases
-- `redirect` — cache-first lookup, fallback to DB, publishes click events
-- `analytics` — records and reports click events; it becomes an asynchronous consumer only when measurement justifies extraction
-- `auth` — JWT issuance/verification, optional-auth middleware
-
-### 2. Auth is optional
-Guests can create short URLs without an account. Registered users get a dashboard, analytics, and management. This means most creation-path logic must work correctly with `user_id = null`.
-
-### 3. PostgreSQL is the source of truth; Redis is cache-only for durable data
-Never write logic that treats Redis as authoritative for URL or user data. If Redis is unavailable, redirects must degrade to hitting Postgres directly (cache-aside, not cache-only). Redis also holds ephemeral rate-limit counters; those counters are enforcement data, not durable application data.
-
-### 4. Short code generation: Snowflake ID + Base62 encoding
-Chosen over random generation for collision-free uniqueness without a "check and retry" loop at insert time.
-
-### 5. No dedicated alias-availability endpoint
-`POST /api/v1/urls` returning `409 Conflict` is the only mechanism in v1. Reasoning: an availability-check endpoint's only purpose is UX (live validation while typing), and overloading the create endpoint with a `check_only` flag violates single-responsibility. If live validation is added later, it should be a genuinely separate `GET /api/v1/aliases/{alias}/availability` endpoint with frontend debouncing — not a repurposed create call.
-
-### 6. Route identifier convention
-- `short_code` → public/unauthenticated routes (`/{short_code}`, `/api/v1/urls/{short_code}/qr`)
-- `id` → owned-resource CRUD under `/api/v1/me/urls/{id}`
-
-Do not unify these "for simplicity" — they serve different access-control contexts (public lookup vs. ownership-checked mutation).
-
-### 7. Health checks: `/health` only until orchestration exists
-`/live` and `/ready` are meaningful once there's an orchestrator (Kubernetes, Docker Swarm) deciding whether to restart or route traffic to an instance. Adding them before Phase 11 (multiple instances / load balancing) is premature.
-
-### 8. Strict Redis-backed rate limiting
-Rate limiting uses an atomic Redis sliding-window log, avoiding fixed-window boundary bursts. Registration and login share a limit of 5 attempts per IP per rolling minute; guest URL creation is limited to 10 requests per IP per rolling minute; authenticated URL creation is limited to 30 requests per user per rolling minute. Redirects and `/health` are not rate-limited. Exceeded limits return `429 Too Many Requests` with `Retry-After`. If Redis is unavailable, redirect caching falls back to Postgres, while rate-limited write routes fail closed with `503` so abuse protection is not silently disabled.
-
-### 9. Authentication is session-backed JWT, not stateless-only JWT
-Smolink issues short-lived JWT access tokens and rotated JWT refresh tokens.
-Refresh-token state is persisted in Postgres so logout, password reset, token
-revocation, and reuse detection are enforceable. A reused rotated-out refresh
-token revokes its entire token family. Access tokens carry only identity and
-validation claims; authorization always loads the current user from Postgres.
-
-New password registrations are unverified and cannot log in until their email
-is verified. Google OIDC accounts are verified through Google; a verified
-Google email matching a local account links to that account rather than creating
-a duplicate user. See the authentication design specification for the full
-contract and persistence model.
-
-**Current implementation status:** local registration and login foundations are
-in progress. Login issues signed access and refresh JWTs, persists only a keyed
-hash of the refresh JWT identifier, and applies the five-failure/15-minute
-account-lock policy. Refresh rotation locks and consumes one persisted token,
-issues its child in the same family, and revokes the family when a consumed
-token is replayed. Email-verification token consumption is implemented: a
-one-time, hashed, expiring token marks the account verified. Registration
-creates that token atomically and sends its raw value only in a Resend email
-after commit. Logout revokes the presented refresh-token family. Current-user
-lookup and the forgot-password request flow are implemented: the latter stores
-only a hashed, one-hour reset token, sends its raw value only in a post-commit
-email, and always returns `202` to avoid account enumeration. A
-resend-verification endpoint now replaces prior unused tokens and sends a new
-one without revealing account state. Optional current-user support assigns
-authenticated URL ownership while preserving guest creation. Guest creation
-uses the 10-per-IP limiter and authenticated creation uses the independent
-30-per-user limiter. Google OIDC remains unfinished. Password reset consumes a
-one-time token, replaces the Argon2id hash, clears lock state, increments
-`auth_version`, and revokes every active refresh-token family.
-
-Latest backend verification: `uv run pytest -q -s` completed with 115 passing
-tests and 9 dependency warnings on 2026-08-24.
-
-### 10. All application APIs remain versioned under `/api/v1`
-Authentication routes live under `/api/v1/auth/...`; they are not root-level
-exceptions. The public `/{short_code}` redirect is the only root dynamic route.
-Alias reservations therefore protect root paths such as `api`, `health`,
-`docs`, `redoc`, and `openapi.json`; versioned auth paths do not create
-short-code collisions. Keep conservative legacy alias reservations unless a
-separate compatibility decision removes them.
-
-### 11. Services coordinate multi-record transactions; handlers translate HTTP
-Routes stay thin. A service owns the atomic workflow for registration, refresh
-rotation, password reset, and Google identity linking through a shared session
-or unit-of-work boundary. Repositories flush but do not commit. Global handlers
-map domain exceptions to the canonical error envelope; routes should not add
-new per-route exception-mapping patterns.
-
-## Current Backend Roadmap
-
-1. **Foundation** — FastAPI configuration, Docker Compose, PostgreSQL, Redis, and `/health`.
-2. **Data layer** — async SQLAlchemy, Alembic, and the `users`, `urls`, and `click_events` tables.
-3. **URL utilities** — Snowflake IDs, Base62 encoding, and custom-alias validation.
-4. **Rate limiting** — strict Redis-backed limits for authentication and URL creation.
-5. **Auth and creation** — verified local and Google OIDC authentication,
-   refresh-token rotation, optional-auth URL creation for guests and users.
-6. **Core URL features** — owner management, cache-aside redirects, QR generation, and full analytics.
-7. **Verification and next phases** — tests and documentation, followed by frontend and deployment work.
-
-## API Standards
-
-- Expected API errors use `{ "error": "<short code>", "message": "<human readable>" }`.
-  A shared `ErrorResponse` schema and global handlers own this shape, including
-  auth errors; request-validation errors are normalized before release.
-- Conflicts → `409`. Validation failures → `422` (FastAPI/Pydantic default). Not found → `404`. Auth required → `401`. Forbidden (wrong owner) → `403`.
-- Rate limits → `429` with `Retry-After`; an unavailable rate limiter on protected writes → `503`.
-- Pagination via `?page=&limit=`; search/filter/sort are additive query params, never separate endpoints.
-- The initial API uses `/api/v1/`; no breaking changes to existing response shapes are allowed without a new version.
-
-## Canonical Backend Endpoints
-
-| Method | Path | Purpose |
+| Domain | Responsibility | Status |
 |---|---|---|
-| `GET` | `/health` | Application health check |
-| `POST` | `/api/v1/auth/register` | Register a user |
-| `POST` | `/api/v1/auth/login` | Authenticate a verified local user and receive tokens |
-| `POST` | `/api/v1/auth/refresh` | Rotate a refresh token and issue a new token pair |
-| `POST` | `/api/v1/auth/logout` | Revoke the current refresh-token family |
-| `GET` | `/api/v1/auth/me` | Retrieve the authenticated current user |
-| `POST` | `/api/v1/auth/verify-email` | Consume an email-verification token |
-| `POST` | `/api/v1/auth/resend-verification` | Request a replacement verification email without account enumeration |
-| `POST` | `/api/v1/auth/forgot-password` | Request a password-reset email without account enumeration |
-| `POST` | `/api/v1/auth/reset-password` | Consume a reset token and revoke active sessions |
-| `GET` | `/api/v1/auth/google/start` | Begin Google OAuth2/OIDC authorization-code flow |
-| `GET` | `/api/v1/auth/google/callback` | Validate Google OIDC callback and issue Smolink tokens |
-| `POST` | `/api/v1/urls` | Create a URL as a guest or authenticated user |
-| `GET` | `/api/v1/me/urls` | List the authenticated user's URLs |
-| `PATCH` | `/api/v1/me/urls/{id}` | Update an owned URL |
-| `DELETE` | `/api/v1/me/urls/{id}` | Delete an owned URL |
-| `GET` | `/api/v1/me/urls/{id}/analytics` | Retrieve full analytics for an owned URL |
-| `GET` | `/api/v1/urls/{short_code}/qr` | Generate a QR PNG for a public code |
-| `GET` | `/{short_code}` | Redirect to the destination URL |
+| Shortener | ID generation, Base62 encoding, aliases, URL creation | Implemented |
+| Redirect | Cache-aside lookup and click capture | Planned |
+| Analytics | Click storage and reports | Table implemented. Capture and reports planned |
+| Authentication | Token issuance, verification, and required or optional authentication | Local flows implemented. Google OIDC pending |
 
-## Current Project Structure
+### 2. Optional authentication
 
+Guests can create URLs without an account. Guest URLs have `owner_id=None`.
+A valid access token assigns `owner_id` to the current user. Dashboard,
+management, and analytics routes are planned for authenticated owners.
+
+### 3. PostgreSQL owns durable data
+
+PostgreSQL is the source of truth for URLs, users, and authentication state.
+Redis holds redirect-cache entries and ephemeral rate-limit state. Redis must
+never be the only store for durable application data.
+
+The planned redirect cache uses cache-aside lookup. If Redis fails, the
+redirect path must read PostgreSQL. Protected writes have a different failure
+policy: an unavailable rate limiter returns `503`.
+
+### 4. Snowflake IDs and Base62 short codes
+
+The service generates a Snowflake ID and encodes it in Base62. This avoids a
+random-code retry loop when generator state is coordinated correctly.
+Generators must have distinct worker IDs or shared sequence state to prevent
+collisions. The current auth and URL route modules each create a generator
+with the same configured worker ID. This remains an implementation gap.
+
+### 5. Alias conflicts use the create endpoint
+
+In v1, `POST /api/v1/urls` returns `409 Conflict` when an alias exists.
+There is no alias-availability endpoint or `check_only` flag.
+An availability check serves live validation in the interface. Adding that
+check to creation would give the create endpoint a second responsibility.
+
+A later live-validation feature can use
+`GET /api/v1/aliases/{alias}/availability` with frontend debouncing. That path
+is a future option, not an implemented endpoint.
+
+### 6. Route identifiers
+
+- Use `short_code` for public lookup: `/{short_code}` and `/api/v1/urls/{short_code}/qr`.
+- Use the numeric `id` for owned resources: `/api/v1/me/urls/{id}`.
+
+Public lookup and ownership checks require different identifiers.
+
+### 7. Health checks
+
+`GET /health` is the current health endpoint. It returns application status,
+not database or Redis readiness. Add `/live` and `/ready` when an orchestrator
+needs separate restart and traffic-routing signals.
+
+### 8. Redis sliding-window limits
+
+An atomic Lua script enforces rolling 60-second limits in Redis:
+
+| Scope | Redis key | Requests per window |
+|---|---|---|
+| Auth writes | `rate:auth:{ip}` | 5 |
+| Guest URL creation | `rate:create:guest:{ip}` | 10 |
+| Authenticated URL creation | `rate:create:user:{user_id}` | 30 |
+
+All current auth POST routes share the auth-write limit. `GET /health` and
+`GET /api/v1/auth/me` have no limiter. The planned redirect has no limiter.
+Denied requests return `429` with a positive `Retry-After` header in seconds.
+If the limiter fails, protected writes return `503`.
+
+Client identity currently comes from `request.client.host`, or `"unknown"`
+when absent. Proxy trust and forwarded-header handling remain deployment work.
+
+### 9. Session-backed JWT authentication
+
+Smolink issues JSON Web Token (JWT) access and refresh tokens. Access tokens
+are short-lived. Refresh records persist in PostgreSQL to support rotation,
+logout, reset, and reuse detection. The database stores a keyed hash of the
+refresh JWT identifier (`jti`), not the raw JWT.
+
+Each login creates a refresh-token family. Rotation consumes one record under
+a row lock and creates a child in the same family. Reuse of a consumed token
+revokes that family. Authorization loads the current user and checks
+`email_verified_at` and `auth_version`. Logout blocks future refreshes.
+Password reset also increments `auth_version` to reject existing access tokens.
+
+Local registration creates an unverified account and a hashed verification
+token in one transaction. The route commits before sending a Resend email.
+Email verification is required before local login. Five consecutive password
+failures lock the account for 15 minutes.
+
+Verification tokens expire after 24 hours. Password-reset tokens expire after
+one hour. Both are single-use. Forgot-password and resend-verification return
+the same empty `202` response across account states after successful validation
+and limiting. Email-delivery failures are suppressed in those two routes.
+Registration email-delivery failures currently propagate after the account commits.
+
+Password reset consumes its token, replaces the Argon2id hash, clears lock
+state, increments `auth_version`, and revokes active refresh families atomically.
+Optional authentication supports guest and owned URL creation.
+
+Google OpenID Connect (OIDC) remains unfinished. The approved target validates
+Google's ID token and verified email, then links a matching local account.
+Google configuration and persistence tables exist. They do not establish a
+working sign-in flow.
+
+For dated test results, use the [checklist](docs/backend-build-checklist.md#current-verified-state).
+
+### 10. API versioning
+
+Application APIs use `/api/v1`, including authentication. The planned public
+`/{short_code}` redirect is the only root dynamic route. Alias reservations
+protect `api`, `health`, `docs`, `redoc`, and `openapi.json`. Legacy reservations
+remain until a separate compatibility decision removes them.
+
+### 11. Transactions and error translation
+
+Services coordinate multi-record workflows through one shared session.
+Repositories flush changes and do not commit. Current routes commit or roll
+back the workflow and map domain exceptions to HTTP responses.
+
+Global domain handlers and a shared `ErrorResponse` schema remain targets.
+Current domain errors use the envelope below. FastAPI validation and dependency
+errors still use `detail`. Do not describe error normalization as complete.
+Normalize request-validation errors before release. Preserve the approved
+direction toward global domain handlers instead of adding new per-route
+domain exception-mapping patterns.
+
+## Backend roadmap
+
+1. **Foundation:** FastAPI settings, local Compose services, and `/health`.
+2. **Data layer:** async SQLAlchemy, Alembic, URL tables, and auth tables.
+3. **URL utilities:** Snowflake IDs, Base62, and alias validation.
+4. **Rate limiting:** Redis sliding-window limits for auth and URL creation.
+5. **Authentication and creation:** local authentication and optional URL ownership, then Google OIDC.
+6. **URL features:** owner management, redirects, QR generation, and analytics.
+7. **Release verification:** tests and documentation, then frontend and deployment.
+
+The checklist records completion evidence. A target contract does not imply
+that its endpoint is implemented.
+
+## API standards
+
+Domain errors use:
+
+```json
+{"error": "<short code>", "message": "<human readable>"}
 ```
+
+| Condition | Status |
+|---|---|
+| Conflict | `409` |
+| Request or URL business validation failure | `422` |
+| Missing resource | `404` |
+| Authentication required or invalid token | `401` |
+| Wrong owner or unverified local login | `403` |
+| Locked account | `423` |
+| Invalid or expired verification/reset token | `400` |
+| Exceeded limit | `429` with `Retry-After` |
+| Unavailable limiter | `503` |
+
+Planned pagination uses `?page=&limit=`. Search, filter, and sort extend query
+parameters. Breaking changes require a new API version.
+
+## Backend endpoints
+
+| Method | Path | Purpose | Status |
+|---|---|---|---|
+| `GET` | `/health` | Application health | Implemented |
+| `POST` | `/api/v1/auth/register` | Register a local account | Implemented |
+| `POST` | `/api/v1/auth/login` | Authenticate a verified local account | Implemented |
+| `POST` | `/api/v1/auth/refresh` | Rotate refresh tokens | Implemented |
+| `POST` | `/api/v1/auth/logout` | Revoke a refresh-token family | Implemented |
+| `GET` | `/api/v1/auth/me` | Get the current user | Implemented |
+| `POST` | `/api/v1/auth/verify-email` | Consume a verification token | Implemented |
+| `POST` | `/api/v1/auth/resend-verification` | Request a replacement email | Implemented |
+| `POST` | `/api/v1/auth/forgot-password` | Request a reset email | Implemented |
+| `POST` | `/api/v1/auth/reset-password` | Consume a reset token and revoke sessions | Implemented |
+| `GET` | `/api/v1/auth/google/start` | Start Google authorization | Planned |
+| `GET` | `/api/v1/auth/google/callback` | Validate Google authorization | Planned |
+| `POST` | `/api/v1/urls` | Create a guest or owned URL | Implemented |
+| `GET` | `/api/v1/me/urls` | List owned URLs | Planned |
+| `PATCH` | `/api/v1/me/urls/{id}` | Update an owned URL | Planned |
+| `DELETE` | `/api/v1/me/urls/{id}` | Delete an owned URL | Planned |
+| `GET` | `/api/v1/me/urls/{id}/analytics` | Get owned URL analytics | Planned |
+| `GET` | `/api/v1/urls/{short_code}/qr` | Generate a public QR PNG | Planned |
+| `GET` | `/{short_code}` | Redirect to the destination | Planned |
+
+## Project structure
+
+```text
 smolink/
 ├── backend/
 │   ├── app/
-│   │   ├── api/v1/endpoints/  # HTTP route handlers
-│   │   ├── core/              # configuration, Redis, security helpers
-│   │   ├── db/                # engine, sessions, declarative base
-│   │   ├── models/            # SQLAlchemy tables
-│   │   ├── repositories/      # SQL access grouped by domain ownership
-│   │   ├── schemas/           # Pydantic request/response contracts
-│   │   ├── services/          # business workflows grouped by domain
-│   │   └── utils/             # pure helpers
+│   │   ├── api/v1/endpoints/   # HTTP route handlers
+│   │   ├── api/v1/dependencies/ # authentication and rate limits
+│   │   ├── core/               # settings and Redis
+│   │   ├── db/                 # engine, sessions, declarative base
+│   │   ├── models/             # SQLAlchemy tables
+│   │   ├── repositories/       # SQL by domain ownership
+│   │   ├── schemas/            # Pydantic API contracts
+│   │   ├── services/           # business workflows and email delivery
+│   │   └── utils/              # ID, encoding, alias, and security helpers
 │   ├── alembic/
 │   └── tests/
-├── docs/
-└── docker-compose.yml
+├── docs/                      # maintained guides and dated designs
+│   └── docker-compose.yml     # local PostgreSQL and Redis
+└── AGENTS.md
 ```
 
-## Data Model Overview
+## Data model
 
-The initial schema uses Snowflake `BIGINT` primary keys for `users`, `urls`,
-and `click_events`; the generator is implemented in the next utility
-milestone.
+All current tables use application-generated Snowflake `BIGINT` primary keys.
+The current models and migrations define:
 
-- **User**: id, normalized unique email, nullable Argon2id password hash,
-  verified timestamp, login-failure/lock state, auth-version, timestamps.
-- **AuthIdentity**: provider and provider subject linked to one user; Google
-  identity is unique by provider-subject pair.
-- **RefreshToken**: hashed JWT identifier, token family and parent relation,
-  expiry, rotation/revocation/reuse-detection state.
-- **EmailVerificationToken** and **PasswordResetToken**: one-time hashed,
-  expiring tokens; resetting a password revokes active refresh-token families.
-- **Url**: id, unique indexed short_code, destination, nullable owner_id,
-  expires_at, total_clicks, last_clicked_at, created_at, updated_at.
-  `short_code` stores either the generated Base62 code or a custom alias;
-  there is no separate `custom_alias` field.
-- **ClickEvent**: id, url_id, clicked_at, browser, os, device, referrer,
-  ip_hash. It uses `(url_id, clicked_at)` for date-range analytics. Store a
-  keyed IP hash only; never store a raw IP address.
+- **User:** normalized unique email, nullable Argon2id password hash, verification time, login lock state, `auth_version`, and timestamps.
+- **AuthIdentity:** provider and provider subject linked to one user. The provider/subject pair is unique.
+- **RefreshToken:** keyed `jti` hash, family UUID, parent relation, expiry, use time, and revocation time.
+- **EmailVerificationToken** and **PasswordResetToken:** hashed opaque tokens with expiry and consumption times.
+- **OAuthAuthorizationRequest:** hashed state, nonce, raw PKCE verifier, expiry, and consumption time for the planned Google flow.
+- **Url:** unique `short_code`, destination, nullable `owner_id`, expiry, click aggregates, and timestamps.
+- **ClickEvent:** `url_id`, click time, browser, operating system, device, referrer, and keyed IP hash.
 
-Deleting a user preserves URLs by setting `owner_id` to `NULL`. Deleting a URL
-permanently cascades to its click events in v1.
+`short_code` stores either a generated Base62 code or a custom alias. There is
+no separate `custom_alias` field. `total_clicks` currently uses SQLAlchemy
+`Integer`, not `BIGINT`. Click events have a `(url_id, clicked_at)` index.
+The table has no raw IP or raw user-agent field.
 
-## Invariants — Do Not Break
+Deleting a user sets URL `owner_id` to `NULL`. Deleting a URL permanently
+cascades to its click events. `updated_at` uses SQLAlchemy `onupdate=func.now()`.
+The migrations do not create a trigger for updates made outside SQLAlchemy.
 
-- Redirect latency must not depend on a network call to another service; measure synchronous analytics capture before introducing a queue or worker.
-- Guest-created URLs must remain fully functional with no `owner_id`.
-- No cross-module direct DB access — go through the owning module's interface.
-- Redis is never the only place a piece of data exists.
-- Rate-limit counters are ephemeral Redis enforcement data; durable application data remains in Postgres.
-- Password hashes, raw refresh tokens, reset tokens, verification tokens, and
-  OAuth client secrets are never persisted or logged in plaintext.
-- Unverified password accounts cannot receive tokens or access protected APIs.
+## Invariants
 
-## Future Expansion Ideas
+- Keep redirects independent of network calls to another application service.
+- Preserve guest URLs with no owner.
+- Access another domain's data through its service interface.
+- Store durable data in PostgreSQL. Redis enforcement keys are ephemeral.
+- Never persist or log plaintext passwords, raw refresh JWTs, reset tokens, verification tokens, or OAuth client secrets.
+- Do not issue Smolink tokens to unverified password accounts. Block their login and protected API access.
+- Measure synchronous click capture before introducing a queue or worker.
 
-Password-protected links, scheduled activation, bulk shortening, custom domains, team workspaces, tags/collections, public API with API keys, `/live` + `/ready` once orchestration is introduced.
+## Future options and open questions
 
-## Open Questions
+Deferred options include password-protected links, scheduled activation, bulk
+shortening, custom domains, team workspaces, tags, collections, and API keys.
+Separate liveness and readiness checks depend on orchestration.
 
-- Deployment target details beyond "Oracle Cloud VM" (single instance vs. planned multi-instance timeline).
+The deployment direction is an Oracle Cloud virtual machine. Instance count
+and the timeline for multiple instances remain undecided. Generator
+coordination, normalized error responses, and Google callback delivery remain
+unfinished. See the authentication design for unresolved contracts.

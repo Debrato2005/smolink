@@ -1,3 +1,6 @@
+# A created short_code must be nonempty.
+# pytest.raises() asserts that the enclosed operation raises the expected error.
+
 import asyncio
 from datetime import datetime, timedelta, timezone
 import pytest
@@ -25,7 +28,7 @@ def test_create_short_url_generates_guest_code() -> None:
                 )
 
                 assert url.owner_id is None
-                assert url.short_code #The short_code should exist and should not be empty.
+                assert url.short_code
                 assert url.short_code != str(url.id)
 
                 await session.rollback()
@@ -44,7 +47,7 @@ def test_create_short_url_rejects_past_expiry() -> None:
 
         try:
             async with session_factory() as session:
-                with pytest.raises(InvalidExpiryError, match="future"):  #Why no assert? Because pytest.raises() is itself the assertion.
+                with pytest.raises(InvalidExpiryError, match="future"):
                     await create_short_url(
                         session=session,
                         destination="https://example.com",

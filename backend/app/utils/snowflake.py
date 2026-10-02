@@ -1,8 +1,19 @@
+# IDs combine elapsed milliseconds, a 10-bit worker ID, and a 12-bit sequence.
+# Worker values are 0-1023. Sequence values are 0-4095 per millisecond.
+# (1 << n) - 1 is the largest value representable by n bits.
+# Subtracting a fixed epoch reduces the timestamp value before shifting.
+# CUSTOM_EPOCH_MS equals 1970-07-27T02:24:16.123Z. Keep it stable after issuance.
+# The intended 64-bit layout reserves 41 timestamp bits and one sign bit.
+# The implementation does not enforce that timestamp bound.
+# A lock coordinates threads using this instance, not independent generators.
+# Assign distinct worker IDs or share sequence state across generators.
+# A backward clock raises. Sequence overflow waits for the next millisecond.
+
 import time
 from threading import Lock
 
 
-CUSTOM_EPOCH_MS = 17_893_456_123 # Jan 1, 2026 00:00:00 UTC
+CUSTOM_EPOCH_MS = 17_893_456_123  # 1970-07-27T02:24:16.123Z
 WORKER_ID_BITS = 10
 SEQUENCE_BITS = 12
 MAX_WORKER_ID = (1 << WORKER_ID_BITS) - 1
@@ -52,68 +63,3 @@ class SnowflakeGenerator:
             timestamp = self._current_timestamp()
 
         return timestamp
-
-
-# =============================================================================
-# Snowflake ID Generator
-#
-# Generates globally unique, time-ordered 64-bit integer IDs without requiring
-# a central database.
-#
-# ID Layout (64 bits)
-#
-#   0 |--------- Timestamp ---------|-- Worker ID --|-- Sequence --|
-#     |          41 bits            |    10 bits    |    12 bits    |
-#
-# Components
-# ----------
-# • Timestamp : Milliseconds since the custom epoch (Jan 1, 2026 UTC).
-# • Worker ID : Identifies the machine/service generating the ID.
-# • Sequence  : Counter (0-4095) allowing multiple IDs in the same millisecond.
-#
-# Why a Custom Epoch?
-# -------------------
-# The operating system measures time as milliseconds since the Unix epoch
-# (Jan 1, 1970 UTC). Snowflake subtracts a fixed custom epoch so timestamps
-# start near zero for this application, reducing wasted timestamp space.
-#
-#     snowflake_timestamp = current_unix_time_ms - CUSTOM_EPOCH_MS
-#
-# The custom epoch is chosen once and MUST NEVER change after IDs have been
-# generated, otherwise old and new IDs become incompatible.
-#
-# Bit Allocation
-# --------------
-# WORKER_ID_BITS = 10  -> 2^10 = 1024 workers (IDs 0-1023)
-# SEQUENCE_BITS  = 12  -> 2^12 = 4096 IDs per worker per millisecond
-#
-# Why (1 << n) - 1?
-# -----------------
-# Left shifting 1 by n bits computes 2^n.
-#
-#     1 << n == 2^n
-#
-# This is the first value that requires (n + 1) bits. Subtracting one fills
-# the lower n bits with 1s, producing the largest value representable in n bits.
-#
-# Example:
-#
-#     1 << 10      -> 10000000000₂ = 1024
-#     (1 << 10)-1  -> 01111111111₂ = 1023
-#
-# Hence:
-#
-#     MAX_WORKER_ID = (1 << WORKER_ID_BITS) - 1
-#     MAX_SEQUENCE  = (1 << SEQUENCE_BITS) - 1
-#
-# Thread Safety
-# -------------
-# A mutex (Lock) ensures only one thread generates an ID at a time, preventing
-# duplicate sequence values under concurrent access.
-#
-# Clock Handling
-# --------------
-# • If the clock moves backwards, generation stops with an exception.
-# • If the sequence overflows within the same millisecond, the generator waits
-#   until the next millisecond before producing another ID.
-# =============================================================================

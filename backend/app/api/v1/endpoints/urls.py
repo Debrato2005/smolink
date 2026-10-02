@@ -1,3 +1,13 @@
+# APIRouter groups URL handlers under the versioned route prefix.
+# FastAPI resolves Depends(get_session) once for the request dependency chain.
+# The session is shared with services and repositories within that request.
+# Do not share AsyncSession across concurrent requests.
+# Repositories flush SQL. This route commits the completed creation workflow.
+# Without commit, session closure rolls back the insert.
+# A previous missing commit prevented duplicate-alias tests from seeing a row.
+# Business errors map first. PostgreSQL SQLSTATE 23505 handles uniqueness races.
+# The unused dependency result `_` still enforces the creation rate limit.
+
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
@@ -17,19 +27,19 @@ from app.api.v1.dependencies.rate_limit import limit_url_creation
 from app.api.v1.dependencies.auth import get_optional_current_user
 from app.models.user import User
 
-router=APIRouter(prefix="/urls",tags=["urls"])#A router (APIRouter) in FastAPI is a tool used to organize code, group endpoints, and split large projects into multiple files
+router=APIRouter(prefix="/urls",tags=["urls"])
 generator=SnowflakeGenerator(worker_id=get_settings().snowflake_worker_id,)
 
 @router.post(
     "",
     response_model=CreateUrlResponse,
-    status_code=status.HTTP_201_CREATED, #If function succeeds instead of default 200
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_url(  
     payload: CreateUrlRequest,
-    session: AsyncSession=Depends(get_session), #session should be an AsyncSession object with default value after =
+    session: AsyncSession=Depends(get_session),
     current_user: User | None = Depends(get_optional_current_user),
-    _: None = Depends(limit_url_creation), #by convention, _ means: "I know this variable exists, but I intentionally won't use it."
+    _: None = Depends(limit_url_creation),
      )->CreateUrlResponse|JSONResponse:
     try:
         url=await create_short_url(
@@ -40,7 +50,7 @@ async def create_url(
             owner_id=current_user.id if current_user is not None else None,
             generator=generator,
         )
-        await session.commit() #important look down at comment as well as in test_url_creation
+        await session.commit()
         await session.refresh(url)
 
     except InvalidExpiryError as error:
@@ -51,11 +61,6 @@ async def create_url(
                 "message": str(error),
             },
         )
-    # except InvalidExpiryError as error:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-    #         detail=str(error),
-    #     )       from error
     except InvalidAliasError as error:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -98,59 +103,3 @@ async def create_url(
         expires_at=url.expires_at,
         created_at=url.created_at,
     )
-
-# Why use Depends(get_session) instead of a global session?
-#
-# SnowflakeGenerator is a long-lived, reusable object.
-# It only generates IDs, doesn't hold external resources,
-# and is safe to share across all requests.
-#
-# AsyncSession is different:
-# - Represents a database connection/transaction.
-# - Must be unique for each request.
-# - Needs to be opened before use and closed afterwards.
-# - Sharing one session across multiple requests can mix
-#   transactions, cause race conditions, and corrupt state.
-#
-# Depends(get_session) tells FastAPI:
-#   "Before calling this endpoint, create a new AsyncSession,
-#    inject it into the 'session' parameter, and clean it up
-#    automatically after the request finishes."
-#
-# Internally, FastAPI does something similar to:
-#
-# session = await get_session()
-# await create_url(payload=payload, session=session)
-#
-# The session is then passed to the service and repository so
-# they all use the same transaction for that request.
-
-
-# Commit at the API (transaction) boundary.
-#
-# Repository:
-#   - Performs database operations (add, update, delete, queries).
-#   - May call flush() to send SQL and obtain generated values.
-#   - MUST NOT commit, so repositories remain reusable and composable.
-#
-# Service:
-#   - Contains business logic.
-#   - Coordinates one or more repository calls.
-#   - Also should not commit.
-#
-# Endpoint:
-#   - Owns the transaction.
-#   - Commits only after the entire operation succeeds.
-#   - If an exception occurs before commit, the transaction is rolled back.
-#
-# Earlier bug:
-# Repository only called session.flush(). Without commit, the request ended,
-# the session closed, and SQLAlchemy rolled back the transaction. The first
-# URL was never persisted, so duplicate-alias tests incorrectly succeeded.
-    
-#==============================================================================================
-
-# Exception handlers are ordered by execution flow: application-level
-# validation and business-rule errors first, followed by IntegrityError,
-# which represents PostgreSQL's final concurrency safeguard during
-# flush()/commit() when a UNIQUE constraint is violated.

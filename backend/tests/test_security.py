@@ -1,3 +1,9 @@
+# Argon2id uses a random salt and configurable memory/work parameters.
+# The stored hash includes the algorithm, parameters, salt, and hash value.
+# Library verification checks the candidate password against that stored value.
+# Tests require distinct hashes for the same password and reject wrong passwords.
+# Token-type tests reject an access JWT where a refresh JWT is required.
+
 from app.utils.security import hash_password, verify_password
 
 from app.utils.security import hash_password, normalize_email, verify_password
@@ -23,7 +29,6 @@ def test_normalize_email_strips_and_lowercases() -> None:
     assert normalize_email(" User.Name@Example.COM ") == "user.name@example.com"
 
 
-
 def test_access_token_contains_only_required_claims()->None:
     token=create_access_token(
         user_id=123,
@@ -31,7 +36,7 @@ def test_access_token_contains_only_required_claims()->None:
         secret="test-jwt-secret",
         issuer="smolink",
         audience="smolink-api",
-        expires_in=timedelta(minutes=15), #will create expires_at
+        expires_in=timedelta(minutes=15),
     )
     claims=decode_access_token(
         token,
@@ -42,7 +47,7 @@ def test_access_token_contains_only_required_claims()->None:
     assert claims["sub"] == "123"
     assert claims["auth_version"] == 1
     assert claims["typ"] == "access"
-    assert isinstance(claims["jti"], str) #jwt id
+    assert isinstance(claims["jti"], str)
     assert "email" not in claims
     assert "password" not in claims
 
@@ -72,24 +77,6 @@ def test_access_token_rejects_wrong_issuer_or_audience() -> None:
             audience="wrong-audience",
         )
 
-# Passwords are never stored or compared in plaintext. Instead, they are
-# hashed using Argon2id, a password hashing algorithm designed to be slow and
-# memory-hard, making brute-force attacks computationally expensive.
-#
-# Each password is hashed with a cryptographically secure random salt, ensuring
-# that identical passwords produce different hashes. The generated hash embeds
-# the algorithm, hashing parameters, salt, and final hash in a single string,
-# allowing password verification without storing the original password or a
-# separate salt column.
-#
-# During login, the stored hash is parsed to recover the original hashing
-# parameters and salt. Argon2 hashes the user-provided password again using
-# those same values, and authentication succeeds only if the newly computed
-# hash matches the stored hash.
-#
-# These tests verify that passwords are hashed with Argon2id, never stored in
-# plaintext, and that password verification succeeds only for the correct
-# password while rejecting incorrect ones.
 
 def test_refresh_token_contains_required_sesssiion_claims()->None:
     family_id=uuid4()
@@ -134,7 +121,6 @@ def test_refresh_decoder_rejects_access_token() -> None:
             issuer="smolink",
             audience="smolink-api",
         )
-#This test verifies that an access token cannot be used where a refresh token is expected.
 
 def test_generate_opaque_token_returns_unique_nonempty_values() -> None:
     first = generate_opaque_token()

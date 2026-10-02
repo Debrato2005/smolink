@@ -1,3 +1,12 @@
+# Use unique emails and roll back uncommitted test data.
+# Service duplicate checks precede the database's uniqueness safeguard.
+# session.add() updates local session state. flush()/commit() perform async I/O.
+# Failed passwords increment the count. The fifth failure sets the lock.
+# A subsequent attempt during the lock raises AccountLockedError.
+# Token-pair tests compose JWT helpers, keyed hashing, repositories, and services.
+# The stored refresh hash must match its jti under the configured secret.
+# exp is an absolute JWT expiry. expires_in is the response lifetime in seconds.
+
 import asyncio
 
 import pytest
@@ -44,7 +53,7 @@ def test_register_user_normalizes_email_and_hashes_password() -> None:
             async with session_factory() as session:
                 registration=await register_user(
                     session=session,
-                    email=f" {email.upper()} ", #Don't use fixed emails in integration tests.
+                    email=f" {email.upper()} ",
                     password="a-secure-password",
                     generator=SnowflakeGenerator(worker_id=0),
                 )
@@ -55,8 +64,6 @@ def test_register_user_normalizes_email_and_hashes_password() -> None:
                 assert verify_password("a-secure-password", user.password_hash)
 
                 await session.rollback()
-#The rollback is there to ensure the test doesn't leave data in the database.
-#Without it, the test would pollute the database and affect later tests.
 
         finally:
             await engine.dispose()
@@ -91,8 +98,6 @@ def test_register_user_rejects_normalized_duplicate_email() -> None:
                         "another-secure-password",
                         generator,
                     )
-# register_user() should detect an existing normalized email and raise
-# EmailTakenError before PostgreSQL raises an IntegrityError on flush().
 
                 await session.rollback()
         finally:
@@ -126,10 +131,6 @@ def test_authenticate_user_returns_verified_user()->None:
             await engine.dispose()
 
     asyncio.run(check())
-# session.add() is synchronous because it only registers the object with
-# SQLAlchemy's in-memory session; it does not communicate with the database.
-# Database I/O happens later during flush() or commit(), which are async and
-# therefore must be awaited.
 
 def test_authenticate_user_rejects_invalid_credentials() -> None:
     async def check() -> None:
@@ -269,17 +270,6 @@ def test_authenticate_user_locks_account_after_five_failed_attempts() -> None:
             await engine.dispose()
 
     asyncio.run(check())
-#authenticate_user() currently raises InvalidCredentialsError
-# immediately on an incorrect password without updating the User object. As a
-# result:
-#
-#   - failed_login_count is never incremented (remains 0),
-#   - locked_until is never set (remains None),
-#   - the account is never locked.
-#
-# The test defines the desired behavior: each failed login should increment
-# failed_login_count, the fifth failure should create the lock, and only the
-# following login attempt should raise AccountLockedError.
 
 def test_authenticate_user_resets_failure_state_after_successful_login() -> None:
     async def check() -> None:
@@ -318,7 +308,6 @@ def test_authenticate_user_resets_failure_state_after_successful_login() -> None
 
     asyncio.run(check())
 
-#The same input always produces the same output.
 def test_token_identifier_hash_is_deterministic_and_keyed() -> None:
     token_id="refreshtoken-jti"
     first = hash_token_identifier(
@@ -337,21 +326,6 @@ def test_token_identifier_hash_is_deterministic_and_keyed() -> None:
     assert first != different_secret
     assert len(first) == 64
     assert token_id not in first
-# `jti` (JWT ID) is a unique identifier embedded in the refresh token itself.
-# For security, the server does not store this raw identifier. Instead, it
-# stores a keyed hash of the `jti`. When a refresh token is presented later,
-# the server extracts its `jti`, hashes it again, and looks up the stored hash.
-# The hash must therefore be deterministic (same input → same output) and
-# keyed (different secrets → different hashes) to allow secure, reliable
-# refresh-token validation.
-#===============================================================================================================
-# Unlike previous tests that checked one function, this one verifies that multiple components work together.
-# It tests the complete flow of issuing a token pair.
-# Integration test for issuing a token pair. It verifies that issue_token_pair()
-# creates valid access and refresh JWTs, hashes the refresh token's `jti`,
-# persists the corresponding RefreshToken record, and stores the correct
-# user_id, token_hash, and family_id. It ensures the JWT utilities, hashing,
-# repository, and service layer all work together correctly.
 def test_issue_token_pair_persists_hashed_refresh_identifier() -> None:
     async def check() -> None:
         settings = get_settings()
@@ -411,14 +385,6 @@ def test_issue_token_pair_persists_hashed_refresh_identifier() -> None:
 
     asyncio.run(check())
 
-
-
-# The access token stores an absolute expiration time (`exp`) because JWTs
-# must know the exact timestamp after which they become invalid. Separately,
-# the API response returns `expires_in` (the configured lifetime in seconds)
-# so the client knows how long the access token is valid and when it should
-# proactively refresh it. Both represent the same lifetime, but `exp` is for
-# server-side validation while `expires_in` is for client-side scheduling.
 
 def test_verify_email_marks_user_and_consumes_token()->None:
     async def check()->None:

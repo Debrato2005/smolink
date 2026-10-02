@@ -1,4 +1,5 @@
-#Repository Layer. It is responsible for all communication with the database.
+# Exercise URL persistence and lookup through the repository's SQL interface.
+
 import asyncio
 from time import time_ns
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine

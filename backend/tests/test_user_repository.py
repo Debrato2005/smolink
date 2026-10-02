@@ -1,3 +1,6 @@
+# Models define the schema. Repositories insert and retrieve mapped records.
+# This integration test checks durable User insertion and email lookup.
+
 import asyncio
 from time import time_ns
 
@@ -41,19 +44,3 @@ def test_create_and_find_user_by_email() -> None:
             await engine.dispose()
 
     asyncio.run(check())
-
-# Repository Layer
-#
-# The repository layer encapsulates all database access logic, providing a
-# clean interface for creating, querying, updating, and deleting models while
-# hiding SQLAlchemy implementation details from the rest of the application.
-#
-# Models define *what* the database schema looks like (tables, columns,
-# relationships), whereas repositories define *how* data is persisted and
-# retrieved. Routes and services interact with repositories instead of writing
-# SQLAlchemy queries directly, improving separation of concerns, code reuse,
-# maintainability, and testability.
-#
-# This test verifies that the User repository correctly persists a User model
-# and can retrieve it by email, ensuring the repository interacts correctly
-# with the database.

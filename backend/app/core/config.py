@@ -1,8 +1,12 @@
-from functools import lru_cache #Imports Python’s cache decorator. It will let the app create one settings object and reuse it.
+# BaseSettings loads typed fields from environment variables and .env.
+# Fields without defaults are required. The .env path is working-directory-relative.
+# lru_cache retains the first settings instance for subsequent calls.
+
+from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict 
 
-class Settings(BaseSettings): #Defines your application settings. Because it inherits BaseSettings, values come from environment variables or .env, not hardcoded Python values.
+class Settings(BaseSettings):
     database_url: str
     redis_url: str
     jwt_secret: str
@@ -32,6 +36,6 @@ class Settings(BaseSettings): #Defines your application settings. Because it inh
         extra="ignore",
         )   
 
-@lru_cache #Caches the result of the next function. This prevents repeatedly reading environment variables for every request.
+@lru_cache
 def get_settings() -> Settings:
     return Settings()

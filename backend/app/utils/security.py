@@ -1,3 +1,13 @@
+# PyJWT signs Header.Payload with HS256 and validates the token on decode.
+# Header, payload, and signature use Base64url encoding in the JWT format.
+# The signature detects changes under the configured secret. It does not encrypt.
+# Claims remain readable. Keep passwords and other secrets out of them.
+# Required claims and typ distinguish access JWTs from refresh JWTs.
+# JWT signing and persistence hashing have separate purposes and secrets.
+# hash_token_identifier() hashes refresh jti or an entire opaque token value.
+# Hash the presented value with the same key to find its stored record.
+# `*` makes the following parameters keyword-only to avoid argument-order errors.
+
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
 
@@ -11,7 +21,7 @@ import hmac
 
 import secrets
 
-password_hasher=PasswordHasher() #object
+password_hasher=PasswordHasher()
 
 def hash_password(password:str)->str:
     return password_hasher.hash(password)
@@ -25,7 +35,6 @@ def verify_password(password:str,password_hash:str)->bool:
 def normalize_email(email: str) -> str:
     return email.strip().lower()
 
-#jwt implementation
 
 class InvalidAccessTokenError(Exception):
     pass
@@ -39,9 +48,6 @@ def create_access_token(
     audience: str,
     expires_in: timedelta,
 ) -> str:
-#The * means you must pass arguments using key=value (keyword arguments), not just values in order.
-# `*` makes all following parameters keyword-only. This prevents accidentally
-# passing many similarly-typed arguments (e.g. secret, issuer, audience) in the
     now = datetime.now(timezone.utc)
     claims = {
         "sub": str(user_id),
@@ -92,31 +98,6 @@ def decode_access_token(
 
     return claims
 
-# wrong order, making calls safer, clearer, and more self-documenting.
-# A JWT consists of three Base64URL-encoded parts:
-#
-#   Header.Payload.Signature
-#
-# Header:
-#   - Created automatically by PyJWT.
-#   - Specifies metadata such as the signing algorithm (e.g. HS256) and token
-#     type (JWT).
-#
-# Payload:
-#   - Provided by the application.
-#   - Contains the JWT claims (e.g. sub, exp, iss, aud, auth_version, jti).
-#
-# Signature:
-#   - Generated automatically by PyJWT by signing:
-#
-#         Base64URL(Header) + "." + Base64URL(Payload)
-#
-#     using the configured secret/private key and algorithm.
-#
-# During decoding, PyJWT splits the token into its three parts, verifies the
-# signature, validates claims such as exp, iss, and aud, and returns the
-# payload if everything is valid. Using PyJWT avoids implementing security-
-# critical JWT encoding, signing, and validation logic manually.
 
 class InvalidRefreshJwtError(Exception):
     pass
@@ -162,7 +143,7 @@ def decode_refresh_token(
             algorithms=["HS256"],
             issuer=issuer,
             audience=audience,
-            options={ #These claims must exist in every valid token
+            options={
                 "require": [
                     "sub",
                     "family_id",
@@ -185,7 +166,7 @@ def decode_refresh_token(
 
 def hash_token_identifier(
     token_id: str,
-    *, #Everything after * must be passed as a keyword argument.
+    *,
     secret: str,
 ) -> str:
     return hmac.new(
@@ -194,49 +175,6 @@ def hash_token_identifier(
         hashlib.sha256,
     ).hexdigest()
 
-# JWT Signature Summary
-
-# 1. Server creates:
-#    Header + Payload
-
-# 2. Server computes:
-#    Signature = HMAC(Header + Payload, Secret Key)
-
-# 3. JWT sent to client:
-#    header.payload.signature
-
-# 4. Client sends JWT back on every request.
-
-# 5. Server verifies by:
-#    - Taking the received header and payload.
-#    - Recomputing the signature using its secret key.
-#    - Comparing the computed signature with the received signature.
-
-# 6. If the header or payload is modified:
-#    - The recomputed signature changes completely (avalanche effect).
-#    - The attacker cannot generate a new valid signature because they do not know the server's secret key.
-#    - Signatures do not match → JWT is rejected.
-
-# Key idea:
-# The signature guarantees the JWT's integrity (it hasn't been tampered with) and 
-# authenticity (it was signed by someone with the secret key). 
-# It does NOT encrypt the payload—the header and payload remain readable by anyone.
-#=================================================================================================================================
-# JWTs and token hashing serve different purposes:
-#
-# • jwt.encode() creates a signed JWT that the client carries. It packages
-#   claims (e.g. user ID, expiry, token type) into a token and signs them
-#   using the server's secret. The signature lets the server detect if the
-#   token was modified, but it does not hide the claims.
-#
-# • jwt.decode() verifies the signature and extracts the claims if the token
-#   is valid.
-#
-# • hash_token_identifier() is unrelated to JWT signing. It hashes only the
-#   refresh token's `jti` before storing it in the database, so the server
-#   never stores the raw token identifier. Later, the server hashes the `jti`
-#   from a presented refresh token again and compares the hash to the stored
-#   value.
 
 def generate_opaque_token()->str:
     return secrets.token_urlsafe(32)

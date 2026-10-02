@@ -1,3 +1,7 @@
+# Parametrization runs one test with each supplied input.
+# **payload expands dictionary fields into named Pydantic arguments.
+# Verification-token schema checks precede HTTP endpoint execution.
+
 import pytest
 from pydantic import ValidationError
 
@@ -14,7 +18,7 @@ def test_login_request_accepts_valid_credentials() -> None:
     assert str(request.email) == "User@example.com"
     assert request.password == "hello12345678"
 
-@pytest.mark.parametrize( #Instead of writing three separate tests, pytest runs the same test with three different inputs.
+@pytest.mark.parametrize(
     "payload",
     [
         {"email": "not-an-email", "password": "hello12345678"},
@@ -26,23 +30,8 @@ def test_login_request_rejects_invalid_credentials(
     payload: dict[str, str],
 ) -> None:
     with pytest.raises(ValidationError):
-        LoginRequest(**payload) #The ** operator unpacks the dictionary into keyword arguments.
+        LoginRequest(**payload)
 
-# `**` unpacks a dictionary into keyword arguments. For example:
-#
-#     payload = {"email": "...", "password": "..."}
-#
-#     LoginRequest(**payload)
-#
-# is equivalent to:
-#
-#     LoginRequest(
-#         email="...",
-#         password="...",
-#     )
-#
-# Without `**`, the entire dictionary would be passed as a single positional
-# argument, which is not how Pydantic BaseModels are constructed.
 
 def test_token_pair_response_has_the_public_contract() -> None:
     response = TokenPairResponse(
@@ -67,10 +56,6 @@ def test_refresh_request_requires_a_token() -> None:
     with pytest.raises(ValidationError):
         RefreshRequest(refresh_token="")
 
-
-# Verify the request model accepts a non-empty verification token and rejects
-# an empty one. FastAPI relies on this Pydantic validation before the endpoint
-# logic executes, automatically returning HTTP 422 for invalid request bodies.
 
 def test_verify_email_request_requires_a_token() -> None:
     request = VerifyEmailRequest(token="verification-token")

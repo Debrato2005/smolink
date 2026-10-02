@@ -1,3 +1,7 @@
+# The provider/provider_subject pair is unique across users.
+# The same subject string can exist for different providers.
+# Google linking remains planned. Local passwords are stored on User.
+
 from datetime import datetime
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey, String, UniqueConstraint, func
@@ -8,11 +12,6 @@ from app.db.base import Base
 class AuthIdentity(Base):
     __tablename__="auth_identities"
     __table_args__ = (UniqueConstraint("provider", "provider_subject"),)
-# __table_args__ defines table-level configuration such as composite unique
-# constraints, indexes, and check constraints. Here, UniqueConstraint("provider",
-# "provider_subject") ensures that the same authentication provider identity
-# (e.g. Google subject ID) cannot be linked to more than one user, while still
-# allowing the same provider_subject value to exist under different providers.
     id: Mapped[int] = mapped_column(
         BigInteger,
         primary_key=True,

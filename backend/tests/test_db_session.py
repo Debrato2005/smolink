@@ -1,6 +1,9 @@
-#The future get_session() dependency must yield a usable async SQLAlchemy session.
-import asyncio #Python’s asynchronous runtime so a normal pytest test can run async code
-from sqlalchemy import text #imports SQLAlchemy’s explicit SQL-text wrapperfro
+# The session dependency must yield a usable async SQLAlchemy session.
+# asyncio.run() bridges this synchronous test to its async database check.
+# sqlalchemy.text() wraps the explicit SELECT 1 statement.
+
+import asyncio
+from sqlalchemy import text
 from app.db import session
 def test_session_dependency_runs_select_one()-> None:
     async def check_connection()-> None:

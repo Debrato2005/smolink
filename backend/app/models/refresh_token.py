@@ -1,3 +1,14 @@
+# token_hash stores a keyed HMAC-SHA256 hash of the refresh JWT jti.
+# The raw refresh JWT and raw identifier are not stored.
+# family_id groups records from one login. parent_token_id links each successor.
+# issued_at/expires_at track lifetime. used_at records rotation consumption.
+# revoked_at blocks future refreshes from an explicitly revoked record.
+# Reuse of a consumed token revokes the family's active records.
+# Multiple logins can create independent families for one user.
+# Each rotation gives its successor a fresh expiry, not an absolute family expiry.
+# Access JWTs have no row per token. Current-user checks still query PostgreSQL.
+# Logout blocks refreshes. Password reset also invalidates access via auth_version.
+
 from datetime import datetime
 from uuid import UUID
 
@@ -20,12 +31,13 @@ class RefreshToken(Base):
         index=True,
         nullable=False,
     )
+    # Keyed hash of jti, not the complete refresh JWT.
     token_hash: Mapped[str] = mapped_column(
         String(64),
         unique=True,
         nullable=False,
     )
-    family_id: Mapped[UUID] = mapped_column(#The family groups all refresh tokens that belong to one login session.
+    family_id: Mapped[UUID] = mapped_column(
         Uuid,
         index=True,
         nullable=False,
@@ -51,43 +63,3 @@ class RefreshToken(Base):
         DateTime(timezone=True),
         nullable=True,
     )
-
-# RefreshToken stores long-lived refresh tokens used to obtain new JWT access
-# tokens without requiring the user to log in again. Unlike access tokens,
-# refresh tokens are stateful and are persisted (as hashes) so the server can
-# securely manage user sessions.
-#
-# This table enables:
-# - Refresh token rotation (issue a new refresh token on every refresh).
-# - Reuse detection (detect if an already-used token is presented again,
-#   indicating possible token theft).
-# - Token revocation (logout, password changes, administrator actions, etc.).
-# - Per-device/session management (multiple active sessions per user).
-# - Expiration and lifecycle tracking for every issued refresh token.
-#
-# Key fields:
-# - token_hash: SHA-256 hash of the refresh token; the raw token is never stored.
-# - family_id: Random UUID shared by all rotated tokens originating from the
-#   same login session (token family). If compromise is detected, the entire
-#   family can be revoked.
-# - parent_token_id: Links each rotated token to its predecessor, forming the
-#   refresh-token rotation chain.
-# - issued_at / expires_at: Track token lifetime.
-# - used_at: Records when a refresh token has been consumed during rotation.
-# - revoked_at: Marks tokens that have been explicitly invalidated.
-#
-# Access tokens remain short-lived and stateless (JWTs), while refresh tokens
-# are intentionally stateful to provide secure long-lived authentication.
-
-#==============================================================================================================================
-# why no model for access model only for refresh token
-
-# Because access tokens are short-lived, signed JWTs—usually 15 minutes. 
-# The server validates their signature, expiry, issuer/audience, then loads the user 
-# and checks auth_version; no database row is needed for each access token.
-# Refresh tokens live much longer (30 days) and must support rotation, logout, 
-# reuse detection, and family revocation. Their JWT jti is therefore stored as 
-# a keyed hash in the refresh_tokens table.
-# So:
-# Access JWT: signed, short-lived, not persisted.
-# Refresh JWT: signed, long-lived, persisted as hashed state.

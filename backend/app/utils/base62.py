@@ -1,3 +1,9 @@
+# divmod(value, 62) returns the next quotient and one alphabet index.
+# The remainder ranges from zero through len(ALPHABET) - 1.
+# divmod(125, 62) returns (2, 1). Each iteration keeps the quotient.
+# ALPHABET[1] is "1". ALPHABET[36] is "A".
+# Reversing the collected digits restores most-significant-digit order.
+
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 def encode_base62(value: int)-> str:
@@ -12,29 +18,3 @@ def encode_base62(value: int)-> str:
         characters.append(ALPHABET[remainder])
 
     return "".join(reversed(characters))
-
-# divmod(a, b) returns a tuple: (quotient, remainder)
-#
-# Example:
-#     divmod(125, 62) -> (2, 1)
-#
-# Tuple unpacking assigns:
-#     value, remainder = divmod(value, len(ALPHABET))
-#
-# which is equivalent to:
-#     result = divmod(value, len(ALPHABET))
-#     value = result[0]      # quotient
-#     remainder = result[1]  # remainder
-#
-# The quotient becomes the new value for the next iteration.
-# The remainder is always in the range [0, len(ALPHABET)-1], making it
-# a valid index into ALPHABET.
-#
-# Example:
-#     remainder = 1
-#     ALPHABET[1] -> "1"
-#
-#     remainder = 36
-#     ALPHABET[36] -> "A"
-#
-# Thus, each remainder directly selects the corresponding Base62 digit.

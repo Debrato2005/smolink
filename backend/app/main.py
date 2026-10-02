@@ -1,4 +1,4 @@
-from fastapi import FastAPI  # see fastapi docs
+from fastapi import FastAPI  # See FastAPI documentation.
 # from pydantic import BaseModel # pydantic for schema validation
 from app.api.v1.router import router as api_v1_router
 
@@ -18,8 +18,8 @@ app=create_app()
 
 
 
-#order of path operatons does matter
-#path_operation=route 
+# Register fixed routes before any future /{short_code} route.
+# A path operation is an HTTP route.
 # @app.get("/") #path_operation decorator
 # async def root(): #path_operation function
-#     return {"message": "Hello, Debrato"} 
+#     return {"message": "Hello, Debrato"}

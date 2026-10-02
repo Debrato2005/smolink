@@ -1,3 +1,9 @@
+# Routes own HTTP translation and transaction commit/rollback.
+# Registration commits the user and token before sending verification email.
+# EmailTakenError covers the service check. IntegrityError also maps to 409.
+# The current IntegrityError branch does not distinguish constraint types.
+# PublicUserResponse excludes password_hash and internal authentication fields.
+
 from fastapi import APIRouter, Depends, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
@@ -50,8 +56,6 @@ router=APIRouter(prefix="/auth", tags=["auth"])
 generator = SnowflakeGenerator(
     worker_id=get_settings().snowflake_worker_id,
 )
-#@router.post("/register") registers the function underneath
-#  it as the handler for a POST request to /register
 @router.post( "/register",
     response_model=PublicUserResponse,
     status_code=status.HTTP_201_CREATED,)
@@ -98,12 +102,6 @@ async def register(
 
     return PublicUserResponse.model_validate(user)
 
-# Duplicate-email handling has two layers:
-# - EmailTakenError handles the normal case where the service detects an
-#   existing normalized email before attempting an insert.
-# - IntegrityError handles rare concurrent race conditions where two requests
-#   pass the duplicate check simultaneously, and PostgreSQL's UNIQUE
-#   constraint rejects the second insert. Both return the same 409 response.
 
 @router.post("/login",
              response_model=TokenPairResponse,)
@@ -125,7 +123,8 @@ async def login(
         )
         await session.commit()
     except InvalidCredentialsError:
-        await session.commit() #to update the failed counter
+        # Commit the failed-login count before returning the client error.
+        await session.commit()
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={
@@ -173,11 +172,8 @@ async def refresh(
         )
         await session.commit()
     except InvalidRefreshTokenError:
-        # A replay may revoke a token family, so preserve transaction changes.
+        # Commit replay revocation. Rollback would leave the family active.
         await session.commit()
-        #Do not replace await session.commit() with rollback in the exception branch: 
-        # a replayed refresh token intentionally revokes the token family and must persist 
-        # that revocation.
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={
@@ -190,11 +186,6 @@ async def refresh(
         refresh_token=token_pair.refresh_token,
         expires_in=token_pair.expires_in,
     )
-# Normally exceptions trigger a rollback, but refresh-token replay is different:
-# replay detection revokes the entire refresh-token family before raising
-# InvalidRefreshTokenError. Committing here preserves that security update. If
-# no database changes were made (e.g. malformed or expired token), commit is a
-# harmless no-op.
 
 @router.post("/verify-email", response_model=PublicUserResponse)
 async def verify_email_endpoint(
@@ -220,10 +211,6 @@ async def verify_email_endpoint(
         )
 
     return PublicUserResponse.model_validate(user)
-# Convert the internal SQLAlchemy User model into the public response schema,
-# exposing only the fields defined by PublicUserResponse before returning JSON.
-# Map the internal database model to the public response model to avoid
-# exposing internal-only fields (e.g. password_hash, auth_version).
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT,response_model=None)
 async def logout(
@@ -278,8 +265,6 @@ async def forgot_password(
         try:
             await send_password_reset_email(
                 recipient_email=result.user.email,
-# `result` contains the User object, not a separate email field, so the
-# user's email is accessed through `result.user.email`.
                 reset_token=result.reset_token,
                 idempotency_key=f"password-reset:{result.token_id}",
             )

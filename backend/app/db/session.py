@@ -1,3 +1,6 @@
+# pool_pre_ping checks a pooled connection before reuse.
+# get_session yields one request session. The caller owns transaction commit.
+
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -8,7 +11,7 @@ settings=get_settings()
 
 engine=create_async_engine(
     settings.database_url,
-    pool_pre_ping=True, #checks an existing pooled connection before reusing it, avoiding failures after Postgres restarts.
+    pool_pre_ping=True,
 )
 async_session_factory=async_sessionmaker(
     engine,
@@ -17,4 +20,4 @@ async_session_factory=async_sessionmaker(
 
 async def get_session()->AsyncGenerator[AsyncSession,None]:
     async with async_session_factory() as session:
-        yield session 
+        yield session

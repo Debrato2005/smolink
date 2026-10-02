@@ -1,198 +1,139 @@
 # Smolink Agent Guide
 
-This is the operational handbook for coding agents working in Smolink. It
-orients work; it does not replace the repository's canonical documentation.
+This guide defines agent workflow. The README defines architecture decisions.
+The walkthrough describes implementation. The checklist records milestone
+verification. Use each document for its stated purpose.
 
-## 1. Mission
+## Mission
 
-Smolink is a backend-first URL shortener built to demonstrate sound engineering
-judgment, not maximum technology usage. Build the smallest production-minded
-solution that the current milestone requires.
+Smolink is a backend-first URL shortener and an engineering learning project.
+Build the smallest solution that meets the current milestone.
 
-Non-negotiable principles:
+- Preserve the modular monolith unless evidence justifies a new boundary.
+- Store durable data in PostgreSQL. Redis holds cache and ephemeral enforcement state.
+- Preserve guest creation with no owner.
+- Prefer explicit tools and interfaces with understood behavior.
+- Record a replacement decision before reversing an architecture decision.
 
-- Preserve the modular-monolith architecture and evolve it only when evidence
-  justifies a new boundary.
-- PostgreSQL is the durable source of truth. Redis is cache-only for durable
-  data and holds ephemeral rate-limit state.
-- Guests must be able to create functional URLs without an owner.
-- Prefer explicit, boring, well-understood solutions over speculative scale.
-- Do not silently reverse a documented decision; propose and document a
-  replacement decision first.
+## Collaboration and authorization
 
-## 2. Agent Workflow
+Unless the user authorizes implementation, work as a read-only coding partner:
 
-### Collaboration mode
+1. Inspect the relevant source and documentation.
+2. Give the exact code, file location, and command for the requested step.
+3. State the required walkthrough and checklist updates.
+4. Stop after the requested step until the user authorizes continuation.
 
-Unless the user explicitly authorizes an action, work as a read-only coding
-partner:
+In that mode, do not edit files, run tests, or change repository state.
+If the user asks for edits, tests, or documentation changes, complete the
+authorized scope. User instructions for the task control that scope.
+Keep replies concise and include enough detail to execute the step.
 
-- First inspect the relevant repository files and canonical documentation.
-- Give the exact code, file location, and command for the user to type and
-  run; do not edit files, run tests, or otherwise change repository state.
-- State which walkthrough and checklist updates the user should make, with the
-  exact documentation text when useful.
-- Stop after the requested step. Continue only when the user explicitly says
-  to continue.
-- Keep responses concise: lead with the next action, omit repeated context,
-  and use only the detail needed to complete that step.
+For authorized changes:
 
-When the user explicitly asks the agent to edit, test, or update documentation,
-perform only that authorized action and report the actual result.
+Inspect `git status` before editing. Preserve unrelated local work.
 
-1. Understand the affected behavior, its tests, and its canonical rules before
-   editing.
-2. Make the smallest reversible change that satisfies the requested outcome.
-3. Preserve existing module and layer boundaries; do not refactor unrelated
-   code while implementing a focused task.
-4. Do not invent endpoints, persistence, dependencies, abstractions, or
-   fallback behavior that the current milestone does not require.
-5. Treat an uncertain requirement as a question to resolve, not a license to
-   guess.
-6. Preserve unrelated working-tree changes. Never use destructive Git commands
-   to make the tree appear clean.
+1. Read the affected behavior, tests, and architecture rules.
+2. Make the smallest reversible change that satisfies the outcome.
+3. Preserve module boundaries and unrelated working-tree changes.
+4. Use only endpoints, persistence, dependencies, and abstractions required by the milestone.
+5. Resolve requirements from evidence. Ask when an unresolved choice changes scope or a public contract.
 
-### Repository skills and Graphify
+Never use destructive Git commands to make the tree appear clean.
 
-Use `.agents/skills/fastapi/` for FastAPI conventions and
-`.agents/skills/python-testing/` for Python testing work. Use
-`.agents/skills/graphify/` for questions that span files, layers, or
-architecture. When a graph exists, query it before broad source searches, but
-verify every `INFERRED` or `AMBIGUOUS` relationship in source. The commands,
-outputs, and generated-file policy are documented in
-[agent-tooling.md](agent-tooling.md).
+## Documentation order
 
-## 3. Documentation Order
+Before changing behavior, read:
 
-Read these before changing behavior, in this order:
+1. [README.md](../README.md): architecture, invariants, target API contracts, and roadmap.
+2. [Backend build checklist](backend-build-checklist.md): current milestone and verification records.
+3. [Codebase walkthrough](codebase-walkthrough.md): implementation and file responsibilities.
+4. [Engineering Playbook](ENGINEERING_PLAYBOOK.md): reasoning and future concepts.
 
-1. [README.md](../README.md) — source of truth for architecture decisions,
-   invariants, API contracts, and roadmap. Consult it for any design or API
-   question; it wins if documents disagree.
-2. [backend-build-checklist.md](backend-build-checklist.md) — current
-   milestone, required scope, red-green steps, verification commands, and
-   recorded progress. Consult it to determine what should happen next. The
-   latest verified baseline is 115 passing tests on 2026-08-24; later entries
-   supersede this number as the suite grows.
-3. [codebase-walkthrough.md](codebase-walkthrough.md) — current
-   implementation map and line-by-line explanations. Consult it before editing
-   an unfamiliar file and update it when behavior changes.
-4. [ENGINEERING_PLAYBOOK.md](ENGINEERING_PLAYBOOK.md) — the reasoning
-   behind the architecture, backend practices, and future direction. Consult it
-   when choosing between valid technical approaches or when a design decision
-   needs context.
+Also read the feature design or plan under `docs/superpowers/` when relevant.
+Historical plans describe earlier work. Do not execute their obsolete examples
+as current procedures. Use [development.md](development.md) for commands.
 
-Also read a feature's design/specification or implementation plan under
-`docs/superpowers/` when one exists. Repository-local `AGENTS.md` contains
-additional development commands and conventions.
+The README governs design decisions. Source and tests establish implemented
+behavior. If those differ, document the gap without treating the target as
+already implemented. Do not change code merely to make obsolete prose true.
 
-## 4. Development Rules
+## Skills and writing
 
-### Boundaries
+Read the relevant skills in `.agents/skills/` before work. Use `fastapi` for
+API conventions, `python-testing` for test behavior, and `graphify` for
+relationships across files. Query an existing graph before broad source
+searches. Check inferred edges against source.
 
-- Routes handle HTTP concerns and transaction boundaries, not SQL or business
-  rules.
-- Schemas validate request/response shape.
-- Services own business rules and coordination; they do not return HTTP
-  responses or issue SQL directly.
-- Repositories own SQLAlchemy queries and persistence operations; they do not
-  decide business policy or commit transactions.
-- Utilities are pure, reusable helpers with no database or FastAPI dependency.
-- A module must not directly query another module's data store.
+The root [AGENTS.md](../AGENTS.md) defines the writing policy.
+[Agent tooling](agent-tooling.md) explains skill usage, terminology, and
+Graphify output handling. After source changes, run `graphify update .`.
 
-### Tests, errors, commits, and dependencies
+## Development boundaries
 
-- Follow red → green: write or adjust a focused failing test, implement the
-  minimum behavior, then rerun focused and full verification.
-- Keep tests isolated: do not rely on execution order or leftover database or
-  Redis state; use unique data and clean fixed external-state keys in fixtures.
-- Use real Compose PostgreSQL for database constraints and Redis for Redis
-  behavior. Use `-s` with pytest in this environment.
-- Keep API failures deliberate and consistent with the documented status and
-  response contract. Do not turn expected client errors into `500`s.
-- Keep commits focused on one milestone and use concise imperative messages.
-- Add a dependency only when it solves a current documented requirement. Do not
-  add Kafka, workers, microservices, or frontend/deployment tooling early.
+| Layer | Responsibility |
+|---|---|
+| Route | HTTP concerns and transaction boundary |
+| Schema | Request/response shape and validation |
+| Service | Business policy and coordination through a shared session |
+| Repository | SQL queries and persistence without commit |
+| Utility | Reusable operations without a database or FastAPI dependency |
 
-## 5. Working Process
+Some utilities manage local state or random values. Do not describe all
+utilities as pure functions. Access another domain's data through its service
+interface. Preserve `/api/v1` and established public response shapes.
 
-### Before coding
+Keep durable data in PostgreSQL. Planned redirect-cache failure must fall back
+to PostgreSQL. Protected-write limiter failure must return `503`.
+Use reviewed Alembic migrations for schema changes. Do not edit applied history
+or manually change a deployed schema.
 
-- Identify the requested milestone and read its relevant tests, source files,
-  architecture rules, and any feature plan.
-- Inspect `git status` and avoid overwriting unrelated local work.
-- State assumptions or ask for direction when a choice would change scope or a
-  public contract.
+## Tests, errors, and dependencies
 
-### During implementation
+- Use the red-to-green workflow for behavior changes. Run a focused failing test before implementation.
+- Test observable success and failure contracts. Avoid dependence on test order or leftover external state.
+- Use unique data and fixture cleanup for fixed PostgreSQL/Redis state.
+- Use real local PostgreSQL for constraint tests and Redis for Redis behavior.
+- Use `-s` for the recorded pytest capture issue in this environment.
+- Keep expected client failures distinct from unexpected `500` errors.
+- Add dependencies only for current documented requirements.
+- Keep commits focused and use imperative summaries when the user authorizes commits.
 
-- Keep diffs narrow and preserve public response shapes and `/api/v1`.
-- Put each concern in its proper layer.
-- Make database changes through SQLAlchemy models and a reviewed Alembic
-  migration; do not edit a deployed schema manually.
-- Keep durable data in Postgres. Cache failure must not make durable data
-  unavailable; protected-write rate-limit failure must fail closed as specified.
+Do not add Kafka, workers, microservices, frontend, or deployment tooling to an
+unrelated backend milestone.
 
-### Before finishing
+## Documentation maintenance
 
-- Run the relevant verification from `backend/`, then the full suite when the
-  change affects shared behavior.
-- Review the diff for accidental scope, secrets, generated artifacts, and
-  documentation drift.
-- Report commands and actual results. Never claim a test passed without running
-  it or clearly labeling the result as user-reported.
+- Update the walkthrough in the same change as source, tests, configuration, migration, Docker, CI, or frontend behavior.
+- Update checked milestone status only after its required verification succeeds.
+- Add dated progress records for completed, blocked, or deferred work.
+- Update the README when decisions, invariants, target endpoints, or roadmap change.
+- Synchronize dependent guides and link to one authoritative explanation.
+- Preserve historical results and meaningful uncertainty.
 
-## 6. Editing Rules
+## Decisions and completion
 
-- Update `docs/codebase-walkthrough.md` whenever source, test, configuration,
-  migration, Docker, CI, or frontend behavior changes.
-- Update `docs/backend-build-checklist.md` only after its stated verification
-  succeeds; add a concise progress-log entry for completed, blocked, or
-  deferred work.
-- Update `README.md` when an architecture decision, invariant, endpoint
-  contract, or roadmap changes; then synchronize dependent documentation.
-- Do not silently change architecture, API versioning, database ownership,
-  failure policy, or a deferred feature's scope.
-
-## 7. Decision Framework
-
-When several implementations are viable, choose the option that best satisfies
-this order:
+Choose among viable approaches in this order:
 
 1. Correctness and documented invariants.
-2. Simplicity and the current milestone's scope.
-3. Maintainability and clear ownership boundaries.
+2. Simplicity within the current scope.
+3. Maintainability and ownership boundaries.
 4. Explicit behavior and testability.
-5. Consistency with existing code and documented conventions.
-6. Measured performance needs—not hypothetical future scale.
+5. Consistency with existing conventions.
+6. Measured performance needs.
 
-If a trade-off changes an API, schema, durability, security, or operational
-behavior, surface it before implementing it.
+Surface choices that change an API, schema, durability, security, or operational
+contract before implementation. Do not bundle speculative infrastructure or
+unrelated formatting into a focused milestone.
 
-## 8. Anti-Patterns
+Before completion:
 
-Never:
+1. Run relevant verification from `backend/`.
+2. If the change affects shared behavior, run the full suite.
+3. Review the diff for scope, secrets, generated files, and documentation drift.
+4. Check that guides distinguish implemented behavior from targets.
+5. Report changed areas, actual verification results, and remaining work.
 
-- Treat Redis as authoritative for URLs or users.
-- Require authentication for guest URL creation.
-- Add a second alias-availability mechanism in v1.
-- Conflate public `short_code` routes with owned-resource `id` routes.
-- Put SQL in routes or business policy in repositories.
-- Commit secrets, `.env` files, database volumes, or local generated assets.
-- Modify applied migration history; create a new migration instead.
-- Add speculative infrastructure, broad refactors, or unrelated formatting
-  churn to a focused milestone.
-- Mark checklist work complete without its required verification.
-- Hide uncertainty, unverified results, or a conflict with canonical docs.
-
-## 9. Completion Checklist
-
-Before declaring work complete, confirm:
-
-- [ ] The requested behavior matches README invariants and the active milestone.
-- [ ] Tests cover the intended success and failure behavior.
-- [ ] Focused and appropriate full verification ran successfully.
-- [ ] The diff is minimal, layered correctly, and free of secrets/unrelated work.
-- [ ] The walkthrough and checklist accurately reflect verified behavior.
-- [ ] Any architecture or contract decision was explicitly documented.
-- [ ] The handoff states changed files, verification results, and remaining work.
+Do not mark work complete from source inspection alone when tests are required.
+Label user-reported results. Report failures and unavailable checks without
+claiming a pass. Never commit secrets, `.env`, volumes, or local generated assets.

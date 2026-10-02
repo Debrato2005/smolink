@@ -1,4 +1,7 @@
-def test_settings_reads_environment_variables(monkeypatch)-> None: #monkeypatch is a built-in pytest tool that temporarily changes environment variables only for this test.
+# monkeypatch restores environment changes after this test.
+# _env_file=None excludes local developer configuration from Settings.
+
+def test_settings_reads_environment_variables(monkeypatch)-> None:
     from app.core.config import Settings
 
     monkeypatch.setenv("DATABASE_URL","postgresql+asyncpg://smolink:smolink@localhost:5432/smolink")

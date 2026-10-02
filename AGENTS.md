@@ -9,16 +9,31 @@ Repository-scoped skills live in `.agents/skills/`:
 Read the selected skill before acting. The shared workflow and generated-output
 policy are in [docs/agent-tooling.md](docs/agent-tooling.md).
 
+## Technical writing
+
+Use ASD-STE100-inspired writing for human-readable technical prose. Use
+STE-flavored mode for explanations and documentation. Use strict mode for
+procedures, instructions, troubleshooting, error text, and safety-critical
+content. Preserve technical terminology, identifiers, uncertainty, qualifiers,
+and scientific, mathematical, and implementation meaning. Prefer clarity over
+mechanical simplification. Use the installed `asd-ste100` skill for substantial
+prose changes.
+
 ## Graphify
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+The knowledge graph in `graphify-out/` records central nodes, communities,
+and relationships across files.
 
 When the user invokes `/graphify`, use the repository's `graphify` skill before
 doing anything else.
 
 Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+
+- If `graphify-out/graph.json` exists, run `graphify query "<question>"` first for codebase questions.
+- Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts.
+- Use these scoped subgraphs before reading the full report or searching broadly.
+- Dirty graph files are expected after hooks or updates. They do not justify skipping Graphify.
+- Skip Graphify only for stale or incorrect graph output, or at the user's explicit request.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

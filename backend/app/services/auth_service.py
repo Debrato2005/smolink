@@ -1,3 +1,13 @@
+# Services coordinate business rules through the caller's shared session.
+# Login creates a family UUID. Rotation retains it and links parent_token_id.
+# Each refresh JWT has a fresh expiry. There is no absolute family lifetime.
+# Persist only the keyed jti hash, not the raw JWT.
+# Reuse indicates a possible replay and revokes the family's active records.
+# Old families remain separate from later logins and can remain for auditing.
+# The route must commit replay revocation despite the returned error.
+# Keyword-only parameters require named arguments at call sites.
+# Passwordless or unknown accounts do not receive password-reset records.
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4,UUID
@@ -99,7 +109,6 @@ async def register_user(
     )
 
 
-
 async def authenticate_user(
         *,
         session:AsyncSession,
@@ -129,9 +138,6 @@ async def authenticate_user(
         raise EmailUnverifiedError
 
     return user
-#these functions are service-layer functions.
-# Their job is to return the authenticated or newly created domain object (User)
-#  so the caller can decide what to do next.
 
 @dataclass
 class IssuedTokenPair:
@@ -175,7 +181,7 @@ async def issue_token_pair(
         audience=settings.jwt_audience,
     )
 
-    refresh_record = RefreshToken( #code that creates the database record for the refresh token after generating the JWT.
+    refresh_record = RefreshToken(
         id=generator.next_id(),
         user_id=user.id,
         token_hash=hash_token_identifier(
@@ -224,7 +230,7 @@ async def rotate_refresh_token(
         token_hash,
     )
 
-    if( # Ensure the refresh token still represents a valid, active login session.
+    if(
         token_record is None
         or token_record.user_id!=user_id
         or token_record.family_id!=family_id
@@ -233,8 +239,6 @@ async def rotate_refresh_token(
     ):
         raise InvalidRefreshTokenError
 
-# A refresh token is single-use. Reusing an already-consumed token indicates
-# a replay attack, so revoke the entire refresh-token family.
     if token_record.used_at is not None:
         await revoke_refresh_token_family(
             session,
@@ -242,16 +246,12 @@ async def rotate_refresh_token(
             revoked_at=now,
         )
         raise InvalidRefreshTokenError
-    # Ensure the owning account still exists and is eligible to receive new
-    # tokens.
     user = await get_user_by_id(session, token_record.user_id)
     if user is None or user.email_verified_at is None:
         raise InvalidRefreshTokenError
 
-    token_record.used_at = now # Consume this refresh token so it can never be used again.
+    token_record.used_at = now
 
-    # Rotate the refresh token by issuing a new token pair in the same family.
-    # The parent_token_id links the new refresh token to the one it replaced.
     return await issue_token_pair(
         session=session,
         user=user,
@@ -261,40 +261,10 @@ async def rotate_refresh_token(
     )
 
 
-
-# A refresh-token family represents one authenticated login session.
-#
-# • Login:
-#   - A successful login creates a brand-new `family_id` (UUID), a new access
-#     token, and the first refresh token in that family.
-#
-# • Refresh rotation:
-#   - Access tokens are short-lived (e.g. 15 minutes). When one expires, the
-#     client presents its current refresh token instead of logging in again.
-#   - Refresh tokens have a maximum lifetime (e.g. 30 days) but are single-use.
-#     Every successful refresh marks the current refresh token as used and
-#     issues a new access token and a new refresh token with a fresh expiry.
-#   - The new refresh token reuses the same `family_id`, so all rotated refresh
-#     tokens belong to the same login session. `parent_token_id` links each
-#     refresh token to the one that created it.
-#
-# • Session end:
-#   - If the session ends normally (logout or refresh-token expiry), the next
-#     login starts a completely new refresh-token family with a new UUID.
-#   - Previous families are never reused or linked to new ones; they may remain
-#     in the database for auditing or later cleanup.
-#
-# • Replay protection:
-#   - Reusing an already-consumed refresh token indicates a possible replay
-#     attack. The server revokes every refresh token in that family, invalidating
-#     the entire login session.
-#   - The user must log in again, creating a new token pair in a brand-new,
-#     unrelated refresh-token family.
-
 class InvalidOrExpiredTokenError(Exception):
     pass
 async def verify_email(
-        *, #Everything after this is keyword-only
+        *,
         session:AsyncSession,
         token:str,
 )->User:
@@ -366,7 +336,7 @@ class PasswordResetRequestResult:
     token_id:int
 
 async def request_password_reset(
-        *, #Everything after * must be passed by keyword.
+        *,
         session:AsyncSession,
         email:str,
         generator:SnowflakeGenerator,
@@ -375,7 +345,6 @@ async def request_password_reset(
         session,
         normalize_email(email),
     )    
-#If the account doesn't exist or doesn't have a local password, don't create a password-reset token.
     if user is None or user.password_hash is None:
         return None
 
