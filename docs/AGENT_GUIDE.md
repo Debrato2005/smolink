@@ -90,7 +90,9 @@ or manually change a deployed schema.
 
 ## Tests, errors, and dependencies
 
-- Use the red-to-green workflow for behavior changes. Run a focused failing test before implementation.
+- Follow the [README testing policy](../README.md#testing-policy). For behavior changes and bugs, establish a reproducible failing check at the highest practical boundary. Isolate the requirement, implement the minimum correct change, and rerun focused and relevant broader suites.
+- Prefer real API/integration checks for current backend workflows. Use selective unit tests for distinct diagnostic or fault-detection value. Browser E2E remains planned.
+- Do not manufacture tests for every step or generate superficial unit suites. Use the [selection questions](ENGINEERING_PLAYBOOK.md#test-quality-and-coding-agents). Use relevant checks for documentation or trivial configuration changes.
 - Test observable success and failure contracts. Avoid dependence on test order or leftover external state.
 - Use unique data and fixture cleanup for fixed PostgreSQL/Redis state.
 - Use real local PostgreSQL for constraint tests and Redis for Redis behavior.

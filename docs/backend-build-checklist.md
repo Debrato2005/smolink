@@ -35,11 +35,19 @@ After backend verification, continue with the following planned product work:
 
 ## Working rules
 
-1. Use the red-to-green test workflow. Run a focused failing test before implementation. After implementation, run focused and relevant full verification.
+1. For behavior changes and bug fixes, establish a reproducible failing check at the highest practical boundary that isolates the requirement. Then implement the minimum correct change and rerun focused and relevant broader suites.
 2. Do not commit `.env`, real secrets, database volumes, or local generated assets.
 3. If the user authorizes commits, make one focused commit per completed milestone.
 4. Mark a task complete only after its required verification succeeds.
 5. Use `uv run pytest -q -s` in this environment. `-s` avoids the recorded pytest output-capture cleanup issue.
+
+Use the [README testing policy](../README.md#testing-policy) for test selection
+and the [Playbook](ENGINEERING_PLAYBOOK.md#behavior-first-testing-strategy) for
+examples. API tests with real PostgreSQL/Redis carry current backend confidence.
+Use focused unit tests when they add distinct value. Do not fabricate tests for
+trivial, configuration-only, generated, or documentation changes without a
+meaningful behavior check. Add regression cases where confirmed bugs were
+observable when automation can meaningfully reproduce them.
 
 ## Current verified state
 
@@ -188,14 +196,15 @@ for target contracts and the walkthrough for current behavior.
   rate-limit scope.
 - [ ] Cover registration, duplicate email, login, invalid/expired JWTs,
   refresh rotation/reuse, lockout, verification, reset-token consumption,
-  Google linking, authorization, and unavailable dependencies with unit and
-  integration tests.
+  Google linking, authorization, and unavailable dependencies with realistic
+  API/integration tests. Use selective unit tests for distinct helper and
+  security edge cases. Replace external provider calls intentionally.
 - [ ] Run the focused auth suite and full suite after the remaining auth work. Use `uv run pytest tests/test_auth.py -q -s` and `uv run pytest -q -s`.
 - [ ] Commit: `feat: add production authentication and authorization`.
 
 ### I. Owned URL management — 90 minutes
 
-- [ ] Write tests for list pagination, search, unauthenticated access, wrong owner, update, and delete.
+- [ ] Write API/integration tests for list pagination, search, unauthenticated access, wrong owner, update, and delete.
 - [ ] Add `GET /api/v1/me/urls?page=&limit=&search=&sort=`.
 - [ ] Add `PATCH /api/v1/me/urls/{id}` for destination and expiry only.
 - [ ] Add `DELETE /api/v1/me/urls/{id}` returning `204`.
@@ -204,7 +213,7 @@ for target contracts and the walkthrough for current behavior.
 
 ### J. Redirect cache-aside — 120 minutes
 
-- [ ] Write tests for cache hit, cache miss, expired link, unknown link, cache invalidation, and Redis cache outage.
+- [ ] Write HTTP/integration tests with real PostgreSQL/Redis for cache hit, cache miss, expiry, unknown links, invalidation, and controlled cache failure.
 - [ ] Add `GET /{short_code}` after all `/api/v1` routes.
 - [ ] Cache `{url_id, destination, expires_at}` by short code with a TTL that never exceeds link expiry.
 - [ ] On cache failure, log and query PostgreSQL. Return `302` when the URL exists.
@@ -216,9 +225,9 @@ for target contracts and the walkthrough for current behavior.
 
 - [ ] Write a QR endpoint test expecting `image/png`, correct public URL content, `404`, and `410` cases.
 - [ ] Add `GET /api/v1/urls/{short_code}/qr`. Generate PNG on demand only.
-- [ ] Write click-event tests for browser/OS/device/referrer extraction, keyed IP hash, aggregate counter, and last-clicked timestamp.
+- [ ] Verify persisted click events, aggregate counters, and timestamps with integration tests. Use focused browser/OS/device/referrer parsing and keyed IP-hash tests when they add distinct edge-case value.
 - [ ] Record a synchronous click event after resolving a successful redirect.
-- [ ] Write analytics authorization and date-range tests.
+- [ ] Write API/integration tests for analytics authorization and date ranges.
 - [ ] Add `GET /api/v1/me/urls/{id}/analytics?from=&to=&timezone=` with totals, daily series, and browser/OS/device/referrer breakdowns.
 - [ ] Record redirect latency during analytics tests or a local benchmark. Defer Kafka unless measurement shows a real problem.
 - [ ] Commit: `feat: add QR generation and URL analytics`.
@@ -255,13 +264,14 @@ for target contracts and the walkthrough for current behavior.
 - [ ] Build analytics page with date filters and charts for daily, browser, OS, device, and referrer breakdowns.
 - [ ] Map API errors consistently: `409` alias conflict, `422` field errors, `429` with retry guidance, `401` login redirect, `403` access denied, and `503` retryable service message.
 - [ ] Test responsive layouts, keyboard navigation, screen-reader labels, reduced-motion behavior, and mobile performance.
+- [ ] Once the frontend exists, add deterministic Playwright E2E tests for selected critical journeys against the real stack where practical. Use the [planned journey list](ENGINEERING_PLAYBOOK.md#behavior-first-testing-strategy).
 
 ### O. Rate-limit management and production client identity
 
 - [ ] Add owner/admin-facing rate-limit configuration or dashboard UI only after the backend exposes safe, authenticated configuration/reporting endpoints.
 - [ ] Document trusted proxy boundaries and configure NGINX to supply forwarded client information.
 - [ ] Update FastAPI client-IP extraction to trust forwarded headers only from configured proxies. Never trust arbitrary client-supplied `X-Forwarded-For` headers.
-- [ ] Add tests for direct, proxied, spoofed, and missing client-IP headers before enabling production IP rate limits.
+- [ ] Add HTTP/integration tests for direct, proxied, spoofed, and missing client-IP headers before enabling production IP rate limits.
 
 ### P. Deployment and observability
 

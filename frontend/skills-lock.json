@@ -1,0 +1,170 @@
+{
+  "skills": {
+    "caveman": {
+      "bundleHash": "f62f4561351554e90a0711a14065a7f5b41c614615cd0248137f8a97bdee82f8",
+      "computedHash": "34255a0215a7701eb83d508d03bc9560dc7bffbeb95a145ad2921ad2598a03bf",
+      "declaredName": "caveman",
+      "fileCount": 2,
+      "installedPath": ".agents/skills/caveman",
+      "skillPath": "skills/caveman/SKILL.md",
+      "source": "JuliusBrussee/caveman",
+      "sourceRef": "6571943370f7c9d4de1946481177ee7b306cd8e8",
+      "sourceType": "github"
+    },
+    "design-taste-frontend": {
+      "bundleHash": "f8b0b5a819c7a71c569e8f27d2dcc66de617940489c6bb36d1c81b0db7d9ed4d",
+      "computedHash": "aa194351b246b8b4799099d4ed7b033d29eab6e6e3d58d8d2172978be7b3ec89",
+      "declaredName": "design-taste-frontend",
+      "fileCount": 1,
+      "installedPath": ".agents/skills/design-taste-frontend",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "source": "Leonxlnx/taste-skill",
+      "sourceRef": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b",
+      "sourceType": "github"
+    },
+    "impeccable": {
+      "bundleHash": "97daec6b3a761c66a555248fa65f1342b811f5b5c426c4f534d98f3d4b82a9f2",
+      "computedHash": "e1a965737ca8255934bad358d5cfb8788ce013867910efd97d1daac68375e941",
+      "declaredName": "impeccable",
+      "fileCount": 62,
+      "installedPath": ".agents/skills/impeccable",
+      "skillPath": ".agents/skills/impeccable/SKILL.md",
+      "source": "pbakaus/impeccable",
+      "sourceRef": "ece38d9904b8a619b3f77cab476eacad09c4fb11",
+      "sourceType": "github"
+    },
+    "investigate-first": {
+      "bundleHash": "ec1faf1bf6cb590e3f1977fbfdac2cec61e8b3f79330f5e22dc7855f48d079ad",
+      "computedHash": "7cc19dd2fc457eb20d65c44dee4d1b72dcdfcd1617182f5bff666700f2a055d8",
+      "declaredName": "investigate-first",
+      "fileCount": 2,
+      "installedPath": ".agents/skills/investigate-first",
+      "skillPath": "skills/investigate-first/SKILL.md",
+      "source": "JuliusBrussee/caveman",
+      "sourceRef": "6571943370f7c9d4de1946481177ee7b306cd8e8",
+      "sourceType": "github"
+    },
+    "lean-build": {
+      "bundleHash": "825e10d011d8c9a63089944bf35d44042bc7f3b94282940e7f8178d9c92e837e",
+      "computedHash": "4d498073c6312858b220e9a04b7456c2485c734edb077f6bb17d88a7ed96ad7a",
+      "declaredName": "lean-build",
+      "fileCount": 2,
+      "installedPath": ".agents/skills/lean-build",
+      "skillPath": "skills/lean-build/SKILL.md",
+      "source": "JuliusBrussee/caveman",
+      "sourceRef": "6571943370f7c9d4de1946481177ee7b306cd8e8",
+      "sourceType": "github"
+    },
+    "playwright": {
+      "bundleHash": "b54f642e26b06322b2c703b895ca0f2c420f81de34659da3231a625823c12fdd",
+      "computedHash": "0ffaabcc8e0990627c4725f18bf1c7955534a796c1c199e872909de2013ce6a8",
+      "declaredName": "playwright",
+      "fileCount": 9,
+      "installedPath": ".agents/skills/playwright",
+      "skillPath": "skills/.curated/playwright/SKILL.md",
+      "source": "openai/skills",
+      "sourceRef": "49f948faa9258a0c61caceaf225e179651397431",
+      "sourceType": "github"
+    },
+    "playwright-interactive": {
+      "bundleHash": "6b620865a575ebe71d0e27ffab73664f439242ef81a3bbb7383fcca2486b41dc",
+      "computedHash": "f6c1155d923e6ae3ccc12abfef2266f119f8e9546df2ddeee1f5eb369845a0a1",
+      "declaredName": "playwright-interactive",
+      "fileCount": 6,
+      "installedPath": ".agents/skills/playwright-interactive",
+      "skillPath": "skills/.curated/playwright-interactive/SKILL.md",
+      "source": "openai/skills",
+      "sourceRef": "49f948faa9258a0c61caceaf225e179651397431",
+      "sourceType": "github"
+    },
+    "ponytail": {
+      "bundleHash": "28db736a30751c76ae4f8649e5f810ae086213f7e15ad601e692b6f87188117e",
+      "computedHash": "1316a2f3f95741d2300b116fe0c2d81ce4a9568656ed0a62643f54aaf09957f2",
+      "declaredName": "ponytail",
+      "fileCount": 1,
+      "installedPath": ".agents/skills/ponytail",
+      "skillPath": "skills/ponytail/SKILL.md",
+      "source": "DietrichGebert/ponytail",
+      "sourceRef": "e15862bb04d04285233a164460ced063941d9ef5",
+      "sourceType": "github"
+    },
+    "react-best-practices": {
+      "bundleHash": "121c0a1585e8af1db810deb3569b2b062c37d7413687cfca759e411ca752d117",
+      "computedHash": "71ed7794962fa6e803ee83030517b5b93a9f70fbfeb431ec4535c5480a8d8355",
+      "declaredName": "vercel-react-best-practices",
+      "fileCount": 76,
+      "installedPath": ".agents/skills/react-best-practices",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "source": "vercel-labs/agent-skills",
+      "sourceRef": "063bee94c3f4df8453406c830b0a7df0f2860278",
+      "sourceType": "github"
+    },
+    "safe-refactor": {
+      "bundleHash": "f9df12adf51577992f1f816a7bb399671aed210e759dbee9b5a84a5638390b55",
+      "computedHash": "cd52867aba26aafb53379d43068cef9b2feca3a3fff850f877a99f710ccd02c0",
+      "declaredName": "safe-refactor",
+      "fileCount": 2,
+      "installedPath": ".agents/skills/safe-refactor",
+      "skillPath": "skills/safe-refactor/SKILL.md",
+      "source": "JuliusBrussee/caveman",
+      "sourceRef": "6571943370f7c9d4de1946481177ee7b306cd8e8",
+      "sourceType": "github"
+    },
+    "screenshot": {
+      "bundleHash": "c3df6a2836c63c0f5a237a9406f0399a6e37121a568a6f261f8cfc9952e30487",
+      "computedHash": "081935a6a163277537d46365f49d6b4a3cb40b4748347e7e88759c5927fa8cf5",
+      "declaredName": "screenshot",
+      "fileCount": 11,
+      "installedPath": ".agents/skills/screenshot",
+      "skillPath": "skills/.curated/screenshot/SKILL.md",
+      "source": "openai/skills",
+      "sourceRef": "49f948faa9258a0c61caceaf225e179651397431",
+      "sourceType": "github"
+    },
+    "surgical-patch": {
+      "bundleHash": "d4ca5ae8dc2ccbaadb6ceb9f42d37aa93bb62c970041ab75a84d48dd3c120ae5",
+      "computedHash": "81ea9f7b51409970099e04b98875dd65806cd35472f9a774b847030328187387",
+      "declaredName": "surgical-patch",
+      "fileCount": 2,
+      "installedPath": ".agents/skills/surgical-patch",
+      "skillPath": "skills/surgical-patch/SKILL.md",
+      "source": "JuliusBrussee/caveman",
+      "sourceRef": "6571943370f7c9d4de1946481177ee7b306cd8e8",
+      "sourceType": "github"
+    },
+    "ui-ux-pro-max": {
+      "bundleHash": "267e0b906303c525611dbf6168cf72cad445df83be29a41052830359a99e72b9",
+      "computedHash": "ea087c341bfb5b23195c7302027268ede86da802554c18a5c4896a6017b439f9",
+      "declaredName": "ui-ux-pro-max",
+      "fileCount": 73,
+      "installedPath": ".agents/skills/ui-ux-pro-max",
+      "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceRef": "477bcb28c9812b385cb51a4605ddf30d7b2266e2",
+      "sourceType": "github"
+    },
+    "verify-and-stop": {
+      "bundleHash": "65c0d973406081a2ce91afc0d928e7c760f8dea9bd4c2ba85ed7105a36be3408",
+      "computedHash": "3d5599f49771b864eba94f27f456fda295c48c1a37fa6ba2f65fdcb13cc32acb",
+      "declaredName": "verify-and-stop",
+      "fileCount": 2,
+      "installedPath": ".agents/skills/verify-and-stop",
+      "skillPath": "skills/verify-and-stop/SKILL.md",
+      "source": "JuliusBrussee/caveman",
+      "sourceRef": "6571943370f7c9d4de1946481177ee7b306cd8e8",
+      "sourceType": "github"
+    },
+    "web-design-guidelines": {
+      "bundleHash": "283881ded804dbc70b8e1052b17048687313e76fc27151e0e378ddfd37b50ebc",
+      "computedHash": "f4647ca866a3accf763777f83e7682954f0187cd6bea7eea0399796652414e8f",
+      "declaredName": "web-design-guidelines",
+      "fileCount": 1,
+      "installedPath": ".agents/skills/web-design-guidelines",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "source": "vercel-labs/agent-skills",
+      "sourceRef": "063bee94c3f4df8453406c830b0a7df0f2860278",
+      "sourceType": "github"
+    }
+  },
+  "version": 1
+}

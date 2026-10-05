@@ -189,8 +189,9 @@ Repositories own SQL operations such as insert, lookup, filtering, and updates.
 They do not hash passwords, issue tokens, generate IDs, return HTTP responses,
 or commit. `flush()` sends pending SQL within a transaction. The route's
 `commit()` makes a completed workflow durable.
-Keeping SQL behind repositories lets tests replace persistence without changing
-business policy. Real database tests still establish constraint behavior.
+Repository interfaces separate SQL ownership from business policy. Prefer real
+database integration for persistence behavior. Use an isolated replacement only
+when it adds distinct fault-detection or diagnostic value.
 
 ### Migrations
 
@@ -468,31 +469,149 @@ and performance requirements. It is the authoritative plan for that work.
 
 ## Testing and debugging
 
-Use unit tests for isolated utilities and policy. Use integration tests for
-real database constraints, Redis behavior, and composed workflows. Use API
-tests for public contracts. Manual testing supplements automation for layout,
-motion, keyboard interaction, and accessibility.
+### Behavior-first testing strategy
 
-For each endpoint, test relevant success, validation, authentication,
-authorization, missing-resource, conflict, and dependency-failure outcomes.
-Some URL-management and redirect cases remain targets because the routes do
-not exist yet. Existing creation tests distinguish guest and user ownership
-and limits. Auth tests cover local token and account workflows.
-The testing pyramid suggests many focused unit tests and fewer broader
-integration tests. Use manual checks for behavior automation covers poorly.
-This is a starting mix, not a required test count or ratio.
+The [README testing policy](../README.md#testing-policy) governs test selection.
+Use a layered strategy based on observable behavior and realistic system
+boundaries. Confidence priority does not prescribe test counts or require
+every check to use the broadest possible suite.
 
-Test behavior instead of mirroring implementation. Keep test data unique and
-clear fixed Redis keys in fixtures. Each async resource must be created,
-used, and closed within a compatible event loop. Test order must not determine
-success. Coverage percentages do not establish contract correctness.
+**1. End-to-end (E2E) tests:** once the complete product exists, real user
+journeys give the highest confidence in its combined behavior. The React
+frontend and browser E2E suite do not exist yet. Plan Playwright journeys
+against the real application stack where practical, without mocks of internal
+application layers. Use controlled data and external-provider doubles for
+deterministic, reproducible checks.
+
+Select a small set of critical journeys as the frontend becomes available:
+
+- Guest URL creation and a generated link's redirect.
+- Registration, email verification, and login.
+- Authenticated creation, dashboard listing, and owned URL editing/deletion.
+- QR generation and analytics.
+- Logout and recovery from expired or invalid authentication.
+
+These are planned checks, not current coverage. Use direct HTTP integration
+for backend-only contracts when it gives equivalent assurance with less setup.
+Playwright is not required for those checks.
+
+**2. API/integration tests:** these carry most behavioral confidence during
+the current backend-first stage. Exercise real FastAPI routing, validation,
+services, repositories, SQLAlchemy, PostgreSQL, and Redis where practical.
+Check HTTP contracts, authentication boundaries, durable effects, constraints,
+and commit/rollback behavior. For each endpoint, check relevant success,
+validation, authentication, authorization, missing-resource, conflict, and
+dependency-failure outcomes. Verify Alembic migrations against a separate
+empty database rather than treating model metadata as migration evidence.
+
+Existing tests exercise URL creation, alias conflicts, guest/user ownership,
+local authentication, refresh rotation and replay revocation, verification,
+reset, persistence constraints, and Redis limits. Failure injection also
+checks limiter errors. Owner-management authorization, redirect/cache behavior,
+QR, analytics, and migration-chain verification remain release work.
+Use the [walkthrough](codebase-walkthrough.md#tests-and-verification-limits)
+for current test categories and limitations.
+
+**3. Selective unit tests:** isolation is useful when a broader test would be
+awkward, slow, ambiguous, or incomplete. Good candidates include Base62,
+Snowflake invariants, aliases, deterministic validators, parsing/normalization,
+cryptographic helper contracts, pure functions with many edge cases, state
+machines, and mathematical or algorithmic logic. Keep useful existing tests.
+Test selection does not justify deleting or rewriting a category.
+
+Tests that mirror private structure or merely restate the implementation
+often fail during harmless refactors. Heavy mocks can verify mock behavior
+while real integration defects remain undetected. These tests add maintenance
+cost with little regression protection. Do not test trivial implementation
+details or mock every dependency merely to increase isolation or coverage.
+
+A tiny E2E suite alone also leaves gaps. Browser checks can be slower and
+operationally complex, and their failures can be difficult to localize.
+Focused algorithm and security edge-case tests add fault detection and useful
+diagnostics. Retain lower-level tests when they add that distinct value.
+
+### Red → green → refactor and regression cases
+
+For behavior changes and bug fixes, first establish a reproducible failing
+check at the highest practical boundary that sufficiently isolates the
+requirement. Confirm that it fails for the expected behavior. Implement the
+minimum correct change, then rerun focused and relevant broader suites.
+Refactor while preserving the tested contract.
+
+| Requirement or bug | Useful failing check |
+|---|---|
+| Base62 arithmetic | Focused unit test |
+| SQL constraint or repository interaction | Real database integration test |
+| Authentication workflow or incorrect HTTP status | API/integration test |
+| Redis degradation | Integration test with controlled dependency failure |
+| Login/dashboard workflow once the frontend exists | Browser E2E test |
+
+Every confirmed bug becomes a regression case when automation can meaningfully
+reproduce it. Place the case at the boundary where the bug was observable.
+Add a lower-level diagnostic case only when it adds value. Do not manufacture
+a unit test before every implementation step. For trivial, configuration-only,
+generated, or documentation changes, use relevant checks without fabricating
+meaningless tests.
+
+### Mocking and isolation
+
+Prefer real components when they are cheap, deterministic, and under project
+control: FastAPI, a PostgreSQL test database, a Redis test instance, SQLAlchemy,
+and application services/repositories. Override resource setup for isolation
+without replacing the behavior under test.
+
+Mock or fake Resend, Google OAuth/OIDC calls, and other external APIs when real
+calls are unsafe, nondeterministic, costly, or inappropriate. Control time when
+necessary. Inject genuine failure conditions intentionally. An injected
+exception checks error handling, but does not alone prove behavior during a
+real network outage. Avoid mocks of internal layers when realistic integration
+is practical.
+
+Use isolated database/Redis state and deterministic setup and cleanup.
+Use unique records or transaction rollback, and remove committed test data
+when necessary. Clear fixed Redis keys before and after the case.
+Create, use, and close each async resource within a compatible event loop.
+Do not depend on execution order or leftover state.
+
+### Test quality and coding agents
+
+A useful test protects an externally meaningful contract or a high-risk
+internal invariant. It fails when that behavior breaks and survives harmless
+refactors. Give it a clear purpose and enough failure context for diagnosis.
+Avoid private-detail assertions unless those details are required invariants.
+Avoid duplicate coverage unless the lower-level case adds diagnostic or
+fault-detection value. Coverage percentages identify gaps, but defect detection
+is the objective. Test count is not evidence of confidence.
+
+Coding agents can cheaply generate many superficial tests. Do not automatically
+add batches of unit tests after implementation. Before adding a test, ask:
+
+1. What failure would it detect?
+2. Does a higher boundary already cover that failure?
+3. Would it survive an internal refactor that preserves behavior?
+4. Is a real dependency practical instead of a mock?
+5. Does it materially increase confidence?
+
+### Later reliability verification
+
+Functional tests do not establish production reliability. Relevant future
+checks include empty-database migrations, production smoke tests, health and
+readiness checks, latency regressions, load, rate limits, security, and
+backup/restore. Also verify PostgreSQL/Redis failure paths, dependency failure
+injection, and observability against defined service-level objectives (SLOs).
+These remain planned verification, not established guarantees.
+Smolink is a URL shortener, so this policy does not add LLM/agent evaluation
+infrastructure. Manual checks supplement automation for layout, motion,
+keyboard interaction, and accessibility.
+
+### Debugging
 
 For a reproducible bug:
 
 1. Reproduce the failure with a focused case.
 2. Identify the failing layer from the traceback and logs.
 3. Inspect the request and relevant persisted state without exposing secrets.
-4. Add a regression test that expresses the incorrect observable outcome.
+4. Add a meaningful regression test at the boundary where the bug was observable.
 5. Fix the established cause.
 6. Run the focused test and relevant shared verification.
 

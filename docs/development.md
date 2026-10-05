@@ -80,12 +80,18 @@ relative to the working directory. As an alternative development server, use
 
 ## Tests
 
+Select checks with the [README testing policy](../README.md#testing-policy).
+API tests with real dependencies are the primary backend safety net.
+Selective unit tests protect focused invariants. Browser E2E remains planned.
+
 Database and Redis integration tests use the configured local services.
 They can create and delete test rows, create tables, and clear fixed test
-rate-limit keys. Use a development database and Redis instance.
-Email tests replace the sender or HTTP client.
+rate-limit keys. Use an isolated development database and Redis instance.
+Some API tests commit rows that remain after the case. Fixed limiter keys
+also require cleanup. See the [walkthrough limits](codebase-walkthrough.md#tests-and-verification-limits).
+Email tests replace the external sender or HTTP client.
 
-1. Run the relevant test module:
+1. Run the relevant test module for the changed behavior. This health example checks only `/health`:
 
    ```bash
    uv run pytest tests/test_health.py -q -s

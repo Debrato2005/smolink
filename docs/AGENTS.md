@@ -38,11 +38,21 @@ Preserve `/api/v1` and the project invariants in `README.md`.
 
 ## Testing rules
 
+Use the [README testing policy](../README.md#testing-policy). For behavior
+changes and bugs, establish a reproducible failing check at the highest
+practical boundary that isolates the requirement. Then make the minimum
+correct change and rerun focused and relevant broader suites.
+
+Current backend confidence comes primarily from API tests and real
+PostgreSQL/Redis integration. Keep useful selective unit tests. Browser E2E
+remains planned. Do not require a unit test for every implementation step or
+add superficial tests for counts or coverage. Use the
+[Playbook selection questions](ENGINEERING_PLAYBOOK.md#test-quality-and-coding-agents).
+
 Use `pytest`, naming files `test_<feature>.py` and functions
-`test_<expected_behavior>()`. Write a focused failing test before implementing
-a feature, then make the smallest change that passes. For database work, test
-real constraints against the Compose PostgreSQL service. Use `-s` consistently
-because this environment has a pytest output-capture cleanup issue.
+`test_<expected_behavior>()`. Use `-s` for the recorded output-capture cleanup
+issue in this environment. Use meaningful document/configuration checks when
+an automated behavior test adds no value.
 
 ## Skills and Graphify
 

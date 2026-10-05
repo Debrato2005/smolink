@@ -182,6 +182,37 @@ Normalize request-validation errors before release. Preserve the approved
 direction toward global domain handlers instead of adding new per-route
 domain exception-mapping patterns.
 
+## Testing policy
+
+Test important behavior at the highest realistic boundary that gives useful,
+deterministic feedback. Use lower-level tests when they add distinct diagnostic
+or fault-detection value. Select tests by risk and observable contracts, not
+by a fixed ratio of test categories.
+
+The confidence priority is:
+
+1. **End-to-end (E2E):** highest product confidence once the complete application exists. Browser journeys and Playwright remain planned.
+2. **API/integration:** the primary safety net at the current backend-first stage. Exercise FastAPI and real PostgreSQL/Redis behavior where practical.
+3. **Selective unit:** protect algorithms, validators, security helpers, and state invariants when isolation adds useful feedback.
+
+For behavior changes and bug fixes, establish a reproducible failing check at
+the highest practical boundary that sufficiently isolates the requirement.
+Then make the minimum correct change and rerun focused and relevant broader
+suites. Red → green → refactor does not require a unit test for every step.
+Do not fabricate tests for trivial, configuration-only, generated, or
+documentation changes when no meaningful automated behavior check applies.
+
+Every confirmed bug becomes a regression case when automation can meaningfully
+reproduce it. Place that case where the bug was observable.
+Mock external boundaries intentionally. Avoid mocks of internal Smolink layers
+when realistic integration is practical. Coverage is diagnostic, and test count
+is not a quality objective. Do not impose arbitrary coverage targets.
+
+See the [behavior-first strategy](docs/ENGINEERING_PLAYBOOK.md#behavior-first-testing-strategy)
+for selection criteria, isolation, mocking, and future reliability checks.
+The [walkthrough](docs/codebase-walkthrough.md#tests-and-verification-limits)
+describes existing tests and their limits.
+
 ## Backend roadmap
 
 1. **Foundation:** FastAPI settings, local Compose services, and `/health`.

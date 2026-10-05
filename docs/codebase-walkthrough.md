@@ -428,16 +428,34 @@ Model tests inspect metadata and exercise database constraints. They create
 `NullPool` engines inside each `asyncio.run()` so asyncpg connections do not
 cross event loops. A connection result is not a migration-chain test.
 
-Utility tests cover Base62, Snowflake sequencing, alias boundaries, password
-hashes, JWTs, and token hashes. Repository tests cover persistence and lookups.
-Service tests cover business outcomes. API tests cover creation, ownership,
-limits, local auth, refresh reuse, verification, reset, and email policies.
+The current categories are:
 
-API fixtures override sessions and Redis clients. They clear fixed test limiter
-keys before and after requests. Unique data avoids dependence on test order.
+| Boundary | Existing modules and behavior |
+|---|---|
+| Focused unit/schema checks | `test_short_codes.py`, `test_snowflake.py`, `test_aliases.py`, `test_security.py`, auth/URL schemas, and isolated settings. They cover Base62, generator sequencing, validation, password/JWT contracts, and normalization |
+| Database integration | Session connectivity, model constraints, URL/user/auth repositories, and URL/auth service workflows use real PostgreSQL. `test_models.py` also contains isolated metadata checks |
+| Redis integration | `test_rate_limiter.py` uses real Redis and explicit `now_ms` to check rolling-window boundaries and separate keys |
+| API/integration | `test_health.py`, `test_url_creation.py`, and `test_auth.py` drive the real FastAPI app through in-process `TestClient`. Creation/auth fixtures connect to real PostgreSQL and Redis. Cases cover HTTP outcomes, guest/user ownership, limits, local auth, refresh replay, verification, reset, and email policy |
+| External-provider doubles | `test_email_service.py` replaces the HTTPX client and settings for Resend request/failure checks. Auth API fixtures replace email senders to prevent delivery |
+| Unfinished helper checks | `test_oidc.py` targets PKCE helpers. `create_pkce_challenge` is absent, so these cases do not establish working Google sign-in |
+
+`test_auth_service.py` also contains an isolated keyed-token-hash check.
+Some API cases patch a limiter to raise an exception or inject an
+`IntegrityError`. They test HTTP failure handling, not a real Redis outage or
+a concurrent database race. No browser E2E suite exists.
+
+API fixtures override session/client setup while retaining real dependency
+behavior. The auth fixture clears its fixed limiter key before and after each
+case. URL limit cases clear selected keys explicitly, but the URL fixture
+does not clean every shared limiter key. Unique identifiers reduce collisions.
+Some repository/service cases roll back, while API requests and seed helpers
+commit rows without removing them afterward. Complete state isolation and
+order independence are not established by these fixtures.
+
 Closing a cleanup Redis client does not close the separate request client or
 stop Redis. TestClient context cleanup and dependency cleanup have separate
-resource responsibilities.
+resource responsibilities. These are current facts, not claims that the suite
+satisfies every criterion in the [testing policy](../README.md#testing-policy).
 
 See the [checklist](backend-build-checklist.md#current-verified-state) for the
 latest dated full-suite result and current blockers. Use the

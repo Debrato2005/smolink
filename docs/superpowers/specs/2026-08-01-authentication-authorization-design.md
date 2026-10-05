@@ -220,8 +220,12 @@ Use the [development guide](../../development.md) for setup.
 3. Test the migration chain against a separate empty development database.
 4. Record successful verification before marking the milestone complete.
 
-Coverage must include local password/JWT helpers, normalization, lock policy,
-rotation, and eventual Google validation. API/integration cases include:
+Use the [README testing policy](../../../README.md#testing-policy) for future
+verification. Real API/database/Redis integration carries workflow confidence.
+Use focused password/JWT, normalization, and PKCE checks when they add distinct
+security edge-case value. Replace email/Google provider calls intentionally.
+Required behavior includes lock policy, rotation, and eventual Google validation.
+API/integration cases include:
 
 - Registration, duplicate email, verification requirement, credentials, limits, locking, and successful-login state reset.
 - Missing, malformed, expired, wrong-issuer/audience, and auth-version-invalid access tokens. Include required and optional authentication.

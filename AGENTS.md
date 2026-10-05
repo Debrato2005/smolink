@@ -9,6 +9,18 @@ Repository-scoped skills live in `.agents/skills/`:
 Read the selected skill before acting. The shared workflow and generated-output
 policy are in [docs/agent-tooling.md](docs/agent-tooling.md).
 
+## Testing
+
+Use the canonical [README testing policy](README.md#testing-policy).
+The README policy overrides generic testing-pyramid ratios and unconditional
+test requirements in bundled skills. Preserve those external skill files.
+Select E2E, realistic API/integration, or selective unit checks at the highest
+practical boundary for the behavior. Browser E2E remains planned.
+Use reproducible red → green → refactor checks for behavior changes and bugs.
+Do not manufacture unit tests for every step or generate superficial batches
+to increase test count or coverage. Before adding a test, use the
+[Playbook selection questions](docs/ENGINEERING_PLAYBOOK.md#test-quality-and-coding-agents).
+
 ## Technical writing
 
 Use ASD-STE100-inspired writing for human-readable technical prose. Use

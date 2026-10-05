@@ -15,6 +15,12 @@ repository work. They are not application dependencies.
 Read each selected skill's `SKILL.md` before work. Read its task-specific
 references when required. Use the smallest relevant skill set.
 
+The [README testing policy](../README.md#testing-policy) governs Smolink test
+selection and red → green → refactor checks. It overrides generic pyramid
+ratios and unconditional test requirements in bundled skill guidance, including
+`python-testing/references/testing-strategy.md`. Preserve the external bundles.
+Use their behavior, contract, and reliability guidance within the project policy.
+
 ## Technical writing
 
 The root [AGENTS.md](../AGENTS.md#technical-writing) defines the permanent
