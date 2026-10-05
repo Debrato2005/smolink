@@ -64,3 +64,14 @@ dist/
 .cache/
 
 Agents.md
+# Local AI-agent tooling
+.agents/skills/
+
+# Generated Graphify knowledge graph
+graphify-out/
+
+# Local AI-agent tooling
+.agents/skills/
+
+# Generated Graphify knowledge graph
+graphify-out/
