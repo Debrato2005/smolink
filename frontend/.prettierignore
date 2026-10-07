@@ -1,0 +1,8 @@
+node_modules
+dist
+.local
+.agents
+skills-lock.json
+package-lock.json
+playwright-report
+test-results

@@ -27,11 +27,11 @@ log preserve the recorded verification history.
 After backend verification, continue with the following planned product work:
 
 - **Frontend:** React with TypeScript, consuming the documented `/api/v1` endpoints only.
-- **Component system:** shadcn/ui for shared application components. Evaluate React Bits for specific interactions. Test accessibility and share components across pages.
-- **Visual direction:** Evaluate Paper Shaders for visual effects, GSAP for motion, and Lenis for scrolling. Retain each only when it improves the experience.
+- **Component system:** use suitable neobrutalism.dev components through the current shadcn and Base UI workflow. Skin fallback Base UI primitives with Smolink tokens. Create custom shared primitives only for unmet interactions.
+- **Visual direction:** follow the canonical [Neobrutalism × Bauhaus × Pop Art design system](frontend-design-system.md). React Bits is optional. Paper Shaders is deferred. GSAP and Lenis require a justified interaction.
 - **Design process:** Use Figma for screens and components. Use Excalidraw for architecture and interaction sketches. Use Dribbble for inspiration without copying designs.
 - **Production:** complete proxy-aware client-IP handling before enabling IP-based production limits, then add NGINX, HTTPS, CI/CD, cloud deployment, metrics, monitoring, and alerting.
-- **Accessibility and performance:** Honor `prefers-reduced-motion` and preserve keyboard navigation and contrast. Keep effects from blocking core content. Measure Core Web Vitals before retaining expensive effects.
+- **Accessibility and performance:** target WCAG 2.2 Level AA. Honor `prefers-reduced-motion`, preserve keyboard navigation, and test rendered contrast. Keep effects from blocking core content. Measure Core Web Vitals before retaining expensive effects.
 
 ## Working rules
 
@@ -247,14 +247,19 @@ for target contracts and the walkthrough for current behavior.
 
 ### M. Product design and frontend foundation
 
-- [ ] Create Figma frames for Home, Login, Register, Dashboard, URL detail/analytics, and empty/error states.
+- [ ] Create Figma variables and styles that match every token in the [canonical design system](frontend-design-system.md).
+- [ ] Create Figma frames for Home, Login, Register, Dashboard, URL detail/analytics, and empty/error states at their required intensity levels.
+- [ ] Create Figma components and states for button, input, field, card, dialog, toast, navigation, URL creation, result, table, and analytics shell.
 - [ ] Create an Excalidraw diagram for browser → NGINX → FastAPI → Redis/PostgreSQL and the authentication/redirect flows.
 - [ ] Bootstrap a React + TypeScript frontend with environment-based API base URL configuration.
 - [ ] Add routing, typed API client modules, shared error parsing, and JWT attachment only for protected requests.
-- [ ] Install and configure shadcn/ui. Define shared button, form, dialog, toast, table, skeleton, and empty-state primitives.
-- [ ] Add React Bits components only where they support the selected interaction or visual hierarchy.
-- [ ] Add a motion policy with GSAP and Lenis. Respect `prefers-reduced-motion` and add non-animated fallbacks.
-- [ ] Evaluate Paper Shaders on target devices. Lazy-load and disable effects that hurt initial render, battery use, or accessibility.
+- [ ] Initialize the current shadcn-compatible Base UI workflow and map its styling layer to Smolink's canonical tokens.
+- [ ] Adopt suitable neobrutalism.dev registry components before building fallback Base UI or custom primitives.
+- [ ] Define shared button, field, form, dialog, toast, table, skeleton, empty-state, and feedback primitives with all required states.
+- [ ] Use React Bits only for a consumed interaction that adopts the complete Smolink system.
+- [ ] Start motion with CSS and native scrolling. Add GSAP or Lenis only after a specific interaction passes accessibility and performance review.
+- [ ] Keep Paper Shaders deferred. A later flat, poster-like proposal requires explicit approval and cannot use gradients.
+- [ ] Keep dark mode deferred until a product requirement supplies a separate contrast-tested palette.
 
 ### N. Frontend feature delivery
 
@@ -263,7 +268,7 @@ for target contracts and the walkthrough for current behavior.
 - [ ] Build protected URL dashboard: pagination, search, sort, empty state, update, and delete confirmation.
 - [ ] Build analytics page with date filters and charts for daily, browser, OS, device, and referrer breakdowns.
 - [ ] Map API errors consistently: `409` alias conflict, `422` field errors, `429` with retry guidance, `401` login redirect, `403` access denied, and `503` retryable service message.
-- [ ] Test responsive layouts, keyboard navigation, screen-reader labels, reduced-motion behavior, and mobile performance.
+- [ ] Test the design-system review checklist, responsive layouts, keyboard navigation, screen-reader labels, contrast, reflow, reduced motion, and mobile performance.
 - [ ] Once the frontend exists, add deterministic Playwright E2E tests for selected critical journeys against the real stack where practical. Use the [planned journey list](ENGINEERING_PLAYBOOK.md#behavior-first-testing-strategy).
 
 ### O. Rate-limit management and production client identity

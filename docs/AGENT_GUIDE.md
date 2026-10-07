@@ -53,6 +53,11 @@ Before changing behavior, read:
 Also read the feature design or plan under `docs/superpowers/` when relevant.
 Historical plans describe earlier work. Do not execute their obsolete examples
 as current procedures. Use [development.md](development.md) for commands.
+For frontend work, also read the
+[frontend design system](frontend-design-system.md) and the
+[frontend engineering guide](../frontend/README.md). The design system owns
+visual and interaction rules. The frontend guide owns browser and integration
+rules.
 
 The README governs design decisions. Source and tests establish implemented
 behavior. If those differ, document the gap without treating the target as
@@ -112,6 +117,8 @@ unrelated backend milestone.
 - Update the README when decisions, invariants, target endpoints, or roadmap change.
 - Synchronize dependent guides and link to one authoritative explanation.
 - Preserve historical results and meaningful uncertainty.
+- Keep exact frontend visual rules in `docs/frontend-design-system.md`. Other
+  documents must summarize and link instead of copying that specification.
 
 ## Decisions and completion
 

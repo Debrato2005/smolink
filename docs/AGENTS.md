@@ -20,6 +20,8 @@ configuration is in `backend/alembic.ini`. Migrations live in `backend/alembic/`
 Use `README.md` for architecture decisions. Use
 [backend-build-checklist.md](backend-build-checklist.md) for the current milestone.
 Update [codebase-walkthrough.md](codebase-walkthrough.md) when behavior changes.
+Use [frontend-design-system.md](frontend-design-system.md) for all frontend
+visual, component-source, interaction, motion, and accessibility decisions.
 
 ## Development commands
 

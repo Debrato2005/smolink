@@ -420,6 +420,26 @@ starting point, not a guarantee that every problem has the same cause.
 The frontend remains planned. It communicates through HTTP APIs and must not
 connect directly to PostgreSQL or Redis.
 
+The [canonical frontend design system](frontend-design-system.md) turns the
+visual direction into enforceable tokens, component rules, page intensity,
+motion limits, and review checks. It uses three layers:
+
+- Neobrutalism supplies the shared component grammar.
+- Bauhaus supplies the grid, hierarchy, functional alignment, and asymmetric
+  macro-composition.
+- Pop Art supplies limited flat-color and print-inspired accents.
+
+This separation supports maintainability. Shared neobrutalist primitives stop
+page-level styling forks. A rational grid keeps forms and dense views usable.
+Limited Pop Art gestures prevent decoration from competing with content. The
+result can remain recognizable while marketing, authentication, and dashboard
+pages use different intensity.
+
+Accessibility and task completion take precedence over expression. The system
+targets WCAG 2.2 Level AA, uses tested color pairs, keeps keyboard focus outside
+thick borders, and requires state cues beyond color. Exact requirements belong
+in the design-system document rather than this rationale.
+
 Suggested React directories include `assets`, `components`, `pages`, `layouts`,
 `services`, `hooks`, `contexts`, `router`, `types`, and `utils`. Centralize
 API calls, base URL, error parsing, and access-token attachment in services.
@@ -432,11 +452,30 @@ Use the backend's implemented endpoints when integrating each page.
 | `pages/` | Home, Dashboard, Login, Register, Analytics, and 404 pages |
 | `layouts/` | Navbar, sidebar, footer, and protected-page wrapper |
 | `services/` | API calls, such as `urlService.ts`, `authService.ts`, and `analyticsService.ts` |
-| `hooks/` | Reusable behavior, such as `useAuth`, `useTheme`, `useDebounce`, and `usePagination` |
-| `contexts/` | Shared authentication, theme, and notification state |
+| `hooks/` | Reusable behavior, such as `useAuth`, `useDebounce`, and `usePagination` |
+| `contexts/` | Shared authentication and notification state when concrete consumers justify them |
 | `router/` | Mapping from paths to pages |
 | `types/` | TypeScript contracts for URLs, users, analytics, and tokens |
 | `utils/` | Clipboard, date formatting, and client-side validation helpers |
+
+Do not create this complete directory tree in advance. Add a directory when an
+authorized feature needs its responsibility.
+
+Use the current component-source order:
+
+1. Use a suitable neobrutalism.dev component through its shadcn registry flow.
+2. Otherwise, skin a shadcn-compatible Base UI primitive with Smolink tokens.
+3. Create a custom shared primitive only for an unmet Smolink interaction.
+
+The current neobrutalism.dev library uses Base UI rather than Radix UI. Its
+September 2026 release also removed dark mode. Recheck the current registry
+before adoption because vendor details can change. Dark mode remains deferred
+until a product requirement justifies a separate contrast-tested system.
+
+React Bits is optional and subordinate. Paper Shaders is deferred and cannot
+supply gradients or ambient decoration. GSAP and Lenis remain conditional for
+interactions that materially need them. CSS and native scrolling are the
+defaults. These tools cannot define the visual language.
 
 An interface action calls a service, which sends the request and parses the
 response. Updating React state then triggers rendering. Keep `fetch` or `axios`
@@ -464,8 +503,10 @@ empty state instead of a blank dashboard. Distinguish local component state,
 shared application state, and server state. Server state needs refresh and
 invalidation when the backend changes.
 
-The checklist records design tools, component libraries, motion, accessibility,
-and performance requirements. It is the authoritative plan for that work.
+The checklist records frontend milestones and verification. The design-system
+document is authoritative for visual and interaction decisions. The
+[frontend engineering guide](../frontend/README.md) owns browser state,
+transport, privacy, and rendered acceptance.
 
 ## Testing and debugging
 

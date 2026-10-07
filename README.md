@@ -13,6 +13,8 @@ reason before changing an existing decision.
 | [Codebase walkthrough](docs/codebase-walkthrough.md) | Current implementation and file responsibilities |
 | [Backend build checklist](docs/backend-build-checklist.md) | Milestones and dated verification records |
 | [Engineering Playbook](docs/ENGINEERING_PLAYBOOK.md) | Design reasoning and future concepts |
+| [Frontend design system](docs/frontend-design-system.md) | Canonical visual, component, interaction, and accessibility rules |
+| [Frontend engineering guide](frontend/README.md) | Browser, state, transport, privacy, and verification rules |
 | [Agent Guide](docs/AGENT_GUIDE.md) | Agent workflow and change rules |
 | [Agent tooling](docs/agent-tooling.md) | Skills, writing conventions, and Graphify |
 | [Authentication design](docs/superpowers/specs/2026-08-01-authentication-authorization-design.md) | Approved authentication target and known implementation gaps |
@@ -226,6 +228,25 @@ describes existing tests and their limits.
 The checklist records completion evidence. A target contract does not imply
 that its endpoint is implemented.
 
+## Frontend direction
+
+The frontend remains planned. React with TypeScript is the product direction.
+The [canonical frontend design system](docs/frontend-design-system.md) defines
+the required **Neobrutalism × Bauhaus × Pop Art** visual language:
+
+- Neobrutalism defines shared component structure and interaction.
+- Bauhaus defines the grid, hierarchy, alignment, and composition.
+- Pop Art supplies limited graphic accents.
+- Usability, accessibility, content hierarchy, and task completion take
+  precedence over the aesthetic layers.
+
+Use current neobrutalism.dev components through their shadcn and Base UI
+workflow when suitable. Skin fallback Base UI primitives with Smolink tokens.
+Create a custom shared primitive only when neither source meets the interaction.
+Gradients, soft elevation, generic rounded SaaS styling, and uncontrolled
+decoration are prohibited. The design-system document owns all exact tokens,
+states, intensity levels, source rules, and review checks.
+
 ## API standards
 
 Domain errors use:
@@ -291,7 +312,9 @@ smolink/
 │   ├── alembic/
 │   └── tests/
 ├── docs/                      # maintained guides and dated designs
+│   ├── frontend-design-system.md # canonical planned frontend visual rules
 │   └── docker-compose.yml     # local PostgreSQL and Redis
+├── frontend/                  # frontend engineering guidance and agent skills
 └── AGENTS.md
 ```
 
