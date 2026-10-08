@@ -69,3 +69,7 @@ export function safeReturn(value: string | null) {
     ? value
     : '/dashboard';
 }
+/** Counts code points, so an emoji or accented letter counts once. */
+export function characters(value: string) {
+  return Array.from(value.trim()).length;
+}

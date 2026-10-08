@@ -16,8 +16,10 @@ test('production uses live transport and presents failure without a fixture fall
     });
   });
   await page.goto('/');
-  await expect(page.getByText('Demo mode', { exact: true })).toHaveCount(0);
-  await expect(page.getByText('Live API mode', { exact: true })).toBeVisible();
+  // Production copy never presents the product as a demo or sample.
+  expect(await page.locator('body').innerText()).not.toMatch(
+    /\b(demo|sample|synthetic|fixture)\b/i,
+  );
   await page
     .getByLabel('Destination URL')
     .fill('https://example.com/production');
@@ -132,8 +134,12 @@ test('production success uses returned public URL while account and QR gaps rema
     page.getByRole('button', { name: 'Sign in', exact: true }),
   ).toBeDisabled();
   await expect(
-    page.getByRole('button', { name: 'Explore demo workspace' }),
+    page.getByRole('button', { name: 'Use test account' }),
   ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Continue with Google' }),
+  ).toBeDisabled();
+  await expect(page.getByText('Accounts are coming soon.')).toBeVisible();
   await page.goto('/dashboard');
   await expect(
     page.getByRole('heading', { name: 'Your workspace is on its way.' }),

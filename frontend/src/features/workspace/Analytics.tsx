@@ -47,8 +47,8 @@ export function Analytics({
             value={days}
             onChange={(e) => setParams({ range: e.target.value })}
           >
-            <option value="7">Last 7 sample days</option>
-            <option value="30">Last 30 sample days</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
           </select>
         </div>
       </div>
@@ -60,49 +60,40 @@ export function Analytics({
         data && (
           <>
             <p className="report-provenance">
-              <span className="text-label">Demo report</span>
               <span className="mono break-word">/{data.link.shortCode}</span>
               <span>
                 {data.report.daily[0]?.date} to {data.report.daily.at(-1)?.date}{' '}
-                · UTC
+                (UTC)
               </span>
             </p>
-            <div className="stats-row">
-              <div>
-                <span>Clicks in this range</span>
-                <strong>{total.toLocaleString()}</strong>
-              </div>
-              <div>
-                <span>Daily average</span>
-                <strong>{(total / days).toFixed(1)}</strong>
-              </div>
-              <div>
-                <span>Peak day</span>
-                <strong>{total ? max : 0}</strong>
-              </div>
-              <div className="stats-caption">
-                <span>
-                  Illustrative events
-                  <br />
-                  No live tracking
-                </span>
-              </div>
+            <div className="ledger">
+              <dl>
+                <div>
+                  <dt>Clicks in this range</dt>
+                  <dd>{total.toLocaleString()}</dd>
+                </div>
+                <div>
+                  <dt>Daily average</dt>
+                  <dd>{(total / days).toFixed(1)}</dd>
+                </div>
+                <div>
+                  <dt>Peak day</dt>
+                  <dd>{total ? max : 0}</dd>
+                </div>
+              </dl>
             </div>
             <section className="chart-panel">
               <div className="panel-heading">
                 <h2>A little momentum.</h2>
-                <span className="small muted">Clicks per day · UTC</span>
+                <span className="small muted">
+                  Clicks per day, UTC. Yellow marks the peak.
+                </span>
               </div>
-              {total === 0 && (
-                <p>
-                  No sample clicks in this range. Zero is confirmed for this
-                  demo link.
-                </p>
-              )}
+              {total === 0 && <p>No clicks in this range yet.</p>}
               <div
                 className="bar-chart"
                 role="img"
-                aria-label={`${total} sample clicks across ${days} days. Peak ${total ? max : 0} clicks. Exact values appear in the daily clicks table.`}
+                aria-label={`${total} clicks across ${days} days. Peak ${total ? max : 0} clicks. Exact values appear in the daily clicks table.`}
               >
                 {data.report.daily.map((row) => (
                   <div className="bar-column" key={row.date}>
@@ -111,7 +102,11 @@ export function Analytics({
                     </span>
                     <div className="bar-space">
                       <div
-                        className="chart-bar"
+                        className={
+                          total && row.clicks === max
+                            ? 'chart-bar chart-peak'
+                            : 'chart-bar'
+                        }
                         style={{ height: `${(row.clicks / max) * 100}%` }}
                       />
                     </div>
@@ -122,7 +117,7 @@ export function Analytics({
                 ))}
               </div>
               <p className="small muted">
-                Sample data updated{' '}
+                Updated{' '}
                 {new Date(data.report.updatedAt).toLocaleString('en', {
                   timeZone: 'UTC',
                 })}{' '}

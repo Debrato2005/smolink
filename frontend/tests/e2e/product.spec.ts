@@ -14,7 +14,7 @@ test('guest customizes a link, recovers validation, copies and downloads a real 
   await page.getByLabel('Custom alias').fill('launch-kit');
   await page.getByRole('button', { name: 'Shorten URL' }).click();
   await expect(page.getByLabel('Short URL', { exact: true })).toHaveValue(
-    'https://smolink.invalid/launch-kit',
+    'https://smolink.test/launch-kit',
   );
   await page.getByRole('button', { name: 'View QR code' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -35,7 +35,7 @@ test('demo workspace supports search, management, analytics and confirmed deleti
   page,
 }) => {
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Explore demo workspace' }).click();
+  await page.getByRole('button', { name: 'Use test account' }).click();
   await expect(
     page.getByRole('heading', { name: 'Your links', exact: true }),
   ).toBeVisible();
@@ -96,18 +96,18 @@ test('expiry validation, alias conflict and service errors preserve the entered 
     'aria-invalid',
     'true',
   );
-  await page.getByText('Demo controls', { exact: true }).click();
-  await page.getByLabel('Preview a state').selectOption('limited');
+  await page.getByText('Developer tools', { exact: true }).click();
+  await page.getByLabel('Data scenario').selectOption('limited');
   await page.getByLabel('Custom alias').fill('my-valid-alias');
   await page.getByRole('button', { name: 'Shorten URL' }).click();
   await expect(page.getByRole('alert')).toContainText('Wait 5 seconds.');
   await expect(page.getByLabel('Destination URL')).toHaveValue(
     'https://example.com/keep-me',
   );
-  await page.getByLabel('Preview a state').selectOption('normal');
+  await page.getByLabel('Data scenario').selectOption('normal');
   await page.getByRole('button', { name: 'Shorten URL' }).click();
   await expect(
-    page.getByText('Demo link ready', { exact: true }),
+    page.getByText('Your link is ready', { exact: true }),
   ).toBeVisible();
 });
 
@@ -118,7 +118,7 @@ test('clipboard denial gives a selectable fallback and success awaits the clipbo
   await page.getByLabel('Destination URL').fill('https://example.com/copy');
   await page.getByRole('button', { name: 'Shorten URL' }).click();
   await expect(
-    page.getByText('Demo link ready', { exact: true }),
+    page.getByText('Your link is ready', { exact: true }),
   ).toBeVisible();
   await page.evaluate(() => {
     Object.defineProperty(navigator, 'clipboard', {
@@ -134,7 +134,7 @@ test('clipboard denial gives a selectable fallback and success awaits the clipbo
   await expect(page.getByRole('alert')).toContainText(
     'Clipboard access was denied',
   );
-  const fallback = page.getByLabel(/Copy demo-\d+ manually/);
+  const fallback = page.getByLabel(/Copy [a-z0-9]+ manually/);
   await fallback.focus();
   expect(
     await fallback.evaluate(
@@ -163,6 +163,8 @@ test('clipboard denial gives a selectable fallback and success awaits the clipbo
 test('account forms cover registration, verification, recovery, reset and locked sign-in', async ({
   page,
 }) => {
+  // A seven-route journey. It needs more than the default budget under parallel load.
+  test.slow();
   await page.goto('/register');
   await page.getByLabel('Email address').fill('demo@example.com');
   await page.getByLabel('Password', { exact: true }).fill('short');
@@ -179,8 +181,8 @@ test('account forms cover registration, verification, recovery, reset and locked
   await expect(
     page.getByRole('heading', { name: 'Check your inbox' }),
   ).toBeVisible();
-  await page.getByRole('link', { name: 'Preview verification' }).click();
-  await page.getByRole('button', { name: 'Load demo email link' }).click();
+  await page.getByRole('link', { name: 'I have the link' }).click();
+  await page.getByRole('button', { name: 'Use test link' }).click();
   await page.getByRole('button', { name: 'Verify email', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Email verified', exact: true }),
@@ -191,8 +193,8 @@ test('account forms cover registration, verification, recovery, reset and locked
   await expect(
     page.getByRole('heading', { name: 'Check your inbox' }),
   ).toBeVisible();
-  await page.getByRole('link', { name: 'Preview password reset' }).click();
-  await page.getByRole('button', { name: 'Load demo email link' }).click();
+  await page.getByRole('link', { name: 'I have the reset link' }).click();
+  await page.getByRole('button', { name: 'Use test link' }).click();
   await page.getByLabel('New password').fill('replacement-demo-password');
   await page
     .getByRole('button', { name: 'Reset password', exact: true })
@@ -201,18 +203,18 @@ test('account forms cover registration, verification, recovery, reset and locked
     page.getByRole('heading', { name: 'Password reset', exact: true }),
   ).toBeVisible();
   await page.goto('/login');
-  await page.getByText('Demo controls', { exact: true }).click();
-  await page.getByLabel('Preview a state').selectOption('locked');
+  await page.getByText('Developer tools', { exact: true }).click();
+  await page.getByLabel('Data scenario').selectOption('locked');
   await page.getByLabel('Email address').fill('demo@example.com');
   await page.getByLabel('Password', { exact: true }).fill('sample-password');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('temporarily locked');
-  await page.getByLabel('Preview a state').selectOption('unverified');
+  await page.getByLabel('Data scenario').selectOption('unverified');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(
     page.getByRole('link', { name: 'Request a verification email' }),
   ).toBeVisible();
-  await page.getByLabel('Preview a state').selectOption('normal');
+  await page.getByLabel('Data scenario').selectOption('normal');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Your links' })).toBeVisible();
   expect(
@@ -232,7 +234,7 @@ test('workspace filters, pagination, edits and outages remain distinct from empt
   page,
 }) => {
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Explore demo workspace' }).click();
+  await page.getByRole('button', { name: 'Use test account' }).click();
   await page.getByRole('button', { name: 'Next page' }).click();
   await expect(page).toHaveURL(/page=2/);
   await expect(
@@ -253,7 +255,7 @@ test('workspace filters, pagination, edits and outages remain distinct from empt
   await page.getByLabel('Link enabled').uncheck();
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(
-    page.getByRole('status').filter({ hasText: 'Demo changes saved' }),
+    page.getByRole('status').filter({ hasText: 'Changes saved.' }),
   ).toBeVisible();
   await expect(page.getByLabel('Destination URL')).toHaveValue(
     'https://example.com/changed',
@@ -262,17 +264,17 @@ test('workspace filters, pagination, edits and outages remain distinct from empt
     .getByRole('link', { name: 'All links', exact: true })
     .last()
     .click();
-  await page.getByText('Demo controls', { exact: true }).click();
-  await page.getByLabel('Preview a state').selectOption('error');
+  await page.getByText('Developer tools', { exact: true }).click();
+  await page.getByLabel('Data scenario').selectOption('error');
   await expect(page.getByRole('alert')).toContainText('unavailable');
   await expect(page.getByText('Total links', { exact: true })).toHaveCount(0);
-  await page.getByLabel('Preview a state').selectOption('empty');
+  await page.getByLabel('Data scenario').selectOption('empty');
   await expect(
     page.getByRole('heading', {
       name: 'A little empty. A lot of possibility.',
     }),
   ).toBeVisible();
-  await page.getByLabel('Preview a state').selectOption('expired');
+  await page.getByLabel('Data scenario').selectOption('expired');
   await expect(page.getByRole('link', { name: 'Sign in again' })).toBeVisible();
 });
 
@@ -280,9 +282,11 @@ for (const width of [320, 768, 1440]) {
   test(`workspace and analytics reflow, text spacing and axe at ${width}px`, async ({
     page,
   }) => {
+    // Three pages, each with axe and text-spacing passes.
+    test.slow();
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/login');
-    await page.getByRole('button', { name: 'Explore demo workspace' }).click();
+    await page.getByRole('button', { name: 'Use test account' }).click();
     await page.getByLabel('Search links').waitFor();
     for (const route of ['dashboard', 'detail', 'analytics']) {
       if (route === 'detail')
@@ -327,6 +331,39 @@ for (const width of [320, 768, 1440]) {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
+      if (route === 'analytics') {
+        const heading = page.getByRole('heading', {
+          name: 'A little momentum.',
+        });
+        expect(
+          await heading.evaluate((element) => {
+            const bounds = element.getBoundingClientRect();
+            const parent = element.parentElement!.getBoundingClientRect();
+            return (
+              bounds.left >= parent.left - 1 &&
+              bounds.right <= parent.right + 1 &&
+              element.scrollWidth <= element.clientWidth
+            );
+          }),
+        ).toBe(true);
+        const chart = page.getByRole('img', {
+          name: /Exact values appear in the daily clicks table/,
+        });
+        expect(
+          await chart.locator('.bar-value, .bar-date').evaluateAll((labels) =>
+            labels.flatMap((label) => {
+              const bounds = label.getBoundingClientRect();
+              const column = label.parentElement!.getBoundingClientRect();
+              return bounds.left < column.left - 1 ||
+                bounds.right > column.right + 1 ||
+                label.scrollWidth > label.clientWidth ||
+                label.scrollHeight > label.clientHeight
+                ? [label.textContent]
+                : [];
+            }),
+          ),
+        ).toEqual([]);
+      }
       await spacing.evaluate((element) => (element as HTMLElement).remove());
     }
     await page.addStyleTag({
@@ -346,7 +383,7 @@ test('workspace navigation preserves the creation task after sign-in and marks t
 }) => {
   await page.goto('/dashboard/new');
   await page.getByRole('link', { name: 'Sign in', exact: true }).last().click();
-  await page.getByRole('button', { name: 'Explore demo workspace' }).click();
+  await page.getByRole('button', { name: 'Use test account' }).click();
   await expect(
     page.getByRole('heading', { name: 'Create a link', exact: true }),
   ).toBeVisible();
@@ -366,7 +403,7 @@ test('workspace navigation preserves the creation task after sign-in and marks t
     navigation.getByRole('link', { name: 'Overview' }),
   ).toHaveAttribute('aria-current', 'page');
   await page.goto('/login?next=https%3A%2F%2Fexample.com');
-  await page.getByRole('button', { name: 'Explore demo workspace' }).click();
+  await page.getByRole('button', { name: 'Use test account' }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 });
 
@@ -392,7 +429,7 @@ test('narrow workspace supports long links, future expiry, QR and confirmed zero
 }) => {
   await page.setViewportSize({ width: 320, height: 900 });
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Explore demo workspace' }).click();
+  await page.getByRole('button', { name: 'Use test account' }).click();
   await page.getByRole('link', { name: 'Create link', exact: true }).click();
   const alias = 'a'.repeat(64);
   await page
@@ -404,7 +441,7 @@ test('narrow workspace supports long links, future expiry, QR and confirmed zero
   await page.getByLabel('Expiry date and time').fill(future);
   await page.getByRole('button', { name: 'Shorten URL' }).click();
   await expect(
-    page.getByText('Demo link ready', { exact: true }),
+    page.getByText('Your link is ready', { exact: true }),
   ).toBeVisible();
   await page.getByRole('link', { name: 'Back to all links' }).click();
   await page.getByLabel('Search links').fill(alias);
@@ -428,11 +465,7 @@ test('narrow workspace supports long links, future expiry, QR and confirmed zero
   await page.keyboard.press('Escape');
   await page.getByRole('link', { name: 'View analytics' }).click();
   await page.getByLabel('Date range').selectOption('30');
-  await expect(
-    page.getByText(
-      'No sample clicks in this range. Zero is confirmed for this demo link.',
-    ),
-  ).toBeVisible();
+  await expect(page.getByText('No clicks in this range yet.')).toBeVisible();
   expect(
     await page
       .getByRole('table', { name: 'Daily clicks' })
@@ -444,4 +477,23 @@ test('narrow workspace supports long links, future expiry, QR and confirmed zero
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+test('Google sign-in is offered beside email and reaches the workspace', async ({
+  page,
+}) => {
+  for (const path of ['/login', '/register']) {
+    await page.goto(path);
+    await expect(
+      page.getByRole('button', { name: 'Continue with Google' }),
+    ).toBeEnabled();
+  }
+  await page.goto('/login?next=%2Fdashboard%2Fnew');
+  await page.getByRole('button', { name: 'Continue with Google' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Create a link', exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => localStorage.length + sessionStorage.length),
+  ).toBe(0);
 });

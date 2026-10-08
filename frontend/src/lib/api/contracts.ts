@@ -58,7 +58,7 @@ export type DemoScenario =
   | 'expired';
 export interface ProductGateway extends LinkGateway {
   account(
-    action: AccountAction,
+    action: AccountAction | 'google',
     input: AccountInput,
     signal?: AbortSignal,
   ): Promise<void>;

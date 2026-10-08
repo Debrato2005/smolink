@@ -14,7 +14,7 @@ For behavior changes, observe a reproducible red check, implement the smallest c
 
 Vitest uses the Node environment. Focused checks cover explicit source selection, unsafe origins, lossless-ID refusal, malformed responses, mixed HTTP envelopes, empty bodies, timeout/cancellation, and explicit token attachment. HTTP tests use a real ephemeral loopback server and native Fetch. They do not require PostgreSQL, Redis, or a guessed live backend.
 
-Playwright runs the actual React/Vite app. The browser suite uses the one explicit fixture adapter. It covers preview/result, unavailable routing/reload, fallback recovery, console errors, absence of fixture API calls, keyboard skip focus, reduced motion, reflow, and axe scans.
+Playwright runs the actual React/Vite app. The browser suite uses the one explicit fixture adapter. It covers creation, validation, conflicts, limits, clipboard success and denial, QR download, account forms, workspace filters and pagination, edits, deletion, analytics, outages, reload, fallback recovery, console errors, absence of fixture API calls, keyboard skip focus, Google sign-in, navbar hover, focus, and active states with zero-blur shadows and 120–180ms transitions, reduced motion, reflow at 320–1440px, WCAG text spacing, unclipped analytics labels within their columns, block hover without layout changes, touch/reduced-motion fallback, and axe scans. Multi-page journeys use `test.slow()` because their budget depends on parallel load. Tests wait for the rendered app before keyboard input because `main.tsx` renders after an async gateway import.
 
 The production suite serves built assets and injects an HTTP 503 response at the network boundary. It checks live transport, visible failure, no fixture fallback, empty browser storage, and email-fragment removal. Failure injection is not backend integration evidence.
 
@@ -33,7 +33,7 @@ Testing Library is evaluated but not installed. Current interaction confidence c
 | Manual accessibility      | Keyboard order, visible focus, zoom/text spacing, screen-reader landmarks and status |
 | Release device checks     | Physical touch and Safari/iOS/Android on supported devices before release            |
 
-WebKit is an engine check, not physical Safari certification. A configured project is not a passing run. Record installed engines, command scope, failures, host-library blockers, and unrun device checks in the handoff.
+When a host cannot download the pinned Chromium, set `SMOLINK_CHROMIUM_PATH` to a local Chromium binary. Record that substitution as an environment note. It is not a pinned-engine pass. WebKit is an engine check, not physical Safari certification. A configured project is not a passing run. Record installed engines, command scope, failures, host-library blockers, and unrun device checks in the handoff.
 
 ## Browser and accessibility review
 
@@ -45,7 +45,7 @@ Axe scans use applicable WCAG 2/2.1/2.2 AA tags. Scans supplement contrast and m
 
 ## Production and performance gate
 
-Run a live production build and inspect its asset output. Production must reject fixtures and contain no fixture chunk or `.invalid` sample URL. Inspect the production app in a real browser, including an API failure path. A fixture dev screenshot cannot prove production behavior.
+Run a live production build and inspect its asset output. Production must reject fixtures and contain no fixture chunk, `smolink.test` URL, or `test-token` string. Check with `grep -c 'smolink\.test\|test-token\|fixtureLinks' dist/assets/index-*.js`, which must print 0. The production suite also asserts that page text has no demo, sample, synthetic, or fixture wording. Inspect the production app in a real browser, including an API failure path. A fixture dev screenshot cannot prove production behavior.
 
 Review compressed JavaScript/CSS, bounded font faces, and duplicate/heavy packages. Record build, environment, browser, data scale, and measurement limits. Do not promise frame rate or Core Web Vitals from code. No artificial performance budget applies before product flows exist.
 

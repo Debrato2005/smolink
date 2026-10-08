@@ -104,9 +104,7 @@ function Editor({
         />
         Link enabled
       </label>
-      <p className="field-help">
-        Pause a link without deleting it. This setting affects the demo only.
-      </p>
+      <p className="field-help">Pause a link without deleting it.</p>
       {error ? <ErrorNotice error={error} /> : null}
       <Button type="submit" disabled={busy}>
         {busy ? 'Saving…' : 'Save changes'}
@@ -184,8 +182,14 @@ export function LinkDetail({
       ) : (
         data && (
           <>
-            <section className="link-summary">
-              <div>
+            <section className="ticket link-summary" aria-label="Short link">
+              <div className="ticket-stub">
+                <strong className="ticket-count">
+                  {data.clicks.toLocaleString()}
+                </strong>
+                <span>clicks</span>
+              </div>
+              <div className="ticket-body">
                 <span
                   className={`status-label status-${linkStatus(data).toLowerCase()}`}
                 >
@@ -194,8 +198,8 @@ export function LinkDetail({
                 </span>
                 <h2 className="mono break-word">/{data.shortCode}</h2>
                 <p className="muted break-word">{data.shortUrl}</p>
+                <LinkActions key={data.shortUrl} link={data} links={links} />
               </div>
-              <LinkActions key={data.shortUrl} link={data} links={links} />
             </section>
             {message && (
               <p className="notice notice-success" role="status">
@@ -209,7 +213,7 @@ export function LinkDetail({
                 link={data}
                 links={links}
                 saved={() => {
-                  setMessage('Demo changes saved for this session.');
+                  setMessage('Changes saved.');
                   reload();
                 }}
               />
@@ -224,7 +228,7 @@ export function LinkDetail({
                     })}{' '}
                     · UTC
                   </dd>
-                  <dt>Lifetime sample clicks</dt>
+                  <dt>Lifetime clicks</dt>
                   <dd>{data.clicks.toLocaleString()}</dd>
                   <dt>Short code</dt>
                   <dd className="mono break-word">{data.shortCode}</dd>
@@ -238,7 +242,7 @@ export function LinkDetail({
               <div>
                 <h2>Time to let this one go?</h2>
                 <p>
-                  Deletion removes this link from the demo workspace. You cannot
+                  Deleting removes the link and its click history. You cannot
                   undo it.
                 </p>
               </div>
@@ -259,7 +263,7 @@ export function LinkDetail({
                 if (!busy) setConfirm(value);
               }}
               title="Delete this link?"
-              description={`Remove /${data.shortCode} from your demo workspace. This action cannot be undone.`}
+              description={`Remove /${data.shortCode} and its click history. This cannot be undone.`}
             >
               {deleteError ? <ErrorNotice error={deleteError} /> : null}
               <div className="modal-actions">

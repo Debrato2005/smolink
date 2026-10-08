@@ -2,123 +2,93 @@
 
 **Owner:** Current frontend continuation checkpoint
 
-Checkpoint: October 7, 2026. Implementation and browser receipts below come from October 6 UTC. This checkpoint replaces the foundation-only handoff.
+Checkpoint: October 8, 2026 (Asia/Calcutta). The full-suite receipts cover the redesign and hover source. The logo follow-up has separate checks below.
 
 ## Current objective
 
-Continue the complete Smolink frontend and its browser refinement loop. **The product is unfinished and is not ready for release.**
+Apply the supplied frontend redesign patch and finish its bounded frontend checks. Keep the neobrutalist measuring bench design and truthful backend availability. The user also requested a small hover lift for all boxed blocks.
 
-The frontend now includes the landing page, URL creation, results, QR preview, account forms, and a fixture workspace. Build, typecheck, lint, and nine existing tests passed. The latest fixture browser run reported **23 passed and nine failed**. Production browser artifacts also record two failures. Final visual acceptance and documentation synchronization remain incomplete.
+Completed: patch application, archive removal, analytics text reflow, block hover behavior, Chromium checks, and documentation synchronization. Live accounts, Google OIDC, redirects, owner management, QR, and analytics still depend on the contracts below. This is not a release-ready product.
 
-The user's latest instruction was to generate this handoff. This continuation wrote the handoff and inspected existing evidence. It did not fix application code or rerun browsers.
+## What changed in this task
 
-Retain these user constraints:
-
-- Write only inside `frontend/`. Preserve existing dirty work, backend contracts, and the adapter boundary.
-- Use Neobrutalism primitives, Bauhaus composition, and restrained Pop Art accents. Keep public pages expressive and the workspace controlled.
-- Take actual browser screenshots, inspect them, and fix observed defects. Work quickly, but do not replace evidence with completion claims.
-- Keep Ponytail active: reuse native controls, CSS, existing components, and installed dependencies. Avoid speculative abstractions and extra motion libraries.
-- Label fixtures and unavailable capabilities. Never use fake data after a failed production request.
-
-## Current implementation
-
-| Area          | Files under `frontend/`                                                        | Current behavior and limits                                                                                                                                        |
-| ------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Public shell  | `src/app/App.tsx`, `src/routes/Home.tsx`                                       | Responsive navigation, footer, hero, features, steps, FAQ, and creation panel. Explicit fixture/live banner.                                                       |
-| Creation      | `src/features/shorten/ShortenPreview.tsx`, `src/lib/validation.ts`             | Destination, optional alias, optional expiry, adjacent validation, pending state, conflicts, limits, and uncertain mutation feedback.                              |
-| Results       | `src/features/shorten/LinkActions.tsx`                                         | Awaited clipboard confirmation, manual copy after denial, QR dialog, and PNG download. Live QR remains unavailable.                                                |
-| Accounts      | `src/features/auth/AuthPage.tsx`                                               | Sign in, sign up, verification, resend, recovery, reset, missing-token, locked, and unverified states. Fixture actions only. Live forms remain explicitly blocked. |
-| Workspace     | `src/features/workspace/WorkspaceLayout.tsx`, `Dashboard.tsx`                  | Fixture identity guard, sign out, overview, URL list, search, filter, sort, and six-row pagination. Query parameters hold list controls.                           |
-| Management    | `src/features/workspace/LinkDetail.tsx`                                        | Fixture destination/expiry edits, enabled state, copy/QR, success feedback, and destructive confirmation.                                                          |
-| Analytics     | `src/features/workspace/Analytics.tsx`                                         | Seven/30 sample-day reports, chart, exact daily table, referrers, devices, UTC dates, freshness, and confirmed zero-data states. Keyboard defect remains.          |
-| Shared UI     | `src/components/ui/`                                                           | Base UI buttons/dialog, labeled fields, SVG icons, loading, and error feedback. Native select, checkbox, date-time input, details, and tables.                     |
-| API boundary  | `src/lib/api/contracts.ts`, `gateway.ts`, `live.ts`, `fixtures.ts`             | `ProductGateway` extends the existing creation boundary. Live guest creation retains the HTTP adapter. Other live operations fail explicitly.                      |
-| Runtime/state | `src/main.tsx`, `src/lib/useResource.ts`, `src/app/router/NavigationFocus.tsx` | Email fragment capture/removal, cancellable reads, navigation focus, and anchor scrolling. Review token cleanup through Strict Mode before live auth integration.  |
-| Design        | `src/styles/globals.css`, `tokens.css`                                         | Flat fills, black borders, hard shadows, geometric artwork, responsive rules, and reduced-motion rules. New styles still need token consolidation and formatting.  |
-
-React 19.3.0, Vite 8.3.2, React Router 8.4.0, TypeScript 6.0.3, and Base UI 1.8.0 remain selected. The new direct dependency is `qrcode` 1.5.4. Its types are `@types/qrcode` 1.5.6. Both use the MIT license. The lockfile changed during installation. The dependency notice and source ledger still need updates.
-
-### Fixture versus live behavior
-
-`fixtures.ts` contains 12 initial sample links and an in-memory mutation store. Reload resets changes. Sample short URLs use `.invalid` and do not redirect. The fixture date is illustrative, based on October 6, 2026. Generated QR images encode those sample URLs correctly but do not create redirect infrastructure.
-
-Use `/login` and **Explore demo workspace** to enter the fixture workspace. The development selector exposes `normal`, `empty`, `error`, `limited`, `locked`, `unverified`, and `expired` scenarios. Account actions simulate results without storing passwords. `wrong@example.com` simulates invalid credentials. Verification/reset accepts `demo-token`, available through **Load demo email link**.
-
-Live guest requests use `/api/v1/urls`. The frontend does not implement a live account session or store bearer/refresh credentials. Google start/callback remains absent. Owner list/edit/delete, redirect, and analytics endpoints remain backend dependencies. Successful production-response tests inject HTTP responses and do not prove a real backend journey.
-
-Unsafe numeric public IDs still become `linkId: null`. Never infer a precise ID or ownership from a public short code. Alias normalization and validation follow backend rules. Expiry converts browser-local input into a future UTC ISO timestamp.
+| Area              | Result                                                                                                                                                                                                                                                                                                                             |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Patch             | Initial `git status --short` returned no output. `git apply --check` and `git apply` passed from the repo root. No conflicts or three-way application occurred                                                                                                                                                                     |
+| Archives          | Deleted `smolink-frontend-redesign.patch` and `smolink-frontend.zip` after application. The ZIP was never extracted                                                                                                                                                                                                                |
+| Analytics         | Heading wraps inside its panel. Counts and dates wrap inside each column without fixed-height clipping. The strengthened 320px test first failed for all seven date labels, then passed after the CSS fix                                                                                                                          |
+| Hover             | Boxed blocks lift by 2px and grow their hard shadow by 2px over 180ms. Landing cards, FAQ, account cards, notices, tickets, and workspace panels share this CSS behavior. No layout size changes. Reduced motion and touch-only pointers disable the lift. The new browser check failed before implementation and passed afterward |
+| Formatting        | `.impeccable/` was already in `.prettierignore` after the patch. It remains excluded                                                                                                                                                                                                                                               |
+| Docs and licenses | Synced design, architecture, workflows, queue, source ledger, quality, entrypoint, and QR notices. Both public QR notices match the installed licenses and the build copies byte for byte                                                                                                                                          |
 
 ## Verified checks
 
-These receipts apply to the implementation checkpoint, not a completed release. The old foundation's green results do not cover the expanded product.
+All tool commands started from `/home/debrato/Projects/smolink`. `npm --prefix frontend` runs npm scripts in `frontend/`. Node 22.23.2 came from `/home/debrato/.nvm/versions/node/v22.23.2/bin`. The default shell still selects Node 18, which does not meet the app's engine requirement.
 
-| Check                               | Observed result                                                                                                                                                                               |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Initial focused browser checks      | Two expected failures established missing alias and workspace behavior. After implementation, both Chromium checks passed.                                                                    |
-| `npm run typecheck`                 | Passed after implementation corrections.                                                                                                                                                      |
-| `npm run lint`                      | Passed after removal of synchronous state updates from the resource effect.                                                                                                                   |
-| `npm test`                          | Nine tests passed in three files. Receipt: October 6, 06:56 UTC. HTTP tests use native Fetch and loopback HTTP.                                                                               |
-| `npm run build`                     | Passed, 268 modules. JavaScript 371.15 kB, gzip 116.58 kB. CSS 32.65 kB, gzip 7.25 kB.                                                                                                        |
-| Earlier expanded browser run        | 24 passed, two failed. The failures used an ambiguous status locator. The test then selected the save-confirmation status.                                                                    |
-| Latest Chromium/Firefox fixture run | 23 passed, nine failed out of 32. Five analytics keyboard failures, one Chromium 320 px overflow, and three Chromium trace-close errors.                                                      |
-| Production browser run              | `.last-run.json` records two failures. Both traces stop at the broad `getByText('Demo mode')` assertion. The final process output was not recovered. No aggregate production pass is claimed. |
-| WebKit                              | Browser launch blocked by missing host libraries. No WebKit product-flow pass.                                                                                                                |
-| Screenshot capture                  | Home, login, dashboard, detail, and analytics captured at 1440 and 390 px. Capture script reported no horizontal overflow or console/page errors at those widths.                             |
-| Handoff scope check                 | All 87 non-frontend baseline files match their hashes. No new non-frontend tracked or unignored file paths appeared.                                                                          |
+| Check                                                                  | Observed result                                                                                                                                         |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm ci`                                                               | Passed. 227 packages installed from the lockfile. Cache: `frontend/.local/npm-cache`                                                                    |
+| `npm run typecheck`                                                    | Passed, including the final production build's typecheck                                                                                                |
+| `npm run lint`                                                         | Passed with zero warnings                                                                                                                               |
+| `npm test`                                                             | 9 passed across 3 files. The first sandbox run passed 4 tests and skipped 5 after a loopback server failure. The loopback-authorized rerun passed all 9 |
+| `npm run test:e2e -- --project=chromium`                               | 22 passed. Installed pinned Chromium 153.0.8010.12. Includes analytics text spacing, block hover geometry, reduced motion, and touch fallback           |
+| `SMOLINK_E2E_TARGET=production npm run test:e2e -- --project=chromium` | 4 passed against the final production build. API responses are injected. This does not prove backend integration                                        |
+| `npm run build`                                                        | Passed. JavaScript 367.85 kB (gzip 116.30 kB). CSS 34.06 kB (gzip 7.10 kB)                                                                              |
+| Production scan                                                        | Zero occurrences of `smolink.test`, `test-token`, and `fixtureLinks` in built JavaScript                                                                |
+| `npm run docs:check`                                                   | Passed: 10 canonical owners, 16 unique tasks, local links and anchors                                                                                   |
+| `npm run format:check`                                                 | Passed                                                                                                                                                  |
+| `git diff --check`                                                     | Passed                                                                                                                                                  |
+| Scope check                                                            | Tracked changes and new files are inside `frontend/`. No staged changes                                                                                 |
 
-The final production fixture-rejection build and bundle scan were not repeated after expansion. Full formatting and documentation gates were not repeated during implementation. Physical-device checks, manual screen-reader checks, performance measurements, and real-stack flows remain unverified.
+Normal sandbox execution blocked loopback listeners with `EPERM`. Network-enabled test and preview runs succeeded after the tool approval check. No ordinary Linux repository command used a Windows wrapper or changed sandbox permissions.
 
-### Exact failing evidence
+Browser commands used `PLAYWRIGHT_BROWSERS_PATH=/home/debrato/Projects/smolink/frontend/.local/browsers`. Temporary files used `TMPDIR=/home/debrato/Projects/smolink/frontend/.local/tmp`.
 
-1. **Analytics keyboard access:** five traces report serious `scrollable-region-focusable` violations on `.daily-table-wrap`. Its scrollable content lacks keyboard focus. The planned `tabIndex={0}` and named region patch did not execute. Current `Analytics.tsx` still contains the unfocusable wrapper.
-2. **320 px Chromium overflow:** `product.spec.ts:171` fails the document-width assertion on the detail screen. This happens before analytics. Inspect the real viewport and overflowing elements instead of hiding page overflow.
-3. **Three Chromium artifact failures:** workspace management, account forms, and filter/edit/outage checks report `browserContext.close: ENOENT` for missing trace files. The main suite and a separate WebKit invocation shared `test-results/fixture` concurrently. That collision is a likely cause, not a confirmed diagnosis. Rerun separately before changing product behavior.
-4. **Production locator failure:** `production.spec.ts:19` expects no text containing “Demo mode.” The snapshot shows **Live API mode**. The FAQ includes “In demo mode,” which the broad locator also matches. Narrow the assertion to the mode banner and separately verify transport and bundle exclusion.
+Visual review: analytics at 320, 390, 768, and 1440px, with normal and extra text spacing. Desktop card hover screenshots show the requested small lift. Receipts and captures are in ignored `.local/redesign-review/`. Firefox, WebKit, physical devices, screen readers, scanner decoding, and real-stack journeys did not run.
 
-Failure snapshots and trace ZIPs remain in `test-results/fixture/` and `test-results/production/`. The `.last-run.json` files report failure. Test artifacts are ignored and can disappear on a later run. Preserve useful receipts before rerunning.
+The new documentation prose scored 1.95 mechanical findings per 100 words in the STE linter. The handoff draft scored 1.25 findings per 100 words. These scores do not certify full ASD-STE100 compliance.
 
-### Screenshots and remaining visual checks
+## Review server
 
-The capture script is `.local/capture.mjs`. Saved files include:
+The fixture development server runs at [http://127.0.0.1:3001](http://127.0.0.1:3001). Port 3000 was already occupied, so this task did not stop its listener. Command: `npm --prefix frontend run dev -- --port 3001`, with the Node path above. Development data is ephemeral. Production still disables missing backend features.
 
-| Screen       | Desktop                                 | Mobile                                |
-| ------------ | --------------------------------------- | ------------------------------------- |
-| Hero         | [1440 px](../.local/hero-1440.png)      | [390 px](../.local/hero-390.png)      |
-| Full landing | [1440 px](../.local/home-1440.png)      | [390 px](../.local/home-390.png)      |
-| Sign in      | [1440 px](../.local/login-1440.png)     | [390 px](../.local/login-390.png)     |
-| Dashboard    | [1440 px](../.local/dashboard-1440.png) | [390 px](../.local/dashboard-390.png) |
-| Link details | [1440 px](../.local/detail-1440.png)    | [390 px](../.local/detail-390.png)    |
-| Analytics    | [1440 px](../.local/analytics-1440.png) | [390 px](../.local/analytics-390.png) |
+## Logo follow-up
 
-The agent visually inspected the desktop hero, mobile landing, desktop dashboard/sign-in, and mobile analytics. The captures exposed a desktop hamburger, duplicate active workspace links, joined analytics caption text, and an opaque auth ornament.
+Removed the frame and separate typed name at the user's request. The initial shared header/footer brand displayed the complete PNG with its original wordmark. Screenshots at 320, 390, and 1440px show no page overflow, border, or added shadow. The PNG request returned HTTP 200. Six focused Chromium navigation/reflow checks and the production build passed. The build includes the supplied PNG unchanged. Earlier full-suite receipts describe the redesign and hover changes before this logo follow-up.
 
-Subsequent source edits addressed navigation, active links, the ornament, small text, and mobile hero density. They were not recaptured. The caption uses a `br::after` spacing attempt that still needs browser inspection. Prefer explicit text spacing if that attempt fails. These images are earlier evidence, not final acceptance images.
+Screenshots: `.local/redesign-review/logo/`. Docs prose lint: 0.92 findings per 100 words.
 
-## Research and tool decisions
+### Navbar crop follow-up
 
-The agent used the installed frontend design, React, Playwright, Graphify, ASD-STE100, Ponytail, and Lean Build guidance. Project rules take precedence over generic skill recipes. No extra state, form, chart, GSAP, or Lenis dependency was added.
+The user requested the symbol and original wordmark side by side in the navbar only. Two PNG crops now supply that layout. The footer keeps the complete artwork. The navbar uses smaller crops at widths of 900px or less.
 
-Sources inspected during implementation still need entries in [SOURCE_LEDGER.md](SOURCE_LEDGER.md):
+The browser check first failed because the navbar contained one stacked image. After the crop change, the 768px check found horizontal overflow. Smaller crops resolved it. The final Chromium check passed at 320, 390, 768, and 1440px. Both images load beside each other with the same vertical center. The home link returns to the homepage. Visual review covered desktop and mobile captures.
 
-| Source                                                                                                                             | Use                                                                                                                              |
-| ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| [neobrutalism.dev dialog](https://www.neobrutalism.dev/docs/dialog), [Base UI dialog](https://base-ui.com/react/components/dialog) | Primitive behavior and installed Base UI composition. Registry downloads failed, so installed types and docs guided the wrapper. |
-| [Neubrutalism.com](https://neubrutalism.com/)                                                                                      | Flat fills, borders, restrained hard-shadow language.                                                                            |
-| [MoMA Herbert Bayer reference](https://www.moma.org/collection/works/5101)                                                         | Bauhaus hierarchy and geometric composition.                                                                                     |
-| [Dribbble URL-shortener dashboard](https://dribbble.com/shots/26997319-URL-Shortener-Dashboard-UI)                                 | Product density and hierarchy reference. No layout or branding copied.                                                           |
-| [Linear features](https://linear.app/features), [Dub link builder](https://dub.co/blog/new-link-builder)                           | Product task priority and link-action visibility. No session-storage pattern adopted.                                            |
-| [node-qrcode](https://github.com/soldair/node-qrcode)                                                                              | Actual client-side QR generation in the fixture boundary.                                                                        |
-| [Web Interface Guidelines](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md)                 | Interaction and accessibility review guidance.                                                                                   |
+Commands: `node .local/navbar-review/check.cjs`, `npm run lint`, `npm run build`, `npm run docs:check`, and `git diff --check`. These checks passed with the Node and browser paths above. The sandbox blocked loopback serving and Chromium startup. The authorized browser run used a local Vite server on port 3100. No dependency installation occurred. Firefox and WebKit did not run for this follow-up.
 
-The Awwwards Flowfest page timed out. Search results did not establish meaningful visual inspection. Awwwards research remains incomplete.
+Screenshots and the browser check are in `.local/navbar-review/`. New documentation prose scored 0.75 findings per 100 words. Root Graphify output remains outside the frontend write scope.
 
-Impeccable's context loader failed because it could not create its engine directory outside this scope. The agent read existing project context directly. No successful engine execution is claimed. Graphify queries worked with legacy-ID warnings. Root graph updates remain outside scope.
+The user then requested larger crops, less space at the left, and the actual logo in the browser tab. The navbar now uses larger crops and spans the viewport. Desktop symbol and wordmark widths are 60px and 160px. Horizontal padding is 24px, or 16px at widths of 900px or less. Smaller widths preserve the horizontal layout on narrow screens. The browser tab uses a transparent 64px PNG from the same symbol crop.
+
+The size check first failed at the earlier 48px symbol width. Final Chromium checks passed at 320, 390, 768, 900, 1024, 1440, and 1920px without horizontal overflow. The favicon loads. The home link works. Build, lint, document checks, and whitespace checks passed. Visual review covered desktop and mobile captures. The final build contains JavaScript at 368.13 kB (gzip 116.43 kB) and CSS at 34.26 kB (gzip 7.22 kB). New size and favicon prose scored 0.00 mechanical findings per 100 words. The temporary port 3100 review server stopped after checks.
+
+## Navbar social links
+
+The user requested the supplied GitHub repository star count and X profile in the navbar. Boxed links now open both destinations in new tabs. Shields.io supplies the cached public star count. The GitHub link shows Star if the badge image fails. Social links move into the menu on phones. Desktop navigation collapses at 1150px. The narrow wordmark can shrink when increased text spacing needs more room.
+
+The new browser test first failed because the links were absent. The first full Chromium run found overflow in the authenticated 320px header with increased text spacing. The wordmark shrink fixed that failure. The next full fixture run passed all 23 tests. A manual boundary check found overflow at 1051px. The final breakpoint change passed seven focused navbar, reflow, and axe checks. Visual review covered eight widths from 320px to 1920px, including both desktop links and the open phone menu. The real badge loaded and showed 2 stars.
+
+Build, lint, formatting, document checks, and whitespace checks passed. Four production Chromium checks passed before the final breakpoint change. These tests inject API responses. Firefox and WebKit did not run. Captures and the review script are in `.local/social-review/`. Simple Icons supplies the GitHub and X paths under CC0. The license ships with the production build. No package installation occurred. Graph output remains outside the frontend write scope.
+
+New social-link documentation prose scored 1.98 findings per 100 words. The temporary review server on port 3100 stopped after checks.
 
 ## Blockers and cross-boundary dependencies
 
-### ENV-02: WebKit host libraries
+The cross-boundary entries continue the supplied handoff. This task did not run backend or deployment tests. Source checks confirmed the missing PKCE helper and mounted route structure.
 
-Pinned Chromium, Firefox, and WebKit runtimes downloaded under `.local/browsers/`. WebKit reports missing `libevent-2.1-7t64` and `libgstreamer-plugins-bad1.0-0`. Host provisioning belongs outside this frontend write scope. It blocks local WebKit verification only. Use a correctly provisioned host for the configured project; do not report a configured engine as tested.
+### ENV-02: Browser runtimes
+
+This task used the installed pinned Chromium 153.0.8010.12, revision 1243. No substitute executable was selected. Firefox and WebKit did not run. Earlier download and WebKit host-library blockers were not rechecked. Cross-engine and physical-device verification remain open.
 
 ### CB-01: Lossless public ID transport
 
@@ -160,62 +130,24 @@ Owner: repository documentation/tooling. Relevant files: root `README.md`, `docs
 
 Owner: backend authentication/email services. Relevant files: `backend/app/api/v1/endpoints/auth.py`, `backend/app/services/email_service.py`, and `backend/app/services/auth_service.py`. Registration can commit before email delivery fails. Forgot-password and resend return empty 202 acceptance without guaranteeing delivery. Required follow-up: define provider-outage and resend recovery behavior before live forms promise an outcome. Frontend cannot undo a committed account or infer delivery from acceptance. This affects live recovery integration; form and fixture work can proceed.
 
-### ENV-03: Approval review unavailable
+### CB-09 note: root design reconciliation
 
-Automatic approval review rejected the final browser rerun because the workspace owner's spend cap prevented review. The action did not execute. This was a review failure, not a finding that the action was unsafe.
-
-The rejected call bundled the analytics focus patch with the browser rerun. Neither action ran. Do not bypass review. Resume restricted browser execution only after the approval service works or the user supplies an approved path. Ordinary reads and this frontend documentation update remained available.
-
-## Unfinished work
-
-The stable frontend owners and queue still mostly describe the earlier foundation. In particular, FE-007/008/009/011/012/013 remain `TODO` despite implementation work. Their acceptance remains incomplete. Do not mark them `DONE_VERIFIED` from screenshots or isolated passes.
-
-Update [FRONTEND_ARCHITECTURE.md](FRONTEND_ARCHITECTURE.md) for `ProductGateway`, fixture sessions, resource reads, and email-token lifetime. Update [WORKFLOW.md](WORKFLOW.md) for actual routes and live/fixture availability. Reconcile [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), [TESTING_AND_QUALITY.md](TESTING_AND_QUALITY.md), [BUILD_CHECKLIST.md](BUILD_CHECKLIST.md), and [README.md](../README.md) with observed implementation.
-
-Record `qrcode` and its types in the source ledger and third-party notices. Preserve the required license text under `public/licenses/`. Review the lockfile diff. Remove or update the unused foundation route map in `src/app/router/route-map.ts`. Format the new TSX/CSS and consolidate repeated values into the existing token system.
+`--sky-surface` is a frontend token added at the user's request. Root `docs/frontend-design-system.md` does not list it. Reconcile the root file under separate authorization. Root `graphify-out/graph.json` exists but lacks the frontend analytics modules. The graph and root documentation remain outside this task's write scope.
 
 ## Exact next task
 
-**Fix the analytics table's keyboard access in `src/features/workspace/Analytics.tsx`.** Keep the existing scroll wrapper, add keyboard focus and an accessible region name, and use the existing failing browser check. The rejected patch did not apply.
+Run the fixture and production suites in Firefox and WebKit on a host with the pinned runtimes and required host libraries. Keep the receipts separate from Chromium. Then complete FE-007 with a real backend guest-creation journey.
 
-Then continue in this order:
-
-1. Fix the observed 320 px detail overflow and narrow the production mode assertion.
-2. Rerun browser invocations separately and inspect fresh screenshots after each visual correction.
-3. Complete token/format cleanup, dependency notices, and source-ledger entries.
-4. Synchronize the stable owners and task queue with actual acceptance evidence.
-5. Run the relevant final gates, compare scope hashes, and rewrite this handoff last.
-
-### Commands and runtime
-
-Run from `frontend/` under Linux Bash. System Node 18 is too old. Use the installed Node 22.23.2:
+From `frontend/`, with the supported Node runtime and provisioned browsers:
 
 ```bash
-export PATH=/home/debrato/.nvm/versions/node/v22.23.2/bin:$PATH
-export TMPDIR="$PWD/.local"
-export PLAYWRIGHT_BROWSERS_PATH="$PWD/.local/browsers"
-npm run dev -- --port 3100
-```
-
-Normal development uses port 3000. Fixture browser tests use 3100. Production preview uses 4173. Check whether a server exists before starting another. Old executor process IDs are not reliable continuation handles. Set `SMOLINK_E2E_REUSE=1` only for a verified matching server.
-
-Once browser execution is available, run these separately:
-
-```bash
-SMOLINK_E2E_REUSE=1 npx playwright test product.spec.ts --project=chromium -g 'workspace and analytics'
-SMOLINK_E2E_REUSE=1 npm run test:e2e -- --project=chromium --project=firefox
+npm run test:e2e -- --project=firefox --project=webkit
 npm run build
-SMOLINK_E2E_TARGET=production npm run test:e2e -- --project=chromium --project=firefox
+SMOLINK_E2E_TARGET=production npm run test:e2e -- --project=firefox --project=webkit
 ```
 
-Do not run two Playwright invocations against the same output directory concurrently. Preserve traces before a rerun. A fixture pass does not resolve live contract blockers.
-
-Final gates also include `typecheck`, `lint`, `format:check`, `test`, `docs:check`, fixture-build rejection, production bundle inspection, and bounded diff review. Do not install host libraries or edit root files under this authorization.
+Review the outlined hero word, ticket `cqi` sizing and notches, block hover, reduced motion, and analytics text spacing.
 
 ## Scope protections
 
-The initial checkout already contained dirty root documentation and an untracked frontend foundation. No commit, push, reset, stash, clean, or worktree operation occurred.
-
-Application changes, dependencies, caches, browser runtimes, screenshots, test artifacts, and this handoff stay under `frontend/`. The product baseline is `.local/product-outside-baseline.json`. The earlier foundation baseline remains `.local/outside-baseline.json`.
-
-The handoff comparison found 87 unchanged non-frontend baseline files and no new non-frontend tracked or unignored file paths. This check does not cover every ignored tool cache. Preserve installed skills and `skills-lock.json`. Root documentation and Graphify updates require separate authorization.
+All file writes are inside `frontend/`. No `git add`, commit, push, stash, reset, clean, or checkout command ran. No conflict resolution occurred. Root documentation, backend code, and graph output remain unchanged. Preserve `.agents/skills/` and `skills-lock.json`. `.impeccable/` remains development-only and excluded from Prettier.

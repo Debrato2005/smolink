@@ -20,7 +20,7 @@ function seed(): SavedLink[] {
   return names.map((name, i) => ({
     linkId: String(i + 1),
     shortCode: name,
-    shortUrl: `https://smolink.invalid/${name}`,
+    shortUrl: `https://smolink.test/${name}`,
     destination: `https://example.com/${name}/a-little-more-to-discover`,
     expiresAt: i === 9 ? '2026-08-01T00:00:00Z' : null,
     createdAt: new Date(Date.UTC(2026, 9, 6 - i, 9)).toISOString(),
@@ -72,13 +72,14 @@ export const fixtureLinks: ProductGateway = {
   },
   async create(input, signal) {
     await wait(signal);
-    const code = input.alias?.toLowerCase() || `demo-${++sequence}`;
+    // Spread the sequence so generated codes look like real short codes.
+    const code = input.alias?.toLowerCase() || (++sequence * 7919).toString(36);
     if (rows.some((r) => r.shortCode === code))
       throw httpError(409, { error: 'alias_taken', message: '' }, null, true);
     const result = adaptCreatedLink({
       id: ++sequence,
       short_code: code,
-      short_url: `https://smolink.invalid/${code}`,
+      short_url: `https://smolink.test/${code}`,
       destination: input.destination,
       expires_at: input.expiresAt ?? null,
       created_at: new Date().toISOString(),
@@ -114,7 +115,7 @@ export const fixtureLinks: ProductGateway = {
       );
     if (
       (action === 'verify-email' || action === 'reset-password') &&
-      input.token !== 'demo-token'
+      input.token !== 'test-token'
     )
       throw httpError(
         400,

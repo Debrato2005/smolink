@@ -22,8 +22,8 @@ export function WorkspaceLayout({
         <Icon name="link" size={48} />
         <h1>Your workspace is on its way.</h1>
         <p>
-          Link management and analytics are not connected yet. Guest link
-          creation is available.
+          Link management and click stats are coming soon. You can shorten links
+          without an account today.
         </p>
         <Link className="button-link" to="/">
           Shorten a link
@@ -36,10 +36,7 @@ export function WorkspaceLayout({
       <section className="unavailable container">
         <Icon name="link" size={48} />
         <h1>A home for your links.</h1>
-        <p>
-          Sign in to the demo workspace to explore link management and sample
-          analytics.
-        </p>
+        <p>Sign in to manage your links and see who clicks them.</p>
         <Link
           className="button-link"
           to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`}
@@ -53,10 +50,12 @@ export function WorkspaceLayout({
     <div className="workspace">
       <aside className="workspace-sidebar">
         <div className="workspace-identity">
-          <span className="avatar">S</span>
+          <span className="avatar" aria-hidden="true">
+            {email.slice(0, 1).toUpperCase()}
+          </span>
           <div>
             <strong>My workspace</strong>
-            <span>Personal · Demo</span>
+            <span>Personal</span>
           </div>
         </div>
         <nav aria-label="Workspace navigation">
@@ -82,14 +81,6 @@ export function WorkspaceLayout({
             Create a link
           </Link>
         </nav>
-        <div className="sidebar-note">
-          <Icon name="info" />
-          <p>
-            This is your demo space.
-            <br />
-            Changes reset on reload.
-          </p>
-        </div>
         <div className="workspace-user">
           <span className="small muted break-word">{email}</span>
           <Button className="button-plain" onClick={onLogout}>

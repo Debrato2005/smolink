@@ -6,6 +6,8 @@
   --success-surface: #dceedd;
   --overlay-surface: rgb(0 0 0 / 45%);
   --workspace-surface: #f3f0e8;
+  /* Page ground: light sky tint under a crisp square grid. */
+  --sky-surface: #dfe9fb;
   --ink-muted: #514e47;
   --accent-yellow: #ffd23f;
   --accent-red: #ff6b6b;
@@ -32,11 +34,19 @@
   --text-sm: 0.875rem;
   --text-body: 1rem;
   --text-lead: 1.125rem;
+  --text-h3: 1.5rem;
   --text-h2: 2rem;
-  --text-display: clamp(3rem, 7vw, 6rem);
+  --text-h1: clamp(2.5rem, 6vw, 4.5rem);
+  --text-display: clamp(3rem, 9vw, 6rem);
+  --tracking-display: -0.03em;
   --line-body: 1.5;
   --line-heading: 1.05;
   --duration-press: 120ms;
+  --duration-panel: 180ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --page-max: 1280px;
+  /* Page grid: 64px squares, 1px rule. SVG tile, not a gradient. */
+  --grid-size: 64px;
+  --grid-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cpath d='M63.5 0v64M0 63.5h64' fill='none' stroke='%23c3d3ee'/%3E%3C/svg%3E");
+  --header-height: 76px;
 }

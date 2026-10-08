@@ -13,7 +13,7 @@ export function NavigationFocus() {
       document.getElementById('main')?.focus();
       window.scrollTo(0, 0);
     }
-    if (['#features', '#how-it-works', '#questions', '#shorten'].includes(hash))
+    if (['#how-it-works', '#questions', '#shorten'].includes(hash))
       document.querySelector(hash)?.scrollIntoView();
     previous.current = surface;
   }, [surface, hash]);

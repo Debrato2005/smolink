@@ -1,11 +1,17 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+} from 'react';
 import { Button } from '../../components/ui/Button';
 import { Field } from '../../components/ui/Field';
 import { Icon } from '../../components/ui/Icon';
 import { ErrorNotice } from '../../components/ui/Feedback';
 import type { CreatedLink, ProductGateway } from '../../lib/api/contracts';
 import { ApiError } from '../../lib/api/errors';
-import { validateLink } from '../../lib/validation';
+import { characters, validateLink } from '../../lib/validation';
 import { LinkActions } from './LinkActions';
 
 type State =
@@ -13,6 +19,50 @@ type State =
   | { kind: 'loading' }
   | { kind: 'ready'; link: CreatedLink }
   | { kind: 'error'; error: unknown };
+
+const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+function Ticket({ link, links }: { link: CreatedLink; links: ProductGateway }) {
+  const before = characters(link.destination);
+  const after = characters(link.shortUrl);
+  const saved = before - after;
+  return (
+    <div className="ticket ticket-result">
+      <div className="ticket-stub">
+        <Icon name="scissors" size={22} />
+        <strong className="ticket-count">{Math.abs(saved)}</strong>
+        <span>{saved >= 0 ? 'characters cut' : 'characters added'}</span>
+      </div>
+      <div className="ticket-body">
+        <p className="ticket-status" role="status">
+          <Icon name="check" />
+          Your link is ready
+        </p>
+        <label htmlFor="short-url">Short URL</label>
+        <input
+          id="short-url"
+          className="ticket-url mono"
+          style={{ '--chars': after } as CSSProperties}
+          readOnly
+          value={link.shortUrl}
+          onFocus={(e) => e.target.select()}
+        />
+        <p className="ticket-meta">
+          {saved >= 0
+            ? `${before} characters became ${after}.`
+            : `Your alias made it ${-saved} characters longer than the original.`}
+          {link.expiresAt &&
+            ` Expires ${new Date(link.expiresAt).toLocaleString('en', {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+            })} (${zone}).`}
+        </p>
+        <LinkActions key={link.shortUrl} link={link} links={links} />
+      </div>
+    </div>
+  );
+}
+
 export function ShortenPreview({
   links,
   onCreated,
@@ -71,26 +121,22 @@ export function ShortenPreview({
     }
   }
   const busy = state.kind === 'loading';
+  const ready = state.kind === 'ready' ? state.link : null;
   return (
-    <section
-      className="create-panel"
-      id="shorten"
-      aria-labelledby="create-heading"
-    >
-      <div className="panel-title">
-        <h2 id="create-heading">Make it smol.</h2>
-        <Icon name="link" size={26} />
-      </div>
-      <p className="muted">A long URL goes in. A little link comes out.</p>
+    <section className="bench" id="shorten" aria-labelledby="create-heading">
+      <h2 id="create-heading" className="sr-only">
+        Make it smol.
+      </h2>
       <form ref={form} noValidate onSubmit={(e) => void submit(e)}>
         <Field
           id="destination"
           name="destination"
           label="Destination URL"
           type="url"
+          inputMode="url"
           autoComplete="url"
           required
-          placeholder="https://your-very-long-link.com"
+          placeholder="https://your-very-long-link.com/goes/here"
           value={destination}
           disabled={busy}
           error={fields.destination}
@@ -98,66 +144,71 @@ export function ShortenPreview({
             setDestination(e.target.value);
             clear();
           }}
+          addon={
+            <Button
+              type="submit"
+              className="button-ink"
+              disabled={busy}
+              aria-busy={busy}
+            >
+              {busy ? 'Shortening…' : 'Shorten URL'}
+              <Icon name="scissors" />
+            </Button>
+          }
         />
-        <Field
-          id="alias"
-          name="alias"
-          label="Custom alias"
-          hint="Optional · 3–64 letters, numbers, or hyphens."
-          placeholder="your-big-idea"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          value={alias}
-          disabled={busy}
-          error={fields.alias}
-          onChange={(e) => {
-            setAlias(e.target.value);
-            clear();
-          }}
-        />
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={hasExpiry}
-            disabled={busy}
-            onChange={(e) => {
-              setHasExpiry(e.target.checked);
-              clear();
-            }}
-          />
-          <Icon name="clock" size={18} />
-          Set an expiry <span className="muted">(optional)</span>
-        </label>
-        {hasExpiry && (
+        <div className="bench-options">
           <Field
-            id="expiry"
-            name="expires_at"
-            type="datetime-local"
-            label="Expiry date and time"
-            hint={`Your timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}.`}
-            value={expiry}
+            id="alias"
+            name="alias"
+            label="Custom alias (optional)"
+            hint="3–64 letters, numbers, or hyphens. Saved in lowercase."
+            placeholder="your-big-idea"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            value={alias}
             disabled={busy}
-            error={fields.expires_at}
+            error={fields.alias}
             onChange={(e) => {
-              setExpiry(e.target.value);
+              setAlias(e.target.value);
               clear();
             }}
           />
-        )}
-        <Button
-          type="submit"
-          className="button-primary"
-          disabled={busy}
-          aria-busy={busy}
-        >
-          {busy ? 'Shortening…' : 'Shorten URL'}
-          <Icon name="arrow" />
-        </Button>
+          <div className="expiry-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={hasExpiry}
+                disabled={busy}
+                onChange={(e) => {
+                  setHasExpiry(e.target.checked);
+                  clear();
+                }}
+              />
+              Set an expiry
+            </label>
+            {hasExpiry && (
+              <Field
+                id="expiry"
+                name="expires_at"
+                type="datetime-local"
+                label="Expiry date and time"
+                hint={`Your timezone: ${zone}.`}
+                value={expiry}
+                disabled={busy}
+                error={fields.expires_at}
+                onChange={(e) => {
+                  setExpiry(e.target.value);
+                  clear();
+                }}
+              />
+            )}
+          </div>
+        </div>
         <p className="form-footnote">
           {links.source === 'fixture'
-            ? 'Demo preview. Sample links do not redirect.'
-            : 'No account needed. Redirect service is not connected yet.'}
+            ? 'Free. No account needed.'
+            : 'Free. No account needed. Short links start redirecting when the redirect service launches.'}
         </p>
       </form>
       {busy && (
@@ -166,27 +217,7 @@ export function ShortenPreview({
         </p>
       )}
       {state.kind === 'error' && <ErrorNotice error={state.error} />}
-      {state.kind === 'ready' && (
-        <div className="result-panel">
-          <p className="result-title" role="status">
-            <Icon name="check" />
-            {links.source === 'fixture' ? 'Demo link ready' : 'Link created'}
-          </p>
-          <label htmlFor="short-url">Short URL</label>
-          <input
-            id="short-url"
-            className="mono"
-            readOnly
-            value={state.link.shortUrl}
-            onFocus={(e) => e.target.select()}
-          />
-          <LinkActions
-            key={state.link.shortUrl}
-            link={state.link}
-            links={links}
-          />
-        </div>
-      )}
+      {ready && <Ticket link={ready} links={links} />}
     </section>
   );
 }

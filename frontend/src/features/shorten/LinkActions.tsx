@@ -97,9 +97,7 @@ export function LinkActions({
         </div>
       )}
       {!compact && links.source === 'live' && (
-        <p className="field-help">
-          QR codes and redirects are not connected yet.
-        </p>
+        <p className="field-help">QR codes are coming soon.</p>
       )}
       <Modal
         open={open}
@@ -111,7 +109,7 @@ export function LinkActions({
           }
         }}
         title="One scan. A little closer."
-        description="Demo QR code. It encodes your sample link, which does not redirect."
+        description="Scan it to open your short link."
       >
         {error ? (
           <ErrorNotice error={error} retry={() => void showQr()} />

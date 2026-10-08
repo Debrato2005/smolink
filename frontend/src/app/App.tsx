@@ -34,19 +34,77 @@ const accountRoutes: [string, AccountAction][] = [
   ['/reset-password', 'reset-password'],
   ['/resend-verification', 'resend-verification'],
 ];
-function Brand() {
+function Brand({ navbar = false }: { navbar?: boolean }) {
   return (
-    <Link className="brand" to="/" aria-label="Smolink home">
-      <svg viewBox="0 0 40 40" aria-hidden="true">
-        <path
-          d="M4 9h23v15H4zM13 17h23v15H13z"
-          fill="var(--accent-yellow)"
-          stroke="var(--ink)"
-          strokeWidth="3"
+    <Link
+      className={`brand${navbar ? ' brand-navbar' : ''}`}
+      to="/"
+      aria-label="Smolink home"
+    >
+      {navbar ? (
+        <>
+          <img
+            className="brand-symbol"
+            src="/smolink-symbol.png"
+            alt=""
+            width={592}
+            height={570}
+          />
+          <img
+            className="brand-wordmark"
+            src="/smolink-wordmark.png"
+            alt=""
+            width={1188}
+            height={287}
+          />
+        </>
+      ) : (
+        <img
+          className="brand-logo"
+          src="/Interlocking%20S%20Smolink%20Retro%20Logo.png"
+          alt=""
+          width={1448}
+          height={1086}
         />
-      </svg>
-      smolink<span>.</span>
+      )}
     </Link>
+  );
+}
+function SocialLinks() {
+  const [badgeFailed, setBadgeFailed] = useState(false);
+  return (
+    <div className="header-social">
+      <a
+        className="button-link button-small button-secondary github-link"
+        href="https://github.com/Debrato2005/smolink"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Star Smolink on GitHub"
+      >
+        {badgeFailed ? (
+          <span>Star</span>
+        ) : (
+          <img
+            className="github-stars"
+            src="https://img.shields.io/github/stars/Debrato2005/smolink?style=flat-square&label=&color=fffdf5"
+            alt="GitHub star count"
+            height={24}
+            referrerPolicy="no-referrer"
+            onError={() => setBadgeFailed(true)}
+          />
+        )}
+        <Icon name="github" size={22} />
+      </a>
+      <a
+        className="button-link button-small button-secondary x-link"
+        href="https://x.com/DebratoG"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Debrato on X"
+      >
+        <Icon name="x" size={22} />
+      </a>
+    </div>
   );
 }
 function Shell({
@@ -88,29 +146,45 @@ function Shell({
         }}
       >
         <div className="container header-inner">
-          <Brand />
+          <Brand navbar />
           <nav className="desktop-nav" aria-label="Main navigation">
-            <Link to="/#features">The little things</Link>
-            <Link to="/#how-it-works">How it works</Link>
-            <NavLink to="/dashboard">Workspace</NavLink>
+            <Link className="nav-item" to="/#how-it-works">
+              How it works
+            </Link>
+            <Link className="nav-item" to="/#questions">
+              Questions
+            </Link>
+            <NavLink className="nav-item" to="/dashboard">
+              Workspace
+            </NavLink>
           </nav>
           <div className="header-actions">
             {email ? (
-              <Link className="button-link button-small" to="/dashboard">
+              <Link
+                className="button-link button-small button-ink"
+                to="/dashboard"
+              >
                 My links
                 <Icon name="arrow" size={16} />
               </Link>
             ) : (
               <>
-                <Link className="sign-in-link" to="/login">
+                <NavLink
+                  className="button-link button-small button-secondary sign-in-link"
+                  to="/login"
+                >
                   Sign in
-                </Link>
-                <Link className="button-link button-small" to="/register">
+                </NavLink>
+                <Link
+                  className="button-link button-small button-ink"
+                  to="/register"
+                >
                   Sign up
                   <Icon name="arrow" size={16} />
                 </Link>
               </>
             )}
+            <SocialLinks />
             <button
               ref={menuButton}
               className="icon-button mobile-menu-button"
@@ -130,28 +204,24 @@ function Shell({
             aria-label="Mobile navigation"
             onClick={() => setMenu(false)}
           >
-            <Link to="/#features">The little things</Link>
-            <Link to="/#how-it-works">How it works</Link>
-            <Link to="/dashboard">Workspace</Link>
-            <Link to="/login">Sign in</Link>
+            <Link className="nav-item" to="/#how-it-works">
+              How it works
+            </Link>
+            <Link className="nav-item" to="/#questions">
+              Questions
+            </Link>
+            <NavLink className="nav-item" to="/dashboard">
+              Workspace
+            </NavLink>
+            {!email && (
+              <NavLink className="nav-item" to="/login">
+                Sign in
+              </NavLink>
+            )}
+            <SocialLinks />
           </nav>
         )}
       </header>
-      <div
-        className={`mode-banner ${links.source === 'live' ? 'mode-live' : ''}`}
-      >
-        <div className="container">
-          <span>
-            <span className="mode-dot" />
-            {links.source === 'fixture' ? 'Demo mode' : 'Live API mode'}
-          </span>
-          <span>
-            {links.source === 'fixture'
-              ? 'Sample data. Changes reset on reload. Links do not redirect.'
-              : 'Guest requests use the API. Account tools and redirects are unavailable.'}
-          </span>
-        </div>
-      </div>
       <main
         id="main"
         tabIndex={-1}
@@ -239,35 +309,25 @@ function Shell({
       <footer className={`site-footer ${workspace ? 'footer-compact' : ''}`}>
         <div className="container">
           <div className="footer-top">
-            <div>
-              <Brand />
-              <p>Less link. More possibility.</p>
-            </div>
+            <Brand />
             <nav aria-label="Footer navigation">
-              <Link to="/#features">Features</Link>
+              <Link to="/#shorten">Shorten a link</Link>
+              <Link to="/#how-it-works">How it works</Link>
               <Link to="/#questions">Questions</Link>
               <Link to="/dashboard">Workspace</Link>
             </nav>
-            <span className="footer-stamp">
-              A little link
-              <br />
-              goes a long way.
-              <Icon name="arrow" size={28} />
-            </span>
           </div>
-          <div className="footer-bottom">
-            <span>© {new Date().getFullYear()} Smolink</span>
-            <span>Made for things worth sharing.</span>
-            <a href="/#shorten">Back to the little things ↑</a>
-          </div>
-          {links.source === 'fixture' && (
+          <p className="footer-note">
+            © {new Date().getFullYear()} Smolink. Long story, smol link.
+          </p>
+          {import.meta.env.DEV && links.source === 'fixture' && (
             <details className="demo-controls">
               <summary>
-                Demo controls
+                Developer tools
                 <Icon name="info" size={16} />
               </summary>
               <div>
-                <label htmlFor="demo-scenario">Preview a state</label>
+                <label htmlFor="demo-scenario">Data scenario</label>
                 <select
                   id="demo-scenario"
                   value={scenario}
@@ -294,10 +354,10 @@ function Shell({
                     setRevision((r) => r + 1);
                   }}
                 >
-                  Reset demo data
+                  Reset local data
                 </Button>
                 <p className="field-help">
-                  Development fixtures only. No requests reach the API.
+                  Local development data. Visible in development builds only.
                 </p>
               </div>
             </details>

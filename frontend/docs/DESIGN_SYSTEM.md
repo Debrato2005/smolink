@@ -6,78 +6,91 @@
 
 Neobrutalism defines primitive grammar. Bauhaus defines composition. Pop Art supplies controlled accents. Usability, accessibility, content hierarchy, and task completion override all three.
 
-This is the sole frontend owner for visual decisions. It reconstructs the useful specification in root `docs/frontend-design-system.md` without changing that file. The [Source Ledger](SOURCE_LEDGER.md) records checked research. Root product/API authority remains intact.
+This is the sole frontend owner for visual decisions. It applies root `docs/frontend-design-system.md` without changing that file. The root file pins the palette and font families. One addition, the `--sky-surface` page ground, came from a direct user request and needs separately authorized root reconciliation (CB-09). [PRODUCT.md](../PRODUCT.md) records product truth.
 
-Use flat fills, structural black outlines, square corners, and zero-blur hard shadows. Build asymmetric macro composition on strong axes. Keep labels, fields, errors, tables, and controls mechanically aligned. Geometry must improve hierarchy, grouping, direction, or recognition.
+The system follows three user-selected references: the [neobrutalism.dev](https://www.neobrutalism.dev/) light grid and boxed controls, the [neubrutalism.com](https://neubrutalism.com/) navbar, strip, and color-filled cards, and the [Medium guide](https://medium.com/@sepidy/how-can-i-design-in-the-neo-brutalism-style-d85c458042de) rules for pitch-black strokes and opaque shadows. The shortener card is the hero action. A successful result is a **ticket** that states how many characters were cut.
+
+Product copy never says demo, sample, or synthetic. Production marks backend-missing features as **coming soon**. Local development data looks like the real product. Only the development-only Developer tools panel names it.
 
 ## Tokens and typography
 
-[src/styles/tokens.css](../src/styles/tokens.css) is the executable source for exact token values. Reference its names instead of maintaining another CSS specification in prose.
+[src/styles/tokens.css](../src/styles/tokens.css) is the executable source for exact values. Reference token names. Do not copy values into prose or components.
 
-| Group     | Contract                                                                                 |
-| --------- | ---------------------------------------------------------------------------------------- |
-| Structure | Ink `#000000`, paper `#fffdf5`, muted surface and text                                   |
-| Accents   | Yellow `#ffd23f`, red `#ff6b6b`, blue `#74b9ff`, green `#88d498`                         |
-| Borders   | Thin 2px internal rules. Default 3px controls/panels. Thick 4px emphasis/error           |
-| Shadows   | 3px, 5px, or 8px positive x/y offsets. Zero blur                                         |
-| Shape     | Radius 0 by default. Semantic circles or geometric motifs can have deliberate exceptions |
-| Spacing   | 4px optical step, then 8, 16, 24, 32, 48, 64, and 96px                                   |
-| Type      | Space Grotesk 700 headings. Inter 400/600 text. Space Mono 400 codes/results only        |
-| Motion    | 120ms CSS control transition. Native scrolling                                           |
+| Group     | Contract                                                                                              |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| Structure | Ink `#000000`, paper `#fffdf5`, muted surface and muted text                                          |
+| Ground    | `--sky-surface` under the `--grid-paper` SVG tile at `--grid-size` (64px). Surfaces stay opaque paper |
+| Accents   | Yellow, red (coral), blue, green. Black text on every accent                                          |
+| Borders   | 2px internal rules. 3px controls and panels. 4px header edge and error emphasis                       |
+| Shadows   | 3, 4, 5, or 8px positive offsets. Zero blur. Colored offsets only on ink surfaces                     |
+| Shape     | Radius 0. Circles only for ticket notches and step numbers                                            |
+| Spacing   | 4px optical step, then 8, 16, 24, 32, 48, 64, and 96px                                                |
+| Type      | Space Grotesk 700 display and headings. Inter 400/600 interface text. Space Mono for URLs and codes   |
+| Motion    | 120ms press and input lift, 180ms navigation lift. One print reveal for the result ticket             |
 
-The selected Space Grotesk family supports weight 700. Do not synthesize the older draft's suggested 800 weight. Fonts load from pinned Fontsource packages. Only Latin faces and consumed weights enter this bundle. Fontsource CSS includes WOFF2 and WOFF fallbacks. Extend script coverage only for an actual content requirement. Preserve OFL notices.
-
-Keep body text calm, left aligned, and near 45–75 characters per line. Use scale, weight, spacing, and position for hierarchy. Do not use novelty body fonts, pervasive capitals, or excessive monospace.
-
-Use black text on accent surfaces. Applicable contrast targets are 4.5:1 normal text, 3:1 large text, and 3:1 meaningful non-text boundaries/states. Contrast must use actual rendered combinations. Do not infer conformance from palette intent.
+Color roles are fixed. Yellow marks primary emphasis, the outlined hero word, the highlights strip, and the current or hovered navigation item. Ink is the inverse action surface: the Shorten button and the header Sign up and My links buttons. Feature cards use solid yellow, coral, blue, and green fills with black text. Green also marks a confirmed result and active status. Red marks errors and destructive actions. Blue marks information notices and chart series.
 
 ## Layout and intensity
 
-The conceptual grid uses 12 desktop, 8 tablet, and 4 mobile columns. Content is bounded to 1280px. Current breakpoints at 1050px and 720px respond to the form and heading fit. They are content decisions, not device promises.
+Content is bounded to 1280px. Breakpoints respond to content pressure: 1150px swaps desktop navigation for the menu button, 1050px makes feature cards two columns, 900px tightens the header, 760px moves social links into the menu, 720px collapses cards, steps, forms, and tables to one column, 560px stacks the joined URL control, and 400px compacts the header.
 
-| Intensity  | Use                            | Limits                                                                               |
-| ---------- | ------------------------------ | ------------------------------------------------------------------------------------ |
-| HIGH       | Public marketing               | Strong asymmetry, large type, poster composition, one print motif. CTA remains clear |
-| MEDIUM     | Shortening and auth            | One primary task, conventional forms, limited accents, aligned errors                |
-| CONTROLLED | Dashboard, analytics, settings | Small shadows, flat surfaces, regular rows. Data scanning dominates decoration       |
+The navbar spans the viewport with 24px horizontal padding, or 16px at widths of 900px or less. Desktop symbol and wordmark widths are 60px and 160px. Smaller widths preserve the horizontal layout on narrow screens. The browser tab uses a transparent 64px PNG from the same symbol crop.
 
-Use no more than two or three saturated accents in a viewport. Remove decoration before hiding a necessary state cue. Pop Art can use original SVG halftones, stripes, bold contours, flat panels, or offset print layers. One expressive gesture is enough. Keep patterns out of body text, fields, tables, and chart data. Do not trace or copy artwork.
+The navbar has boxed GitHub and X links. The GitHub badge reads the repository star count from Shields.io. Shields caches the count. If the image fails, the link shows Star and the GitHub icon. Both links open a new tab. On phones, the navigation menu contains these links.
 
-On smaller widths, preserve DOM order, collapse columns, simplify asymmetry, and remove overlap before reducing content space. Preserve the 3px structural border and comfortable controls. Long URLs must wrap or use an accessible read-only field. Test 390, 768, 1024, and 1440px, plus 320px reflow.
+| Intensity  | Use                     | Treatment                                                                                                                                         |
+| ---------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HIGH       | Public home             | Centered display headline with one outlined yellow word, shortener card, yellow strip, color cards, step cards, boxed questions, ink closing band |
+| MEDIUM     | Account pages           | Ink poster with offset link stubs. Boxed form card with Continue with Google above an email form                                                  |
+| CONTROLLED | Workspace and analytics | Ink side rail, three-column summary strip, flat table rows. Flat rows. Boxed panels lift slightly on hover                                        |
+
+The URL field and Shorten button must sit in the first viewport at 390 × 844. Long URLs never cause page overflow. The result ticket scales its URL text with `cqi` units. Shared inputs use `min-width: 0` so intrinsic control widths cannot widen a page.
 
 ## Component sources and grammar
 
-Check current neobrutalism.dev first. Adopt suitable shared recipes manually or through the shadcn registry after source review. Map every style to Smolink tokens. The consumed button retains the current Base UI primitive and uses plain CSS instead of installing Tailwind/cva utilities solely for that recipe.
+Check current neobrutalism.dev first. Map every adopted style to Smolink tokens. The button keeps the Base UI primitive with plain CSS. Style real anchors directly when navigation needs button styling. Never render links through the Button primitive.
 
-If the registry lacks the required interaction, compose a Base UI primitive with the same tokens. Use a custom shared primitive only for an unmet, consumed interaction with defined accessible behavior. Native labeled inputs remain appropriate for the complete native URL-input interaction.
+| Component        | Grammar                                                                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header           | Sticky paper bar, 4px ink edge. Cropped symbol and original Smolink wordmark sit side by side without a frame. Navigation and utility buttons sit at right. |
+| Navigation item  | Plain text at rest with a transparent 3px border. See the state table                                                                                       |
+| Shortener card   | Paper panel, 3px border, large shadow. Joined URL field and ink Shorten button. Heading kept for screen readers                                             |
+| Highlights strip | Static yellow band with spark icons. Only true, live capabilities                                                                                           |
+| Feature card     | Solid accent fill, 3px border, medium shadow, boxed icon. Coming soon badge in production when the backend is missing                                       |
+| Step card        | Paper card with a numbered yellow circle. Numbers mark a real sequence                                                                                      |
+| Ticket           | Stub and body split by a dashed rule with two notches. Green stub for results, blue stub for link details                                                   |
+| Field            | Visible label, 3px border, adjacent error with an alert icon, then help text. Focus lifts with a 4px hard shadow                                            |
+| Google button    | Full-width paper button with Google's multicolor G, above an or-divider                                                                                     |
+| Workspace table  | 3px outer border, 2px rules, fixed column widths, flat row actions. Rows become stacked cards at 720px                                                      |
+| Analytics chart  | Heading wraps inside the panel. Count and date labels wrap inside each column without clipping. Exact values stay in the daily table                        |
+| Dialog           | Base UI dialog, large shadow, layered above the sticky header                                                                                               |
 
-Current Base UI uses `render`, not old Radix `asChild` recipes. Its Button enforces button semantics. Style real anchors/router links directly when navigation needs button styling. Do not render links through the Button primitive. Future dialogs, menus, and popovers must preserve library focus, naming, dismissal, and restoration behavior.
+| State         | Required treatment                                                                            |
+| ------------- | --------------------------------------------------------------------------------------------- |
+| Default       | Border and hard shadow on controls. Navigation items have no box at rest                      |
+| Hover         | Lift `translate(-2px, -2px)` and grow the shadow by 2px. Navigation items gain the yellow box |
+| Focus-visible | Ink outline with offset. Inputs and navigation items use their lifted shadow state instead    |
+| Current route | Navigation items keep the hover box (`aria-current="page"`). The header Sign in fills yellow  |
+| Active        | Move into the shadow and remove it                                                            |
+| Disabled      | Native disabled semantics, muted fill, no motion or shadow                                    |
+| Loading       | Task-specific text, duplicate-submit prevention, stable geometry                              |
+| Error         | Adjacent text, associated field, structural emphasis. Red is supplementary                    |
+| Selected      | Programmatic state plus explicit text, border, or fill                                        |
 
-| State         | Required treatment                                                                          |
-| ------------- | ------------------------------------------------------------------------------------------- |
-| Default       | Hard shadow, 3px boundary, clear label and hierarchy                                        |
-| Hover         | Small counter-shadow translation and lift. No unique information                            |
-| Focus-visible | Separate ink outline with offset, visible beyond border and shadow                          |
-| Active        | Translation toward the shadow and shadow collapse                                           |
-| Disabled      | Native disabled semantics, muted fill, no motion or shadow                                  |
-| Loading       | Task-specific status, duplicate-submit prevention, stable geometry                          |
-| Error         | Adjacent text, associated field where applicable, structural emphasis. Red is supplementary |
-| Selected      | Programmatic state and explicit text, border, or mark                                       |
-
-No isolated page copies of shared controls. Loading/success/error feedback must stay visible in context. Tooltips and toasts cannot carry the sole required instruction or result. Clipboard success requires actual operation success.
+Decorative shapes are limited to the brand mark, the strip's spark icons, and the auth poster stubs. Do not add scattered stars or blobs.
 
 ## Motion and accessibility
 
-CSS owns simple control motion. No continuous animation, persistent render loop, scroll hijack, or GPU layer exists. Reduced motion removes control transitions and displacement. Settled content remains available. Future motion needs a purpose, cleanup, and reduced-motion behavior. GSAP/Lenis require a measured interaction before adoption.
+CSS owns all motion. Navigation items move their transform and shadow over 180ms and their fill and border over 120ms. Buttons and inputs use the 120ms press and lift. The result ticket prints with one clip-path reveal. The highlights strip is static because continuous animation is prohibited. Avoid transitions of layout properties.
 
-Target WCAG 2.2 AA. This is not a conformance claim. Require semantic landmarks, logical headings, visible labels, accessible names, associated field errors, keyboard operation, and safe live feedback. Focus must remain visible and unobscured. AA pointer targets require 24px sizing or an applicable exception. Prefer at least 44px standalone targets. Current form controls are at least 48px high.
+Boxed blocks lift by 2px and grow their hard shadow by 2px on hover. This applies to the bench, tickets, feature and step cards, FAQ boxes, account cards, notices, and workspace panels. The motion uses `--duration-panel` and requires a hover-capable pointer. It does not change layout or add click behavior to informational cards.
 
-Dialogs require focus trap/restoration. Forms remain conventional. Confirm success and distinguish empty, error, blocked, unknown outcome, and unavailable states. Color alone never communicates meaning. Test zoom, text spacing, 320px reflow, keyboard, reduced motion, and assistive technology. Axe supports review but cannot certify conformance.
+Reduced motion removes every transition, animation, and lift. Boxes and shadows stay visible, so state never depends on motion.
+
+Target WCAG 2.2 AA. This is not a conformance claim. Require semantic landmarks, logical headings, visible labels, accessible names, associated field errors, keyboard operation, and safe live feedback. Stacked elements use `isolation: isolate` so decorative layers cannot paint above dialogs. Test zoom, WCAG text spacing, 320px reflow, keyboard, and reduced motion. Analytics labels must retain complete text under extra spacing. Do not hide overflow to pass a page-width check. Axe supports review but cannot certify conformance.
 
 ## Forbidden patterns and deferred decisions
 
-Gradients are prohibited, including backgrounds, text, borders, masks, charts, and shaders. Also prohibit glassmorphism, blur panels, glow, soft elevation, glossy surfaces, arbitrary rounded cards, pervasive pills, floating blobs, random rotation, and generic blue-purple SaaS styling.
+Gradients are prohibited, including backgrounds, text, borders, masks, charts, and shaders. The page grid is an SVG tile for this reason. Also prohibit glassmorphism, blur, glow, soft elevation, rounded cards, pervasive pills, floating blobs, random rotation, and hero-metric cards. Continuous marquee motion is prohibited.
 
-Dark mode is `DEFERRED`. It needs an actual requirement and a separate contrast-tested palette. Paper Shaders is `EVALUATED_DEFERRED`. React Bits remains `REFERENCE_ONLY`. Native scrolling is the default. No visual package defines Smolink's system.
-
-Figma synchronization is planned external design work. It does not block this explicitly authorized executable foundation. A future library must map token names and component states one to one. Root guidance that requires a complete Figma library before any implementation needs separately authorized reconciliation.
+Dark mode is `DEFERRED`. Paper Shaders is `EVALUATED_DEFERRED`. React Bits remains `REFERENCE_ONLY`. Figma synchronization is planned external work.

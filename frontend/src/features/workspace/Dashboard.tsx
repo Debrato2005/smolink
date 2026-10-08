@@ -28,17 +28,20 @@ export function Dashboard({
   const status = params.get('status') ?? 'all';
   const sort = params.get('sort') ?? 'newest';
   const overview = params.get('view') === 'analytics';
+  // Read the committed URL, not the hook value. Router navigations run as
+  // transitions, so the hook value can lag one quick edit behind and a second
+  // edit would then overwrite the first.
+  function update(change: (next: URLSearchParams) => void, replace = false) {
+    const next = new URLSearchParams(window.location.search);
+    change(next);
+    setParams(next, { replace });
+  }
   function filter(name: string, value: string) {
-    setParams(
-      (old) => {
-        const next = new URLSearchParams(old);
-        if (value) next.set(name, value);
-        else next.delete(name);
-        next.delete('page');
-        return next;
-      },
-      { replace: true },
-    );
+    update((next) => {
+      if (value) next.set(name, value);
+      else next.delete(name);
+      next.delete('page');
+    }, true);
   }
   const filtered = (data ?? [])
     .filter(
@@ -85,35 +88,29 @@ export function Dashboard({
       ) : (
         data && (
           <>
-            <div className="stats-row">
-              <div>
-                <span>Total links</span>
-                <strong>{data.length}</strong>
-              </div>
-              <div>
-                <span>Lifetime clicks</span>
-                <strong>{totalClicks.toLocaleString()}</strong>
-              </div>
-              <div>
-                <span>Active links</span>
-                <strong>
-                  {data.filter((r) => linkStatus(r) === 'Active').length}
-                </strong>
-              </div>
-              <div className="stats-caption">
-                <Icon name="info" size={17} />
-                <span>
-                  Illustrative data
-                  <br />
-                  Snapshot · Oct 6, 2026
-                </span>
-              </div>
+            <div className="ledger">
+              <dl>
+                <div>
+                  <dt>Total links</dt>
+                  <dd>{data.length}</dd>
+                </div>
+                <div>
+                  <dt>Lifetime clicks</dt>
+                  <dd>{totalClicks.toLocaleString()}</dd>
+                </div>
+                <div>
+                  <dt>Active links</dt>
+                  <dd>
+                    {data.filter((r) => linkStatus(r) === 'Active').length}
+                  </dd>
+                </div>
+              </dl>
             </div>
             {overview && (
               <section className="overview-panel">
                 <h2>Your most visited links</h2>
                 <p className="muted small">
-                  Lifetime sample clicks. Select a link for its daily report.
+                  Lifetime clicks. Select a link for its daily report.
                 </p>
                 <div className="ranked-links">
                   {[...data]
@@ -196,9 +193,6 @@ export function Dashboard({
                         <tr key={row.linkId}>
                           <td>
                             <div className="link-cell">
-                              <span className="row-link-icon">
-                                <Icon name="link" />
-                              </span>
                               <div>
                                 <Link
                                   className="short-code"
@@ -253,11 +247,7 @@ export function Dashboard({
                         disabled={page === 1}
                         aria-label="Previous page"
                         onClick={() =>
-                          setParams((old) => {
-                            const next = new URLSearchParams(old);
-                            next.set('page', String(page - 1));
-                            return next;
-                          })
+                          update((next) => next.set('page', String(page - 1)))
                         }
                       >
                         <Icon name="back" size={16} />
@@ -270,11 +260,7 @@ export function Dashboard({
                         disabled={page === pages}
                         aria-label="Next page"
                         onClick={() =>
-                          setParams((old) => {
-                            const next = new URLSearchParams(old);
-                            next.set('page', String(page + 1));
-                            return next;
-                          })
+                          update((next) => next.set('page', String(page + 1)))
                         }
                       >
                         <Icon name="arrow" size={16} />
@@ -314,10 +300,6 @@ export function Dashboard({
                 </div>
               )}
             </section>
-            <p className="table-note">
-              Demo workspace · Links, clicks, and edits are sample data. Nothing
-              is saved to a server.
-            </p>
           </>
         )
       )}

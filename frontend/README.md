@@ -6,7 +6,7 @@ Smolink's React application is a presentation layer over explicit HTTP contracts
 
 ## Current status
 
-The app supports a destination-only guest preview, token-based styling, routing, unavailable account shells, and a validated guest-creation HTTP adapter. The default development mode uses labeled fixtures. Live backend integration, account flows, QR codes, dashboards, and analytics are not verified.
+The app uses a neobrutalist Smolink system built from three references: a sky-blue page grid, a sticky navbar with boxed hover, focus, and active states, a centered shortener hero, color-filled feature cards, and a result ticket. Sign-in offers Continue with Google beside email. Development data (`npm run dev`) shows every journey. Production connects guest creation only and marks QR, accounts, click stats, and redirects as coming soon until backend contracts exist.
 
 Read the [current handoff](docs/HANDOFF.md) for observed checks and blockers. The [implementation queue](docs/BUILD_CHECKLIST.md) owns task status.
 
@@ -23,7 +23,7 @@ npm ci
 npm run dev
 ```
 
-Open [the local preview](http://127.0.0.1:3000). The port matches the backend template's frontend email-link origin. `.env.fixture` explicitly selects fixtures. No backend service is needed. The banner states that no links are saved.
+Open [the local preview](http://127.0.0.1:3000). The port matches the backend template's frontend email-link origin. `.env.fixture` explicitly selects fixtures. No backend service is needed. The development-only Developer tools panel identifies local data. Reload clears local changes.
 
 For live guest creation, start the backend with the [root development guide](../docs/development.md), then run:
 
@@ -54,7 +54,7 @@ The development proxy sends `/api` to `http://127.0.0.1:8000`. Live errors remai
 | `npm run preview`                                | Serve the production build on port 4173                           |
 | `npm run docs:check`                             | Check document structure                                          |
 
-Playwright starts its own fixture server on port 3100. Production checks use port 4173. Keep those ports free; ordinary development uses port 3000. Browser installation can require host libraries. Record missing libraries as environment blockers instead of a pass.
+Set `SMOLINK_CHROMIUM_PATH` when the host cannot download the pinned Chromium. Playwright starts its own fixture server on port 3100. Production checks use port 4173. Keep those ports free; ordinary development uses port 3000. Browser installation can require host libraries. Record missing libraries as environment blockers instead of a pass.
 
 ## Environment
 
@@ -66,7 +66,7 @@ Playwright starts its own fixture server on port 3100. Production checks use por
 | `VITE_API_BASE_URL` | `/api/v1`               | Same-origin path or HTTPS URL ending in `/api/v1`, without credentials, query, or fragment |
 | `SMOLINK_API_PROXY` | `http://127.0.0.1:8000` | Development server only. Does not define production hosting                                |
 
-A local override belongs in ignored `.env.local` or `.env.<mode>.local`. An inherited environment variable overrides mode files. Check the visible banner. Production builds must use live mode, even when a developer used fixtures earlier.
+A local override belongs in ignored `.env.local` or `.env.<mode>.local`. An inherited environment variable overrides mode files. Check the selected mode and the development-only Developer tools panel. Production builds must use live mode, even when a developer used fixtures earlier.
 
 ## Directory and document map
 

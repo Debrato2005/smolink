@@ -8,6 +8,30 @@ import { Field } from '../../components/ui/Field';
 import { Icon } from '../../components/ui/Icon';
 import { ErrorNotice } from '../../components/ui/Feedback';
 
+// Google's multicolor G mark, as its sign-in branding guidelines require.
+function GoogleMark() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.53 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.94 23.94 0 0 0 0 24c0 3.87.92 7.53 2.56 10.78l7.97-6.19z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
+    </svg>
+  );
+}
+
 const content: Record<
   AccountAction,
   { title: string; description: string; action: string }
@@ -84,6 +108,26 @@ export function AuthPage({
     },
     [clearToken],
   );
+  async function google() {
+    if (pending.current) return;
+    const controller = new AbortController();
+    pending.current = controller;
+    setBusy(true);
+    setError(null);
+    try {
+      await links.account('google', {}, controller.signal);
+      if (controller.signal.aborted) return;
+      onLogin('you@gmail.com');
+      navigate(safeReturn(params.get('next')), { replace: true });
+    } catch (e) {
+      if (!controller.signal.aborted) setError(e);
+    } finally {
+      if (pending.current === controller) {
+        pending.current = null;
+        setBusy(false);
+      }
+    }
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending.current) return;
@@ -129,27 +173,28 @@ export function AuthPage({
       }
     }
   }
+  const inbox =
+    kind === 'register' ||
+    kind === 'forgot-password' ||
+    kind === 'resend-verification';
+  const social = kind === 'login' || kind === 'register';
   return (
     <section className="auth-layout container">
       <aside className="auth-poster">
-        <div className="poster-top">
-          <Icon name="link" size={34} />
-          <span>Small by design.</span>
-        </div>
-        <h2>
-          Less link.
+        <p className="poster-display">
+          Every link,
           <br />
-          More you.
-        </h2>
-        <div className="poster-geometry" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </div>
-        <p>
-          Ideas, projects, playlists.
+          kept in one
           <br />
-          Keep your world connected.
+          place.
+        </p>
+        <div className="poster-stubs" aria-hidden="true">
+          <span className="mono">/portfolio</span>
+          <span className="mono">/launch-notes</span>
+          <span className="mono">/summer-playlist</span>
+        </div>
+        <p className="poster-note">
+          Your links, their edits, and their clicks in one workspace.
         </p>
       </aside>
       <div className="auth-content">
@@ -159,9 +204,7 @@ export function AuthPage({
         </Link>
         <h1>
           {done
-            ? kind === 'register' ||
-              kind === 'forgot-password' ||
-              kind === 'resend-verification'
+            ? inbox
               ? 'Check your inbox'
               : kind === 'verify-email'
                 ? 'Email verified'
@@ -171,23 +214,16 @@ export function AuthPage({
         {done ? (
           <div className="auth-success">
             <span className="success-mark">
-              <Icon
-                name={
-                  kind === 'register' ||
-                  kind === 'forgot-password' ||
-                  kind === 'resend-verification'
-                    ? 'mail'
-                    : 'check'
-                }
-                size={30}
-              />
+              <Icon name={inbox ? 'mail' : 'check'} size={30} />
             </span>
             <p role="status">
               {kind === 'register'
-                ? 'Demo registration complete. No account was created or email sent.'
-                : kind === 'forgot-password' || kind === 'resend-verification'
-                  ? 'Demo request accepted. In live service, eligible accounts receive an email. Delivery is not guaranteed.'
-                  : 'Demo complete. No real account was changed.'}
+                ? 'We sent you a verification link. Open it to finish creating your account.'
+                : inbox
+                  ? 'If an account uses that email, a new link is on its way. It can take a few minutes.'
+                  : kind === 'verify-email'
+                    ? 'Your email is verified. You can sign in now.'
+                    : 'Your password is reset. Sign in with the new one.'}
             </p>
             <Link
               className="button-link"
@@ -200,14 +236,14 @@ export function AuthPage({
               }
             >
               {kind === 'register'
-                ? 'Preview verification'
+                ? 'I have the link'
                 : kind === 'forgot-password'
-                  ? 'Preview password reset'
-                  : 'Back to sign in'}
+                  ? 'I have the reset link'
+                  : 'Go to sign in'}
               <Icon name="arrow" />
             </Link>
             <p className="field-help">
-              Need another link?{' '}
+              No email?{' '}
               <Link to="/resend-verification">Request verification</Link> or{' '}
               <Link to="/forgot-password">reset your password</Link>.
             </p>
@@ -215,15 +251,26 @@ export function AuthPage({
         ) : (
           <>
             <p className="auth-description muted">{copy.description}</p>
-            {fixture ? (
+            {!fixture && (
               <p className="notice compact-notice">
-                Demo only. Use sample details, never a real password.
+                Accounts are coming soon. You can shorten links without one
+                today.
               </p>
-            ) : (
-              <p className="notice compact-notice">
-                Account access is not connected yet. You can still shorten links
-                as a guest.
-              </p>
+            )}
+            {social && (
+              <>
+                <Button
+                  className="button-google"
+                  disabled={busy || !fixture}
+                  onClick={() => void google()}
+                >
+                  <GoogleMark />
+                  Continue with Google
+                </Button>
+                <p className="auth-divider">
+                  <span>or use your email</span>
+                </p>
+              </>
             )}
             {needToken && !token && (
               <div className="notice">
@@ -232,12 +279,12 @@ export function AuthPage({
                   <p>
                     Open the full link from your email, or request a new one.
                   </p>
-                  {fixture && (
+                  {import.meta.env.DEV && fixture && (
                     <Button
                       className="button-secondary button-small"
-                      onClick={() => setToken('demo-token')}
+                      onClick={() => setToken('test-token')}
                     >
-                      Load demo email link
+                      Use test link
                     </Button>
                   )}
                 </div>
@@ -316,18 +363,16 @@ export function AuthPage({
                 <p className="auth-switch">
                   New around here? <Link to="/register">Create an account</Link>
                 </p>
-                {fixture && (
-                  <div className="demo-entry">
-                    <p>Just having a look?</p>
+                {import.meta.env.DEV && fixture && (
+                  <div className="dev-entry">
                     <Button
-                      className="button-secondary"
+                      className="button-secondary button-small"
                       onClick={() => {
-                        onLogin('demo@example.com');
+                        onLogin('test@example.com');
                         navigate(safeReturn(params.get('next')));
                       }}
                     >
-                      Explore demo workspace
-                      <Icon name="arrow" />
+                      Use test account
                     </Button>
                   </div>
                 )}
@@ -336,11 +381,6 @@ export function AuthPage({
             {kind === 'register' && (
               <p className="auth-switch">
                 Already have an account? <Link to="/login">Sign in</Link>
-              </p>
-            )}
-            {(kind === 'login' || kind === 'register') && (
-              <p className="field-help google-note">
-                Google sign-in is not available yet.
               </p>
             )}
             {needToken && (

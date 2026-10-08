@@ -15,17 +15,17 @@ live gateway → HTTP transport → unknown wire data → validated adapter → 
 fixture gateway → the same adapter and frontend model
 ```
 
-`src/app/` composes the router and dependencies. `src/routes/` composes pages. `src/features/shorten/` owns destination form state and requests. `src/components/ui/` owns consumed shared controls. `src/lib/api/` owns transport and contract interpretation. `src/lib/config/` owns source selection and API configuration. `src/styles/` owns tokens and shared styling.
+`src/app/` composes the router, shell, and the in-memory development identity. `src/routes/` composes the home and fallback pages. `src/features/shorten/` owns the shortener card, result ticket, copy, and QR actions. `src/features/auth/` owns account forms. `src/features/workspace/` owns the dashboard, link details, and analytics. `src/components/ui/` owns consumed shared controls. `src/lib/api/` owns transport and contract interpretation. `src/lib/config/` owns source selection and API configuration. `src/styles/` owns tokens and shared styling.
 
-Low-level API/configuration modules must not import routes or features. Features must not import another feature's route implementation. Keep direct imports. Add a folder only when it has a consumer. Do not build empty auth, dashboard, analytics, provider, or utility layers.
+Low-level API/configuration modules must not import routes or features. Workspace features may reuse shorten components (`ShortenPreview`, `LinkActions`), not route files. Keep direct imports. Add a folder only when it has a consumer. Do not build empty provider or utility layers.
 
 ## Routing and state
 
-`App.tsx` registers the route map and fallback. `route-map.ts` supplies unavailable shells. `NavigationFocus.tsx` updates the title and focuses the main landmark after path navigation. It preserves initial page focus and native history behavior. Hashes never enter document titles.
+`App.tsx` registers routes, the fallback, and the shell. `NavigationFocus.tsx` updates the title and focuses the main landmark after path navigation. It preserves initial page focus and native history behavior. Hashes never enter document titles.
 
 Local React state owns input and async outcome. A ref owns the pending request and prevents duplicate submission before a React rerender. The feature aborts its request on unmount and rejects late updates. A new input removes its previous result. No global store, server cache, or duplicated response owner exists.
 
-Future search, filters, sort, pagination, and analytics ranges belong in router query parameters when shareable. Passwords and one-time tokens do not. Feature state owns transient form values. A future session owner owns account identity and lifecycle. Server results need one owner per query, with explicit refresh and invalidation after confirmed mutation.
+Dashboard search, status, sort, and page live in router query parameters. Updates read the committed `window.location.search`, not the hook value, because router navigations run as transitions and a quick second edit would otherwise overwrite the first. `useResource` owns one cancellable read per loader and rejects stale results. Analytics ranges also live in the query string. Passwords and one-time tokens do not. Feature state owns transient form values. A future session owner owns account identity and lifecycle. Server results need one owner per query, with explicit refresh and invalidation after confirmed mutation.
 
 ## API transport and contracts
 
@@ -49,11 +49,15 @@ Owner integration is blocked until the backend supplies a documented lossless ID
 
 ## Data source and configuration
 
+`ProductGateway` extends the creation boundary with account, list, get, update, remove, analytics, and QR operations. The live gateway implements creation and reports every other operation as `unavailable`. The fixture gateway implements all of them in memory with URLs on the reserved `smolink.test` domain and selectable scenarios. The account operation also accepts `google`, which the fixture resolves and the live gateway reports as unavailable. Development-only UI (Developer tools, Use test account, Use test link) is gated on `import.meta.env.DEV`, so production bundles exclude it.
+
 `readConfig` defaults to live data. `.env.fixture` explicitly selects development fixtures through `npm run dev`. `.env.live` selects HTTP through `npm run dev:live`. Invalid source values fail startup. Every build rejects fixture configuration. Runtime production selection also refuses it.
 
-`createLinkGateway` selects once at bootstrap. Vite's `DEV` branch dynamically imports the sole fixture gateway. Production removes that branch and fixture chunk. A failed live request never selects a fixture. The source label stays visible in the app shell and in demo results.
+`createLinkGateway` selects once at bootstrap. Vite's `DEV` branch dynamically imports the sole fixture gateway. Production removes that branch and fixture chunk. A failed live request never selects a fixture. Product copy does not label data as demo or sample. The development-only Developer tools panel names local data.
 
-Fixtures are deterministic, ephemeral, and use the reserved `.invalid` domain. They do not simulate persistence, redirects, accounts, email, or analytics. No MSW, interception library, or second fixture system is installed. Future fixture scenarios must extend this boundary, with visible provenance.
+The fixture QR operation dynamically imports `qrcode` and encodes the returned short URL as a 1024px PNG with a four-module margin. Production excludes that gateway and QR chunk. A PNG preview does not prove that its encoded URL redirects.
+
+Fixtures are deterministic, ephemeral, and use the reserved `smolink.test` domain. They simulate account and analytics responses in memory. They do not establish real persistence, redirects, accounts, email delivery, or analytics. No MSW, interception library, or second fixture system is installed. Future fixture scenarios must extend this boundary, with visible provenance.
 
 API base configuration permits `/api/v1` or a secure full URL ending in `/api/v1`. It rejects embedded credentials, query values, and fragments. HTTP loopback URLs are allowed only during development. All `VITE_` values are public. Development proxy configuration is server-only and does not settle production origins.
 
@@ -67,9 +71,11 @@ Evaluate a same-origin backend-for-frontend or HttpOnly cookie session against i
 
 Google OIDC has no mounted start/callback routes. Browser binding, secure callback delivery, and session handoff remain backend decisions. Do not fake sign-in, embed client secrets, or invent query-token redirects.
 
-Email links currently use `/verify-email#token=...` and `/reset-password#token=...`. The scaffold routes are unavailable. Bootstrap uses the router's path matching to remove and discard their fragments before rendering, including equivalent case, encoding, and trailing-slash forms. It does not consume tokens or claim verification. Later implementation must capture once in memory, remove the fragment immediately, submit only on a deliberate action, then discard it after completion. Reload without a retained credential requires a new link.
+Email links currently use `/verify-email#token=...` and `/reset-password#token=...`. Bootstrap uses the router's path matching to capture the token in memory and remove the fragment before rendering, including equivalent case, encoding, and trailing-slash forms. The account form submits it only on a deliberate action, then discards it after completion or when the page unmounts. Live submission stays disabled until the session contract exists. Reload without a retained credential requires a new link.
 
 Do not persist or log URLs, passwords, tokens, private analytics, or raw HTTP payloads. No analytics SDK, third-party font request, or telemetry exists. The HTML uses `no-referrer` and `noindex,nofollow` for this early preview. Public indexing and production security headers need deployment review.
+
+The navbar star badge makes one external image request to `img.shields.io` with no referrer. It sends no application data. Shields caches the public repository count. A failed image leaves the GitHub link usable with a Star label. This image does not use the product API gateway.
 
 ## Errors, dependencies, and extension rules
 
@@ -83,4 +89,4 @@ No generated API code exists. Backend imports require settings and unfinished te
 
 The root [main.py](../../backend/app/main.py) has no SPA hosting or CORS policy. Production requires a separate routing decision. Prefer evaluating same-origin `/api` proxying to avoid unnecessary cross-origin credentials. Reserve SPA routes and API routes separately from public short-code lookup. Current alias reservations do not cover every planned frontend path.
 
-Root Graphify output remains unchanged because this task permits only frontend writes. A later authorized graph update must refresh the new modules.
+Root Graphify output exists but lacks the frontend analytics modules. It remains unchanged because this task permits only frontend writes. A separately authorized graph update must refresh the new modules.
