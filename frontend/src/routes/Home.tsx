@@ -60,15 +60,32 @@ export function Home({ links }: { links: ProductGateway }) {
     <>
       <div className="home-intro">
         <section className="hero" aria-labelledby="hero-heading">
+          <img
+            className="hero-backdrop"
+            src="/hero-blue-backdrop.png"
+            alt=""
+            aria-hidden="true"
+            width="1536"
+            height="1024"
+          />
           <div className="container hero-inner">
             <div className="hero-copy">
+              <span className="hero-eyebrow">Less URL. More you.</span>
               <h1 id="hero-heading" className="display">
-                Long story. <span className="pop">Smol</span> link.
+                Long links?
+                <span className="hero-highlight">Smol it.</span>
               </h1>
               <p className="hero-lede">
-                Paste a long link. Get a short one you can share, print, or say
-                out loud.
+                Paste a long URL, get a smol link in seconds.
+                <span>No sign-up needed. Just shorten and share.</span>
               </p>
+              <img
+                className="hero-link-illustration"
+                src="/hero-link-stickers.png"
+                alt="An example URL that keeps going on and on and on becomes smol.link/idea."
+                width="1536"
+                height="512"
+              />
             </div>
             <ShortenPreview links={links} />
           </div>

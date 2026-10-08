@@ -165,7 +165,7 @@ export function ShortenPreview({
               aria-busy={busy}
             >
               {busy ? 'Shortening…' : 'Shorten URL'}
-              <Icon name="scissors" />
+              <Icon name="arrow" />
             </Button>
           }
         />

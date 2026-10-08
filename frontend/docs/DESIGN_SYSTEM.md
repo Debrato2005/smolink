@@ -6,7 +6,7 @@
 
 Neobrutalism defines primitive grammar. Bauhaus defines composition. Pop Art supplies controlled accents. Usability, accessibility, content hierarchy, and task completion override all three.
 
-This is the sole frontend owner for visual decisions. It applies root `docs/frontend-design-system.md` without changing that file. The root file pins the palette and font families. One addition, the `--sky-surface` page ground, came from a direct user request and needs separately authorized root reconciliation (CB-09). [PRODUCT.md](../PRODUCT.md) records product truth.
+This is the sole frontend owner for visual decisions. It applies root `docs/frontend-design-system.md` without changing that file. The root file pins the palette and font families. The `--sky-surface` page ground and `--hero-surface` hero ground came from direct user requests and need separately authorized root reconciliation (CB-09). [PRODUCT.md](../PRODUCT.md) records product truth.
 
 The system follows three user-selected references: the [neobrutalism.dev](https://www.neobrutalism.dev/) light grid and boxed controls, the [neubrutalism.com](https://neubrutalism.com/) navbar, strip, and color-filled cards, and the [Medium guide](https://medium.com/@sepidy/how-can-i-design-in-the-neo-brutalism-style-d85c458042de) rules for pitch-black strokes and opaque shadows. The shortener card is the hero action. A successful result is a **ticket** that states how many characters were cut.
 
@@ -23,12 +23,12 @@ Product copy never says demo, sample, or synthetic. Production marks backend-mis
 | Accents   | Yellow, red (coral), blue, green. Black text on every accent                                          |
 | Borders   | 2px internal rules. 3px controls and panels. 4px header edge and error emphasis                       |
 | Shadows   | 3, 4, 5, or 8px positive offsets. Zero blur. Colored offsets only on ink surfaces                     |
-| Shape     | Radius 0. Circles only for ticket notches and step numbers                                            |
+| Shape     | Radius 0 by default. The hero permits the supplied rounded label and form treatment                   |
 | Spacing   | 4px optical step, then 8, 16, 24, 32, 48, 64, and 96px                                                |
-| Type      | Space Grotesk 700 display and headings. Inter 400/600 interface text. Space Mono for URLs and codes   |
+| Type      | Space Grotesk 700 headings. Inter 900 hero, 400/600 interface. Space Mono URLs and codes              |
 | Motion    | 120ms press and input lift, 180ms navigation lift. One print reveal for the result ticket             |
 
-Color roles are fixed. Yellow marks primary emphasis, the outlined hero word, the highlights strip, and the current or hovered navigation item. Ink is the inverse action surface: the Shorten button and the header Sign up and My links buttons. Feature cards use solid yellow, coral, blue, and green fills with black text. Green also marks a confirmed result and active status. Red marks errors and destructive actions. Blue marks information notices and chart series.
+Color roles are fixed. Yellow marks primary emphasis, the hero headline highlight, the highlights strip, and the current or hovered navigation item. Ink is the inverse action surface for the header Sign up and My links buttons. The hero Shorten button uses yellow. Feature cards use solid yellow, coral, blue, and green fills with black text. Green also marks a confirmed result and active status. Red marks errors and destructive actions. Blue marks information notices and chart series.
 
 ## Layout and intensity
 
@@ -38,15 +38,21 @@ The navbar spans the viewport with 24px horizontal padding, or 16px at widths of
 
 The navbar has boxed GitHub and X links. The GitHub badge reads the repository star count from Shields.io. Shields caches the count. If the image fails, the link shows Star and the GitHub icon. Both links open a new tab. On phones, the navigation menu contains these links.
 
-| Intensity  | Use                     | Treatment                                                                                                                                         |
-| ---------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| HIGH       | Public home             | Centered display headline with one outlined yellow word, shortener card, yellow strip, color cards, step cards, boxed questions, ink closing band |
-| MEDIUM     | Account pages           | Ink poster with offset link stubs. Boxed form card with Continue with Google above an email form                                                  |
-| CONTROLLED | Workspace and analytics | Ink side rail, three-column summary strip, flat table rows. Flat rows. Boxed panels lift slightly on hover                                        |
+| Intensity  | Use                     | Treatment                                                                                                                          |
+| ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| HIGH       | Public home             | Display headline with a yellow highlight, shortener card, yellow strip, color cards, step cards, boxed questions, ink closing band |
+| MEDIUM     | Account pages           | Ink poster with offset link stubs. Boxed form card with Continue with Google above an email form                                   |
+| CONTROLLED | Workspace and analytics | Ink side rail, three-column summary strip, flat table rows. Flat rows. Boxed panels lift slightly on hover                         |
 
 The URL field and Shorten button must sit in the first viewport at 390 × 844. Long URLs never cause page overflow. The result ticket scales its URL text with `cqi` units. Shared inputs use `min-width: 0` so intrinsic control widths cannot widen a page.
 
 The home hero uses a 40/60 split on desktop. The headline and description sit on the left. The form and newest result share the right panel. The hero and yellow highlights strip fill the first viewport when their content fits. The panel stays vertically centered as the result appears below the form. Taller content can extend the page. At widths of 900px or less, the columns stack in normal document flow.
+
+The hero copy starts with a paper label and the headline Long links? Smol it. The headline uses the installed Inter 900 font through a separate family alias. This keeps other Inter weights unchanged. The second line uses a flat yellow highlight with an ink border and hard shadow. A transparent sticker illustration shows a long example URL becoming a short link. It has one accessible description. On phones, the copy is centered and the illustration scales down.
+
+The user-selected hero reference permits a rounded label, 12px panel corners, and 6px input and button corners in this section. The rest of the interface keeps square corners. The hero Shorten button uses yellow with black text and a hard shadow.
+
+The hero uses a pale blue surface with the original grid across the full section. A static blue illustration sits behind the form and ignores pointer input. On phones, the illustration moves behind the stacked form. The grid keeps its original size and alignment. The headline highlight has a black border and hard shadow. The long-link sticker now ends with /that/keeps/going/on/and/on/and/on.
 
 The result URL receives focus and selects its text. Focus keeps the scroll position when the URL is visible. If the URL is outside the viewport or behind the header, the browser brings it into view.
 
@@ -81,7 +87,7 @@ Check current neobrutalism.dev first. Map every adopted style to Smolink tokens.
 | Error         | Adjacent text, associated field, structural emphasis. Red is supplementary                    |
 | Selected      | Programmatic state plus explicit text, border, or fill                                        |
 
-Decorative shapes are limited to the brand mark, the strip's spark icons, and the auth poster stubs. Do not add scattered stars or blobs.
+Decorative shapes are limited to the brand mark, the strip's spark icons, the auth poster stubs, and the supplied hero illustrations. Do not add scattered stars or blobs.
 
 ## Motion and accessibility
 
@@ -95,6 +101,6 @@ Target WCAG 2.2 AA. This is not a conformance claim. Require semantic landmarks,
 
 ## Forbidden patterns and deferred decisions
 
-Gradients are prohibited, including backgrounds, text, borders, masks, charts, and shaders. The page grid is an SVG tile for this reason. Also prohibit glassmorphism, blur, glow, soft elevation, rounded cards, pervasive pills, floating blobs, random rotation, and hero-metric cards. Continuous marquee motion is prohibited.
+Gradients are prohibited, including backgrounds, text, borders, masks, charts, and shaders. The page grid is an SVG tile for this reason. Also prohibit glassmorphism, blur, glow, soft elevation, rounded cards outside the hero, pervasive pills, unrequested floating blobs, random rotation, and hero-metric cards. Continuous marquee motion is prohibited.
 
 Dark mode is `DEFERRED`. Paper Shaders is `EVALUATED_DEFERRED`. React Bits remains `REFERENCE_ONLY`. Figma synchronization is planned external work.

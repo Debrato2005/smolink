@@ -102,6 +102,36 @@ The final Chromium fixture suite passed all 24 tests. Four production Chromium c
 
 Idle captures: `test-results/shortener-centered-idle-1366.png` and `test-results/shortener-centered-idle-1440.png`. Result captures: `test-results/shortener-split-1366.png` and `test-results/shortener-split-1440.png`. Build sizes: JavaScript 370.40 kB (gzip 117.50 kB), CSS 34.99 kB (gzip 7.37 kB). New prose scored 0.46 findings per 100 words.
 
+## Hero copy follow-up
+
+The user requested catchier copy and a stronger visual treatment for the left hero block. The headline now reads Big ideas. Smol links. An ink label, yellow headline highlight, and long-to-short URL illustration add emphasis. The existing split layout, centered panel, and result order remain intact.
+
+Six focused Chromium fixture checks passed. They cover reflow and axe at five widths from 320px to 1440px, plus panel alignment and result visibility. Visual review covered desktop and phone captures. Build, lint, formatting, document checks, and whitespace checks passed. These checks do not prove live backend integration. Firefox and WebKit did not run.
+
+Captures: `test-results/chromium-1440.png` and `test-results/chromium-390.png`. No dependencies were added. Root graph output remains outside the frontend write scope.
+
+New documentation prose scored 1.12 findings per 100 words.
+
+## Reference-based hero follow-up
+
+The user rejected the first hero treatment and supplied two visual references. The hero now reads Long links? Smol it. It uses heavier type, a paper label, yellow emphasis, sticker artwork, and a yellow Shorten button. Rounded corners follow the supplied reference within the hero. The split layout, centered panel, and output below input remain intact.
+
+Six focused Chromium fixture checks passed. They cover reflow and axe at five widths, plus panel alignment, result order, and result visibility. A browser review also checked the loaded font and artwork, console errors, and a wide desktop viewport. Build, lint, formatting, document checks, and whitespace checks passed. These checks do not prove live backend integration. Firefox and WebKit did not run.
+
+The visual QA report is design-qa.md. Comparison receipts are in .local/hero-reference-review/. The preview remains open at http://127.0.0.1:3100/. No dependencies were installed. Root graph output remains outside the frontend write scope.
+
+Commands: `npm run lint`, `npm run build`, `npm run docs:check`, `git diff --check`, and `SMOLINK_E2E_REUSE=1 npm run test:e2e -- --project=chromium --grep "desktop shortener|home reflows"`. The browser checks used Node 22.23.2 and the installed pinned Chromium runtime. New stable prose scored 1.03 findings per 100 words. The visual QA draft scored 0.67.
+
+## Hero artwork and surface follow-up
+
+The user requested longer sticker text, a blue shape behind the form, and a boxed headline. Two supplied references govern the box and blue surface. The blue illustration is decorative and hidden from assistive technology. The hero uses a separate surface token. Other page surfaces keep their existing token.
+
+Six focused Chromium fixture checks passed after the final change. They cover responsive reflow, axe, panel alignment, output order, and result visibility. Visual review covered desktop and phone renders. Build, lint, formatting, document checks, and whitespace checks passed. These checks do not prove live backend integration. Firefox and WebKit did not run.
+
+Artwork paths: public/hero-link-stickers.png and public/hero-blue-backdrop.png. The assets use transparent output from the built-in image tool. No fallback CLI or package installation ran. The exact prompts and visual comparison receipts are in .local/hero-reference-review/. The preview remains available at http://127.0.0.1:3100/. Root graph output remains outside the frontend write scope.
+
+Commands: `npm run lint`, `npm run build`, `npm run docs:check`, `git diff --check`, and `SMOLINK_E2E_REUSE=1 npm run test:e2e -- --project=chromium --grep "desktop shortener|home reflows"`. New prose scored 0.00 findings per 100 words.
+
 ## Blockers and cross-boundary dependencies
 
 The cross-boundary entries continue the supplied handoff. This task did not run backend or deployment tests. Source checks confirmed the missing PKCE helper and mounted route structure.
@@ -152,7 +182,7 @@ Owner: backend authentication/email services. Relevant files: `backend/app/api/v
 
 ### CB-09 note: root design reconciliation
 
-`--sky-surface` is a frontend token added at the user's request. Root `docs/frontend-design-system.md` does not list it. Reconcile the root file under separate authorization. Root `graphify-out/graph.json` exists but lacks the frontend analytics modules. The graph and root documentation remain outside this task's write scope.
+`--sky-surface` and `--hero-surface` are frontend tokens added at the user's request. Root `docs/frontend-design-system.md` does not list them. Reconcile the root file under separate authorization. Root `graphify-out/graph.json` exists but lacks the frontend analytics modules. The graph and root documentation remain outside this task's write scope.
 
 ## Exact next task
 
@@ -166,7 +196,7 @@ npm run build
 SMOLINK_E2E_TARGET=production npm run test:e2e -- --project=firefox --project=webkit
 ```
 
-Review the outlined hero word, ticket `cqi` sizing and notches, block hover, reduced motion, and analytics text spacing.
+Review the yellow hero highlight, ticket `cqi` sizing and notches, block hover, reduced motion, and analytics text spacing.
 
 ## Scope protections
 
