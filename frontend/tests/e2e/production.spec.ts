@@ -79,7 +79,10 @@ test('production sends normalized alias and timezone-aware expiry, handles confl
   await page.getByLabel('Destination URL').fill('https://example.com/wire');
   await page.getByLabel('Custom alias').fill('My-Link');
   await page.getByLabel('Set an expiry').check();
-  await page.getByLabel('Expiry date and time').fill('2030-07-20T15:30');
+  await page.getByLabel('Expiry date and time').click();
+  await page.getByLabel('Date', { exact: true }).fill('2030-07-20');
+  await page.getByLabel('Time', { exact: true }).fill('15:30');
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
   await page.getByRole('button', { name: 'Shorten URL' }).click();
   await expect(page.getByRole('alert')).toContainText('alias is taken');
   expect(bodies[0]?.alias).toBe('my-link');

@@ -11,6 +11,7 @@ import { useResource } from '../../lib/useResource';
 import { linkStatus, localDateInput, validateLink } from '../../lib/validation';
 import { Button } from '../../components/ui/Button';
 import { Field } from '../../components/ui/Field';
+import { DatePicker } from '../../components/ui/DatePicker';
 import { Icon } from '../../components/ui/Icon';
 import { Modal } from '../../components/ui/Modal';
 import { ErrorNotice, Loading } from '../../components/ui/Feedback';
@@ -84,16 +85,13 @@ function Editor({
         error={fields.destination}
         onChange={(e) => setDestination(e.target.value)}
       />
-      <Field
+      <DatePicker
         id="edit-expiry"
-        name="expires_at"
-        label="Expiry date and time"
-        type="datetime-local"
         value={expiry}
         disabled={busy}
         error={fields.expires_at}
         hint={`Optional. Leave empty for no expiry. Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}.`}
-        onChange={(e) => setExpiry(e.target.value)}
+        onChange={setExpiry}
       />
       <label className="checkbox-label">
         <input

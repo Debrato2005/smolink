@@ -86,7 +86,10 @@ test('expiry validation, alias conflict and service errors preserve the entered 
   await page.getByLabel('Destination URL').fill('https://example.com/keep-me');
   await page.getByLabel('Custom alias').fill('portfolio');
   await page.getByLabel('Set an expiry').check();
-  await page.getByLabel('Expiry date and time').fill('2020-01-01T12:00');
+  await page.getByLabel('Expiry date and time').click();
+  await page.getByLabel('Date', { exact: true }).fill('2020-01-01');
+  await page.getByLabel('Time', { exact: true }).fill('12:00');
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
   await page.getByRole('button', { name: 'Shorten URL' }).click();
   await expect(page.getByText('Choose a future expiry time.')).toBeVisible();
   await page.getByLabel('Set an expiry').uncheck();
@@ -240,13 +243,16 @@ test('workspace filters, pagination, edits and outages remain distinct from empt
   await expect(
     page.getByRole('link', { name: 'project-notes', exact: true }),
   ).toBeVisible();
-  await page.getByLabel('Status', { exact: true }).selectOption('paused');
+  await page.getByRole('combobox', { name: 'Status', exact: true }).click();
+  await page.getByRole('option', { name: 'Paused', exact: true }).click();
   await expect(
     page.getByRole('link', { name: 'press-pack', exact: true }),
   ).toBeVisible();
   await expect(page).not.toHaveURL(/page=2/);
-  await page.getByLabel('Status', { exact: true }).selectOption('all');
-  await page.getByLabel('Sort by').selectOption('oldest');
+  await page.getByRole('combobox', { name: 'Status', exact: true }).click();
+  await page.getByRole('option', { name: 'All statuses', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Sort by', exact: true }).click();
+  await page.getByRole('option', { name: 'Oldest first', exact: true }).click();
   await expect(
     page.getByRole('link', { name: 'project-notes', exact: true }),
   ).toBeVisible();
@@ -438,7 +444,10 @@ test('narrow workspace supports long links, future expiry, QR and confirmed zero
   await page.getByLabel('Custom alias').fill(alias);
   await page.getByLabel('Set an expiry').check();
   const future = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16);
-  await page.getByLabel('Expiry date and time').fill(future);
+  await page.getByLabel('Expiry date and time').click();
+  await page.getByLabel('Date', { exact: true }).fill(future.slice(0, 10));
+  await page.getByLabel('Time', { exact: true }).fill(future.slice(11, 16));
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
   await page.getByRole('button', { name: 'Shorten URL' }).click();
   await expect(
     page.getByText('Your link is ready', { exact: true }),
@@ -447,7 +456,9 @@ test('narrow workspace supports long links, future expiry, QR and confirmed zero
   await page.getByLabel('Search links').fill(alias);
   await page.getByRole('link', { name: alias, exact: true }).click();
   await page.getByRole('button', { name: 'Save changes' }).waitFor();
-  await expect(page.getByLabel('Expiry date and time')).not.toHaveValue('');
+  await expect(page.getByLabel('Expiry date and time')).not.toContainText(
+    'Choose a date',
+  );
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -464,7 +475,8 @@ test('narrow workspace supports long links, future expiry, QR and confirmed zero
   ).toBe(true);
   await page.keyboard.press('Escape');
   await page.getByRole('link', { name: 'View analytics' }).click();
-  await page.getByLabel('Date range').selectOption('30');
+  await page.getByRole('combobox', { name: 'Date range', exact: true }).click();
+  await page.getByRole('option', { name: 'Last 30 days', exact: true }).click();
   await expect(page.getByText('No clicks in this range yet.')).toBeVisible();
   expect(
     await page
@@ -509,7 +521,7 @@ test('desktop shortener centers its panel and expands upward and downward with o
     await page.goto('/');
     const heading = page.getByRole('heading', { level: 1 });
     const destination = page.getByLabel('Destination URL');
-    await destination.fill('https://example.com/a-long-story-to-share');
+    await destination.fill('https://www.youtube.com/watch?v=wuXip1SCJGs');
     const headingBox = await heading.boundingBox();
     const fieldBox = await destination.boundingBox();
     expect(fieldBox!.x).toBeGreaterThan(headingBox!.x + headingBox!.width);
@@ -546,6 +558,23 @@ test('desktop shortener centers its panel and expands upward and downward with o
     expect(
       Math.abs(after.y + after.height / 2 - before.y - before.height / 2),
     ).toBeLessThan(3);
+    const oval = await page
+      .locator('.hero-backdrop-fill')
+      .evaluate((element) => {
+        const ellipse = element as SVGEllipseElement;
+        const matrix = ellipse.getScreenCTM()!;
+        const center = new DOMPoint(
+          ellipse.cx.baseVal.value,
+          ellipse.cy.baseVal.value,
+        ).matrixTransform(matrix);
+        const radiusY = Math.hypot(
+          matrix.b * ellipse.rx.baseVal.value,
+          matrix.d * ellipse.ry.baseVal.value,
+        );
+        return { top: center.y - radiusY, bottom: center.y + radiusY };
+      });
+    expect(oval.top).toBeLessThan(after.y - 12);
+    expect(oval.bottom).toBeGreaterThan(after.y + after.height + 12);
     const resultBox = await result.boundingBox();
     expect(resultBox!.y).toBeGreaterThan(76);
     expect(resultBox!.y + resultBox!.height).toBeLessThan(height);

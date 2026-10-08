@@ -21,7 +21,7 @@ The npm registry metadata and installed package metadata agree on the versions b
 | [Vite](https://vite.dev/guide/) 8.3.2, MIT                                                                                            | `SELECTED`. Dev proxy and production assets                                           | Next.js/React Router framework mode add server/rendering conventions. No current SSR requirement                                                         | Build/dev only. Browser target follows documented defaults. Replace build/config boundary                                                        |
 | [React Vite plugin](https://github.com/vitejs/vite-plugin-react) 6.1.2, MIT                                                           | `SELECTED`. React transform/HMR                                                       | Handwritten transform setup adds maintenance                                                                                                             | Build-only. No application semantics. Replace Vite plugin configuration                                                                          |
 | [React Router](https://reactrouter.com/start/modes) 8.4.0, MIT                                                                        | `SELECTED`. Declarative app routes and native history                                 | Data mode adds loaders/actions. Framework mode adds generation/SSR. No server-data route exists yet. Can adopt data mode without changing gateway models | Browser runtime. App owns route focus/titles. Replace `src/app/router/` and route registration                                                   |
-| [Base UI](https://base-ui.com/react/components/button) 1.8.0, MIT                                                                     | `SELECTED_BOUNDED_USE`. Shared button and QR/delete dialogs                           | Radix recipes are obsolete for the selected upstream. Native HTML remains suitable for ordinary URL inputs                                               | Tree-shaken consumed subpath. Preserve button semantics and keyboard behavior. Replace shared UI layer                                           |
+| [Base UI](https://base-ui.com/react/components/button) 1.8.0, MIT                                                                     | `SELECTED_BOUNDED_USE`. Buttons, dialogs, popovers, selects, and comboboxes           | Radix recipes are obsolete for the selected upstream. Native HTML remains suitable for ordinary URL inputs                                               | Tree-shaken consumed subpath. Preserve button semantics and keyboard behavior. Replace shared UI layer                                           |
 | [Fontsource](https://fontsource.org/docs/getting-started/install) Space Grotesk, Inter, Space Mono packages 5.3.0 each, OFL-1.1 fonts | `SELECTED_BOUNDED_USE`. Four Latin faces imported in `main.tsx`                       | System fonts avoid downloads but lose supplied identity. Remote Google Fonts introduces external requests                                                | Self-hosted assets. Swap in `main.tsx` and font tokens. Preserve readable fallbacks and layout. Space Grotesk 700, Inter 400/600, Space Mono 400 |
 | [node-qrcode](https://github.com/soldair/node-qrcode) 1.5.4, MIT; `@types/qrcode` 1.5.6, MIT                                          | `SELECTED_BOUNDED_USE`. Fixture QR preview in `fixtures.ts`, loaded by dynamic import | A live QR endpoint is `PLANNED` in the backend. Canvas-only libraries need more code for PNG export                                                      | Separate lazy chunk in development. Production uses the live gateway, which reports QR as unavailable. Replace inside the fixture gateway        |
 | [Vitest](https://vitest.dev/guide/) 5.0.3, MIT                                                                                        | `SELECTED`. Node contract suite                                                       | Node test runner needs extra TypeScript handling. DOM emulators add no value to current contracts                                                        | Development only. No a11y claim. Replace test runner/config                                                                                      |
@@ -40,7 +40,7 @@ QR provenance checked against installed `qrcode` 1.5.4 and `@types/qrcode` 1.5.6
 
 ## Adopted component source
 
-[neobrutalism.dev](https://www.neobrutalism.dev/docs) is `SELECTED_BOUNDED_USE` for the shared button recipe. The [current registry item](https://neobrutalism.dev/r/button.json) imports `@base-ui/react/button`. The [migration guide](https://www.neobrutalism.dev/docs/migrating-to-base-ui) changes `asChild` to `render` and explicitly prohibits rendering links through its Button semantics.
+[neobrutalism.dev](https://www.neobrutalism.dev/docs) is `SELECTED_BOUNDED_USE` for the shared button, calendar, select, and popover recipes. The [current registry item](https://neobrutalism.dev/r/button.json) imports `@base-ui/react/button`. The [migration guide](https://www.neobrutalism.dev/docs/migrating-to-base-ui) changes `asChild` to `render` and explicitly prohibits rendering links through its Button semantics.
 
 Registry response SHA-256: `b6c59a12da75416229d85688aea63d4e5a2760d5d8ffa3c8f4eb8021e7b3df3b`.
 Upstream repository: [ekmas/neobrutalism-components](https://github.com/ekmas/neobrutalism-components).
@@ -52,6 +52,24 @@ The [MIT license](https://github.com/ekmas/neobrutalism-components/blob/3306a802
 `Button.tsx` retains the Base UI primitive and shared-source boundary. Plain token CSS replaces Tailwind classes, `cva`, and `cn`. Those styling helpers have no current semantic consumer, so they are not installed. Native URL input behavior is sufficient. Add a complex field/dialog/menu only when a feature needs it.
 
 [shadcn](https://ui.shadcn.com/docs/installation/vite) is `REFERENCE_ONLY` as a source/registry workflow, not an installed application library. Manual source review/adaptation is the current workflow. No `components.json` or CLI-generated theme exists. Future CLI adoption must inspect downloaded source and prevent palette/config overwrites. MIT source notices must follow substantial copied code.
+
+## Requested control sources — October 8, 2026
+
+The requested Neobrutalism calendar and select compositions use Smolink token CSS. React DayPicker 9.14.0 is pinned in the package manifest and lockfile. The calendar has a separate runtime chunk. The searchable combobox uses installed Base UI instead of adding Command and cmdk. Field and sidebar examples informed the existing field and navigation structure. The skeleton follows the upstream border and pulse treatment.
+
+The public license folder contains the calendar dependency and its date-library notices. The existing Neobrutalism MIT notice still applies to adapted component source. Registry snapshots are separate from the earlier observed upstream commit.
+
+Reviewed documentation: [Date Picker](https://www.neobrutalism.dev/docs/date-picker), [Combobox](https://www.neobrutalism.dev/docs/combobox), [Select](https://www.neobrutalism.dev/docs/select), [Field](https://www.neobrutalism.dev/docs/field), [Sidebar](https://www.neobrutalism.dev/docs/sidebar), and [Skeleton](https://www.neobrutalism.dev/docs/skeleton).
+
+| Registry snapshot | SHA-256                                                            |
+| ----------------- | ------------------------------------------------------------------ |
+| `calendar.json`   | `20683303f07496d9e759937ab706ad2ca6f55fc1e7332c2f9dcef6104df2ccd7` |
+| `select.json`     | `2d56c8986af5d9155835e00b591830fc815afa90deae6f024f4f2b535b686321` |
+| `field.json`      | `055afbd1cf7f528f2d5efd8a5fd671dd6b9642bcd01f9ddf09f41c61fbbdde52` |
+| `sidebar.json`    | `afa2218a633ea2b5d5ab3983e1c5b4de0e954dae66393c301ae27401549171ad` |
+| `skeleton.json`   | `9a00ea3de3c9438d42171aeb9ff1ce008fc93a02aa3f40faad2726e76cff9a0a` |
+| `popover.json`    | `2941de4bff4be28fd418570cabd4f04f28c12bb8e8e5798eff74879b16417a94` |
+| `command.json`    | `337387f164dc6180b4b413ef5d62a3ff68b0a2a2cc356da1d255e60cb4a6b4cb` |
 
 ## Evaluated optional systems
 
@@ -114,5 +132,7 @@ The earlier generated PNG files are historical artwork. The current hero no long
 [OWASP HTML5 guidance](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html) rejects assuming localStorage is safe for session credentials. [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700.html) informs the unresolved OAuth browser-binding and delivery review. These sources do not settle Smolink's missing server/session contract. It remains a documented blocker.
 
 [Vite environment guidance](https://vite.dev/guide/env-and-mode) establishes public build-time variables and mode precedence. Production fixture refusal is a deliberate Smolink guard. Runtime libraries do not choose deployment origins or CORS policy.
+
+[MDN scroll restoration](https://developer.mozilla.org/en-US/docs/Web/API/History/scrollRestoration) supports manual scroll restoration for the requested home reload behavior. The root route resets to the hero on reload. Initial section links keep their existing behavior.
 
 The OncoSyn frontend document index supplied the owner separation pattern. No OncoSyn component, media, scientific contract, animation system, or session history was copied. Smolink's smaller scaffold creates only consumed responsibilities.

@@ -7,8 +7,9 @@ import {
 } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Field } from '../../components/ui/Field';
+import { DatePicker } from '../../components/ui/DatePicker';
 import { Icon } from '../../components/ui/Icon';
-import { ErrorNotice } from '../../components/ui/Feedback';
+import { ErrorNotice, Skeleton } from '../../components/ui/Feedback';
 import type { CreatedLink, ProductGateway } from '../../lib/api/contracts';
 import { ApiError } from '../../lib/api/errors';
 import { characters, validateLink } from '../../lib/validation';
@@ -201,17 +202,14 @@ export function ShortenPreview({
               Set an expiry
             </label>
             {hasExpiry && (
-              <Field
+              <DatePicker
                 id="expiry"
-                name="expires_at"
-                type="datetime-local"
-                label="Expiry date and time"
                 hint={`Your timezone: ${zone}.`}
                 value={expiry}
                 disabled={busy}
                 error={fields.expires_at}
-                onChange={(e) => {
-                  setExpiry(e.target.value);
+                onChange={(value) => {
+                  setExpiry(value);
                   clear();
                 }}
               />
@@ -225,9 +223,15 @@ export function ShortenPreview({
         </p>
       </form>
       {busy && (
-        <p className="sr-only" role="status">
-          Creating your link…
-        </p>
+        <div
+          className="shorten-loading"
+          role="status"
+          aria-label="Creating your link…"
+        >
+          <span className="sr-only">Creating your link…</span>
+          <Skeleton className="skeleton-label" />
+          <Skeleton className="skeleton-line" />
+        </div>
       )}
       {state.kind === 'error' && <ErrorNotice error={state.error} />}
       {ready && <Ticket link={ready} links={links} />}

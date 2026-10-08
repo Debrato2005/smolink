@@ -50,13 +50,29 @@ The home hero uses a 40/60 split on desktop. The headline and description sit on
 
 The hero copy starts with a paper label and the headline Long links? Smol it. The headline uses the installed Inter 900 font through a separate family alias. This keeps other Inter weights unchanged. The second line uses a flat yellow highlight with an ink border and hard shadow.
 
-The hero shows the example links as real text in a React component. CSS supplies the sticker borders, yellow fill, rotation, and hard shadows. Inline SVG supplies the curved arrow, ink rays, and blue backdrop. Decorative SVG stays outside the accessibility tree and ignores pointer input. On phones, the copy remains centered and the stickers scale with their container.
+The hero uses equal-height tickets with matching top and bottom edges. The white ticket takes 46% of the group width. The yellow ticket takes 40%. Labels sit above each ticket's center. The vertical cut line sits at the group's center, with upright scissors between equal dashed sections. The arrow points toward the yellow ticket. Text has no strike-through and stays clear of the notches.
 
-The user-selected hero reference permits a rounded label, 12px panel corners, and 6px input and button corners in this section. The rest of the interface keeps square corners. The hero Shorten button uses yellow with black text and a hard shadow.
+The left section moves 16px left on desktop. The ticket group matches the headline width. The ticket group moves up to 20px left on desktop, independently of the headline's left edge. Narrow desktop widths use a smaller offset to keep the border visible. The long URL uses three balanced lines with larger text. Rounded stroke joins and a smaller hard shadow keep the notches clear. The yellow highlight aligns with the headline's left edge on desktop. Supporting text stays centered. Phones keep the highlight and ticket group centered. Ink rays sit outside the yellow ticket's top-right corner.
 
-The hero uses a pale blue surface with the original grid across the full section. A static blue SVG sits behind the form and ignores pointer input. On phones, the backdrop moves behind the stacked form. The grid keeps its original size and alignment. The headline highlight has a black border and hard shadow. The long-link sticker ends with /that/keeps/going/on/and/on/and/on.
+Decorative SVG stays outside the accessibility tree and ignores pointer input. On phones, the stickers scale with their container. The desktop columns use more width and less space on the left.
+
+The user-selected references permit small rounded corners on the hero, shared controls, popup panels, skeletons, and sidebar avatar. Large landing cards remain square. The hero Shorten button uses yellow with black text and a hard shadow.
+
+The hero uses a pale blue surface with the original grid across the full section. The blue oval stays centered behind the form. It grows with the panel when the result appears below the input. Its diagonal follows opposite panel corners. It stays above the grid and below the form. Ink marks stay at the panel corner, clear of the ticket text. The grid keeps its original spacing and alignment. On phones, the backdrop stays behind the stacked form. The headline highlight has a black border and hard shadow. The long-link sticker ends with /that/keeps/going/on/and/on/and/on.
 
 The result URL receives focus and selects its text. Focus keeps the scroll position when the URL is visible. If the URL is outside the viewport or behind the header, the browser brings it into view.
+
+Home reload starts at the top of the hero. Normal section links and initial deep links still scroll to their targets.
+
+The QR skeleton uses three muted corner markers and soft blocks inside the fixed square frame. A gentle pulse shows progress. Reduced motion keeps it still. The download control stays disabled during generation.
+
+The frame keeps the same size when the image appears. The short URL and disabled download control reserve their final space during loading. Download becomes available after generation.
+
+## Footer
+
+The footer uses one compact row on desktop. A smaller original logo sits beside the GitHub creator credit and copyright. Contact, OnlyChai, and Ko-fi are the only actions. The headline, description, navigation columns, repository button, and large creator card were removed because they repeated existing content. Phones stack the brand and actions, with equal columns for the support buttons. The fixture-only Developer tools remain available.
+
+The OnlyChai button opens the supplied support URL in a new tab. Ko-fi remains disabled until the user supplies a profile URL.
 
 ## Component sources and grammar
 
@@ -91,11 +107,19 @@ Check current neobrutalism.dev first. Map every adopted style to Smolink tokens.
 
 Decorative shapes are limited to the brand mark, the strip's spark icons, the auth poster stubs, and the supplied hero illustrations. Do not add scattered stars or blobs.
 
+## Requested controls
+
+The expiry control has one calendar trigger. Its popup contains the calendar, editable date and time, timezone hint, Clear, and Done. Calendar selection preserves the time. The field error stays beside the trigger. The calendar loads only when needed and shows a skeleton during the download.
+
+The workspace uses a paper sidebar with grouped navigation, a yellow current-page marker, and a collapse control. Collapsed desktop navigation keeps accessible link names. Mobile collapse hides the workspace navigation until expansion. Status and analytics ranges use Base UI Select. Sort uses a searchable Base UI Combobox. Query parameters still own filter state.
+
+Contact me opens a dialog with Name, Email, and Message fields. Open email draft prepares a mailto link to debrato2005@gmail.com. The visitor sends the message from their email app. The interface never claims delivery. Contact values stay in memory.
+
 ## Motion and accessibility
 
 CSS owns all motion. Navigation items move their transform and shadow over 180ms and their fill and border over 120ms. Buttons and inputs use the 120ms press and lift. The result ticket prints with one clip-path reveal. The highlights strip is static because continuous animation is prohibited. Avoid transitions of layout properties.
 
-Boxed blocks lift by 2px and grow their hard shadow by 2px on hover. This applies to the bench, tickets, feature and step cards, FAQ boxes, account cards, notices, and workspace panels. The motion uses `--duration-panel` and requires a hover-capable pointer. It does not change layout or add click behavior to informational cards.
+Feature cards, step cards, and question rows lift 6px and grow their hard shadow by 6px on hover. The shortener panel stays still. Other boxes keep the existing 2px lift. Reduced motion and touch-only pointers disable the lift. Loading states use bordered skeletons and accessible status text.
 
 Reduced motion removes every transition, animation, and lift. Boxes and shadows stay visible, so state never depends on motion.
 
@@ -103,6 +127,6 @@ Target WCAG 2.2 AA. This is not a conformance claim. Require semantic landmarks,
 
 ## Forbidden patterns and deferred decisions
 
-Gradients are prohibited, including backgrounds, text, borders, masks, charts, and shaders. The page grid is an SVG tile for this reason. Also prohibit glassmorphism, blur, glow, soft elevation, rounded cards outside the hero, pervasive pills, unrequested floating blobs, random rotation, and hero-metric cards. Continuous marquee motion is prohibited.
+Gradients are prohibited, including backgrounds, text, borders, masks, charts, and shaders. The page grid is an SVG tile for this reason. Also prohibit glassmorphism, blur, glow, soft elevation, unrequested rounded landing cards, pervasive pills, unrequested floating blobs, random rotation, and hero-metric cards. Continuous marquee motion is prohibited.
 
 Dark mode is `DEFERRED`. Paper Shaders is `EVALUATED_DEFERRED`. React Bits remains `REFERENCE_ONLY`. Figma synchronization is planned external work.

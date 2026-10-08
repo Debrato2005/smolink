@@ -22,6 +22,7 @@ import type {
   ProductGateway,
 } from '../lib/api/contracts';
 import { Button } from '../components/ui/Button';
+import { Contact } from '../components/Contact';
 import { Icon } from '../components/ui/Icon';
 import { ErrorBoundary } from './ErrorBoundary';
 import { NavigationFocus } from './router/NavigationFocus';
@@ -118,6 +119,7 @@ function Shell({
   const [credential, setCredential] = useState(initialToken);
   const clearToken = useCallback(() => setCredential(''), []);
   const [menu, setMenu] = useState(false);
+  const [contact, setContact] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const [scenario, setScenario] = useState<DemoScenario>('normal');
   const [revision, setRevision] = useState(0);
@@ -157,6 +159,9 @@ function Shell({
             <NavLink className="nav-item" to="/dashboard">
               Workspace
             </NavLink>
+            <button className="nav-item" onClick={() => setContact(true)}>
+              Contact me
+            </button>
           </nav>
           <div className="header-actions">
             {email ? (
@@ -213,6 +218,15 @@ function Shell({
             <NavLink className="nav-item" to="/dashboard">
               Workspace
             </NavLink>
+            <button
+              className="nav-item"
+              onClick={(event) => {
+                event.stopPropagation();
+                setContact(true);
+              }}
+            >
+              Contact me
+            </button>
             {!email && (
               <NavLink className="nav-item" to="/login">
                 Sign in
@@ -222,6 +236,7 @@ function Shell({
           </nav>
         )}
       </header>
+      <Contact open={contact} onOpenChange={setContact} />
       <main
         id="main"
         tabIndex={-1}
@@ -306,20 +321,52 @@ function Shell({
         </Routes>
       </main>
       <NavigationFocus />
-      <footer className={`site-footer ${workspace ? 'footer-compact' : ''}`}>
+      <footer className="site-footer">
         <div className="container">
-          <div className="footer-top">
-            <Brand />
-            <nav aria-label="Footer navigation">
-              <Link to="/#shorten">Shorten a link</Link>
-              <Link to="/#how-it-works">How it works</Link>
-              <Link to="/#questions">Questions</Link>
-              <Link to="/dashboard">Workspace</Link>
-            </nav>
+          <div className="footer-grid">
+            <div className="footer-brand">
+              <Brand />
+              <div className="footer-identity">
+                <a
+                  className="footer-credit"
+                  href="https://github.com/Debrato2005"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Icon name="github" size={18} />
+                  Built by debrato
+                </a>
+                <p className="footer-note">
+                  © {new Date().getFullYear()} Smolink.
+                </p>
+              </div>
+            </div>
+            <div className="footer-actions">
+              <Button
+                className="button-secondary"
+                onClick={() => setContact(true)}
+              >
+                Contact me
+              </Button>
+              <a
+                className="button-link footer-support"
+                href="https://onlychai.neocities.org/support?name=debrato&upi=debrato2005%40oksbi"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Icon name="coffee" />
+                OnlyChai
+              </a>
+              <Button
+                className="footer-support"
+                disabled
+                aria-label="Ko-fi (coming soon)"
+              >
+                <Icon name="coffee" />
+                Ko-fi
+              </Button>
+            </div>
           </div>
-          <p className="footer-note">
-            © {new Date().getFullYear()} Smolink. Long story, smol link.
-          </p>
           {import.meta.env.DEV && links.source === 'fixture' && (
             <details className="demo-controls">
               <summary>

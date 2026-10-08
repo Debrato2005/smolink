@@ -11,6 +11,18 @@ import { App } from './app/App';
 import { readConfig } from './lib/config/runtime';
 import { createLinkGateway } from './lib/api/gateway';
 
+const navigation = performance.getEntriesByType('navigation')[0] as
+  PerformanceNavigationTiming | undefined;
+if (window.location.pathname === '/' && navigation?.type === 'reload') {
+  window.history.scrollRestoration = 'manual';
+  window.history.replaceState(
+    window.history.state,
+    '',
+    window.location.pathname + window.location.search,
+  );
+  window.scrollTo(0, 0);
+}
+
 // Keep one-time email credentials in memory only. Remove the fragment before rendering.
 let initialToken = '';
 if (

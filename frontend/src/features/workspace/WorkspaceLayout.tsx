@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router';
+import { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
 import type { ProductGateway } from '../../lib/api/contracts';
@@ -12,6 +13,7 @@ export function WorkspaceLayout({
   onLogout: () => void;
 }) {
   const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
   const creating = location.pathname === '/dashboard/new';
   const analytics =
     location.pathname.endsWith('/analytics') ||
@@ -47,8 +49,23 @@ export function WorkspaceLayout({
       </section>
     );
   return (
-    <div className="workspace">
+    <div className="workspace" data-collapsed={collapsed || undefined}>
       <aside className="workspace-sidebar">
+        <div className="sidebar-heading">
+          <Link to="/" className="sidebar-brand" aria-label="Smolink home">
+            <img src="/smolink-symbol.png" alt="" width={38} height={38} />
+            <span>smolink</span>
+          </Link>
+          <button
+            className="icon-button sidebar-toggle"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-expanded={!collapsed}
+            aria-controls="workspace-navigation"
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            <Icon name="menu" size={18} />
+          </button>
+        </div>
         <div className="workspace-identity">
           <span className="avatar" aria-hidden="true">
             {email.slice(0, 1).toUpperCase()}
@@ -58,34 +75,42 @@ export function WorkspaceLayout({
             <span>Personal</span>
           </div>
         </div>
-        <nav aria-label="Workspace navigation">
+        <nav id="workspace-navigation" aria-label="Workspace navigation">
+          <span className="sidebar-group-label">Your workspace</span>
           <Link
             to="/dashboard"
+            aria-label="All links"
             aria-current={!creating && !analytics ? 'page' : undefined}
           >
             <Icon name="link" />
-            All links
+            <span>All links</span>
           </Link>
           <Link
             to="/dashboard?view=analytics"
+            aria-label="Overview"
             aria-current={analytics ? 'page' : undefined}
           >
             <Icon name="chart" />
-            Overview
+            <span>Overview</span>
           </Link>
           <Link
             to="/dashboard/new"
+            aria-label="Create a link"
             aria-current={creating ? 'page' : undefined}
           >
             <Icon name="plus" />
-            Create a link
+            <span>Create a link</span>
           </Link>
         </nav>
         <div className="workspace-user">
           <span className="small muted break-word">{email}</span>
-          <Button className="button-plain" onClick={onLogout}>
+          <Button
+            className="button-plain"
+            onClick={onLogout}
+            aria-label="Sign out"
+          >
             <Icon name="logout" />
-            Sign out
+            <span>Sign out</span>
           </Button>
         </div>
       </aside>

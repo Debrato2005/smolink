@@ -37,9 +37,34 @@ export function ErrorNotice({
 }
 export function Loading({ label = 'Loading your links…' }: { label?: string }) {
   return (
-    <div className="loading-state" role="status">
-      <span className="loading-square" aria-hidden="true" />
-      <span>{label}</span>
+    <div className="skeleton-loading" role="status" aria-label={label}>
+      <span className="sr-only">{label}</span>
+      <div className="skeleton-metrics" aria-hidden="true">
+        {[0, 1, 2].map((item) => (
+          <div key={item} className="skeleton-card">
+            <Skeleton className="skeleton-label" />
+            <Skeleton className="skeleton-number" />
+          </div>
+        ))}
+      </div>
+      <div className="skeleton-panel" aria-hidden="true">
+        {[0, 1, 2].map((item) => (
+          <div key={item} className="skeleton-row">
+            <Skeleton className="skeleton-line" />
+            <Skeleton className="skeleton-line skeleton-line-short" />
+          </div>
+        ))}
+      </div>
     </div>
+  );
+}
+
+export function Skeleton({ className = '' }: { className?: string }) {
+  return (
+    <div
+      data-slot="skeleton"
+      className={`skeleton ${className}`}
+      aria-hidden="true"
+    />
   );
 }

@@ -4,6 +4,7 @@ import type { ProductGateway } from '../../lib/api/contracts';
 import { useResource } from '../../lib/useResource';
 import { ErrorNotice, Loading } from '../../components/ui/Feedback';
 import { Icon } from '../../components/ui/Icon';
+import { Dropdown } from '../../components/ui/Choice';
 export function Analytics({
   links,
   revision,
@@ -40,17 +41,16 @@ export function Analytics({
           <h1>Link analytics</h1>
           <p className="muted">Every click is a little connection.</p>
         </div>
-        <div className="filter-field">
-          <label htmlFor="range">Date range</label>
-          <select
-            id="range"
-            value={days}
-            onChange={(e) => setParams({ range: e.target.value })}
-          >
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-          </select>
-        </div>
+        <Dropdown
+          id="range"
+          label="Date range"
+          value={String(days)}
+          onChange={(value) => setParams({ range: value })}
+          items={[
+            { value: '7', label: 'Last 7 days' },
+            { value: '30', label: 'Last 30 days' },
+          ]}
+        />
       </div>
       {loading ? (
         <Loading label="Loading analytics…" />

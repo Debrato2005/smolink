@@ -5,6 +5,7 @@ import { useResource } from '../../lib/useResource';
 import { linkStatus } from '../../lib/validation';
 import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
+import { Dropdown, SearchableChoice } from '../../components/ui/Choice';
 import { ErrorNotice, Loading } from '../../components/ui/Feedback';
 import { LinkActions } from '../shorten/LinkActions';
 
@@ -148,31 +149,29 @@ export function Dashboard({
                     onChange={(e) => filter('q', e.target.value)}
                   />
                 </div>
-                <div className="filter-field">
-                  <label htmlFor="status-filter">Status</label>
-                  <select
-                    id="status-filter"
-                    value={status}
-                    onChange={(e) => filter('status', e.target.value)}
-                  >
-                    <option value="all">All statuses</option>
-                    <option value="active">Active</option>
-                    <option value="paused">Paused</option>
-                    <option value="expired">Expired</option>
-                  </select>
-                </div>
-                <div className="filter-field">
-                  <label htmlFor="sort-filter">Sort by</label>
-                  <select
-                    id="sort-filter"
-                    value={sort}
-                    onChange={(e) => filter('sort', e.target.value)}
-                  >
-                    <option value="newest">Newest first</option>
-                    <option value="oldest">Oldest first</option>
-                    <option value="clicks">Most clicks</option>
-                  </select>
-                </div>
+                <Dropdown
+                  id="status-filter"
+                  label="Status"
+                  value={status}
+                  onChange={(value) => filter('status', value)}
+                  items={[
+                    { value: 'all', label: 'All statuses' },
+                    { value: 'active', label: 'Active' },
+                    { value: 'paused', label: 'Paused' },
+                    { value: 'expired', label: 'Expired' },
+                  ]}
+                />
+                <SearchableChoice
+                  id="sort-filter"
+                  label="Sort by"
+                  value={sort}
+                  onChange={(value) => filter('sort', value)}
+                  items={[
+                    { value: 'newest', label: 'Newest first' },
+                    { value: 'oldest', label: 'Oldest first' },
+                    { value: 'clicks', label: 'Most clicks' },
+                  ]}
+                />
               </div>
               {rows.length ? (
                 <>

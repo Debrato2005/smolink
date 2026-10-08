@@ -61,7 +61,6 @@ export function Home({ links }: { links: ProductGateway }) {
     <>
       <div className="home-intro">
         <section className="hero" aria-labelledby="hero-heading">
-          <HeroBackdrop />
           <div className="container hero-inner">
             <div className="hero-copy">
               <span className="hero-eyebrow">Less URL. More you.</span>
@@ -75,7 +74,10 @@ export function Home({ links }: { links: ProductGateway }) {
               </p>
               <HeroLinkExample />
             </div>
-            <ShortenPreview links={links} />
+            <div className="hero-shortener">
+              <HeroBackdrop />
+              <ShortenPreview links={links} />
+            </div>
           </div>
         </section>
 

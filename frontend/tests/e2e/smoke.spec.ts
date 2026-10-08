@@ -105,6 +105,45 @@ test('keyboard, navigation recovery, resize and reduced motion remain usable', a
   await expect(page.getByLabel('Destination URL')).toBeVisible();
 });
 
+test('home reload starts at the full hero after scrolling or following a section link', async ({
+  page,
+}) => {
+  for (const [width, height] of [
+    [1440, 900],
+    [390, 844],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    const hero = page.getByRole('heading', { level: 1 });
+    await expect(hero).toBeVisible();
+    await page
+      .getByRole('heading', { name: 'Small links. Big features.' })
+      .scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => scrollY)).toBeGreaterThan(100);
+    await page.reload();
+    await expect(hero).toBeVisible();
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+    const header = (await page.locator('.site-header').boundingBox())!;
+    expect((await hero.boundingBox())!.y).toBeGreaterThanOrEqual(header.height);
+
+    await page.goto('/#questions');
+    await expect(
+      page.getByRole('heading', { name: 'Questions', exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => scrollY)).toBeGreaterThan(100);
+    await page.reload();
+    await expect(hero).toBeVisible();
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+    await expect(page).toHaveURL(/\/$/);
+    await page
+      .locator('.site-footer')
+      .getByRole('link', { name: 'Questions' })
+      .click();
+    await expect(page).toHaveURL(/\/#questions$/);
+    expect(await page.evaluate(() => scrollY)).toBeGreaterThan(100);
+  }
+});
+
 test('navbar social links remain usable when the star badge fails and on phones', async ({
   page,
 }) => {
@@ -213,6 +252,9 @@ test('boxed blocks lift on hover without changing layout and respect reduced mot
     const blocks = page.locator(selector);
     expect(await blocks.count()).toBeGreaterThan(0);
     for (const block of await blocks.all()) {
+      const lift = await block.evaluate((el) =>
+        el.matches('.feature-card, .step-list li, .faq-list details') ? 6 : 2,
+      );
       await page.mouse.move(0, 0);
       await block.scrollIntoViewIfNeeded();
       await expect
@@ -225,12 +267,12 @@ test('boxed blocks lift on hover without changing layout and respect reduced mot
       await block.hover();
       await expect
         .poll(() => block.evaluate((el) => getComputedStyle(el).transform))
-        .toBe('matrix(1, 0, 0, 1, -2, -2)');
+        .toBe(`matrix(1, 0, 0, 1, -${lift}, -${lift})`);
       const after = await block.boundingBox();
       expect(after!.width).toBe(before!.width);
       expect(after!.height).toBe(before!.height);
-      expect(after!.x).toBeCloseTo(before!.x - 2);
-      expect(after!.y).toBeCloseTo(before!.y - 2);
+      expect(after!.x).toBeCloseTo(before!.x - lift);
+      expect(after!.y).toBeCloseTo(before!.y - lift);
       expect(
         await block.evaluate((el) => getComputedStyle(el).boxShadow),
       ).not.toBe(shadow);
@@ -247,7 +289,16 @@ test('boxed blocks lift on hover without changing layout and respect reduced mot
   };
   await page.goto('/');
   await page.getByLabel('Destination URL').waitFor();
-  await checkBlocks('.bench, .feature-card, .step-list li, .faq-list details');
+  const bench = page.locator('.hero .bench');
+  const shadow = await bench.evaluate((el) => getComputedStyle(el).boxShadow);
+  await bench.hover();
+  await expect
+    .poll(() => bench.evaluate((el) => getComputedStyle(el).transform))
+    .toBe('none');
+  await expect
+    .poll(() => bench.evaluate((el) => getComputedStyle(el).boxShadow))
+    .toBe(shadow);
+  await checkBlocks('.feature-card, .step-list li, .faq-list details');
   await page.goto('/login');
   await page.getByRole('button', { name: 'Use test account' }).waitFor();
   await checkBlocks('.auth-poster, .auth-content');

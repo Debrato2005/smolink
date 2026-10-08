@@ -21,11 +21,21 @@ Low-level API/configuration modules must not import routes or features. Workspac
 
 ## Routing and state
 
-`App.tsx` registers routes, the fallback, and the shell. `NavigationFocus.tsx` updates the title and focuses the main landmark after path navigation. It preserves initial page focus and native history behavior. Hashes never enter document titles.
+`App.tsx` registers routes, the fallback, and the shell. `NavigationFocus.tsx` updates the title and focuses the main landmark after path navigation. It preserves initial page focus. Hashes never enter document titles.
+
+Home reload starts at the top of the hero. Before rendering, `main.tsx` detects a reload on the root path, selects manual scroll restoration, removes the section fragment, and resets scrolling. Query parameters stay in place. Normal section links and initial deep links still scroll to their targets. Other routes keep their existing startup behavior.
 
 Local React state owns input and async outcome. A ref owns the pending request and prevents duplicate submission before a React rerender. The feature aborts its request on unmount and rejects late updates. A new input removes its previous result. No global store, server cache, or duplicated response owner exists.
 
 Dashboard search, status, sort, and page live in router query parameters. Updates read the committed `window.location.search`, not the hook value, because router navigations run as transitions and a quick second edit would otherwise overwrite the first. `useResource` owns one cancellable read per loader and rejects stale results. Analytics ranges also live in the query string. Passwords and one-time tokens do not. Feature state owns transient form values. A future session owner owns account identity and lifecycle. Server results need one owner per query, with explicit refresh and invalidation after confirmed mutation.
+
+## Shared control composition
+
+The expiry control has one calendar trigger. Its popup contains the calendar, editable date and time, timezone hint, Clear, and Done. Calendar selection preserves the time. The field error stays beside the trigger. The calendar loads only when needed and shows a skeleton during the download.
+
+The workspace uses a paper sidebar with grouped navigation, a yellow current-page marker, and a collapse control. Collapsed desktop navigation keeps accessible link names. Mobile collapse hides the workspace navigation until expansion. Status and analytics ranges use Base UI Select. Sort uses a searchable Base UI Combobox. Query parameters still own filter state.
+
+Contact me opens a dialog with Name, Email, and Message fields. Open email draft prepares a mailto link to debrato2005@gmail.com. The visitor sends the message from their email app. The interface never claims delivery. Contact values stay in memory.
 
 ## API transport and contracts
 

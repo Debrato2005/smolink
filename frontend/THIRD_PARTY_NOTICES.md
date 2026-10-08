@@ -8,4 +8,8 @@ The QR preview uses [node-qrcode](https://github.com/soldair/node-qrcode) 1.5.4 
 
 GitHub and X icon paths come from [Simple Icons](https://github.com/simple-icons/simple-icons) under CC0. The [license](public/licenses/simple-icons.txt) ships with the app. No icon package is installed.
 
+React DayPicker and its date helpers keep their full MIT notices in the public license folder. The build copies these notices unchanged.
+
+[React DayPicker](public/licenses/react-day-picker.txt), [date-fns](public/licenses/date-fns.txt), [date-fns timezone helpers](public/licenses/date-fns-tz.txt), [date-fns-jalali](public/licenses/date-fns-jalali.txt), and [Hijri converter](public/licenses/hijri-converter.txt).
+
 The [Source Ledger](docs/SOURCE_LEDGER.md) records adopted source, versions, alternatives, consumers, and replacement boundaries. This file preserves notices; it does not replace dependency provenance.

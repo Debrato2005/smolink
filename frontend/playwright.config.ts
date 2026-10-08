@@ -11,7 +11,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   testMatch: production
     ? '**/production.spec.ts'
-    : '**/{smoke,product}.spec.ts',
+    : '**/{smoke,product,controls}.spec.ts',
   workers: 3,
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',

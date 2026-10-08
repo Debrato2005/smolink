@@ -1,47 +1,102 @@
+import type { ReactNode } from 'react';
+import { Icon } from './ui/Icon';
+
 export function HeroBackdrop() {
   return (
-    <svg
-      className="hero-backdrop"
-      viewBox="0 0 1536 1024"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path
-        className="hero-backdrop-fill"
-        d="M110 710C270 470 940 120 1210 125C1410 125 1510 305 1410 470C1290 665 565 1015 265 960C85 928 25 840 110 710Z"
-      />
-      <path
+    <>
+      <svg
+        className="hero-backdrop"
+        viewBox="0 0 1536 1024"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <ellipse
+          className="hero-backdrop-fill"
+          cx="768"
+          cy="512"
+          rx="700"
+          ry="280"
+          transform="rotate(-24 768 512)"
+        />
+      </svg>
+      <svg
         className="hero-ink-rays"
-        d="M1255 85l-6-55M1320 99l28-49M1370 139l43-30"
-      />
-    </svg>
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path d="M20 35l-5-28M48 40l15-26M73 54l22-16" />
+      </svg>
+    </>
   );
 }
 
 export function HeroLinkExample() {
   return (
     <div className="hero-link-illustration">
-      <span className="hero-link-sticker hero-link-long">
-        example.com/a/very/long/link
-        <span>/that/keeps/going/on/and/on/and/on</span>
-      </span>
+      <HeroSticker className="hero-link-long" label="Before">
+        <span className="hero-link-original">
+          https://example.com/posts/
+          <span>this-is-a-very-long-link-</span>
+          <span>that-goes-on-and-on-and-on</span>
+        </span>
+      </HeroSticker>
       <svg
         className="hero-link-arrow"
-        viewBox="0 0 100 60"
+        viewBox="0 0 24 24"
         aria-hidden="true"
         focusable="false"
       >
-        <path d="M8 38C26 10 55 12 82 36M80 18l6 21-22-3" />
+        <path d="M4 12H20M12 4L20 12L12 20" />
       </svg>
-      <span className="hero-link-sticker hero-link-short">smol.link/idea</span>
-      <svg
-        className="hero-link-rays"
-        viewBox="0 0 100 100"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path d="M25 24l-5-15M48 24l5-16M68 33l14-10" />
-      </svg>
+      <span className="hero-cut-line" aria-hidden="true">
+        <Icon name="scissors" />
+      </span>
+      <HeroSticker className="hero-link-short" label="After" sparkle>
+        smol.link/idea
+      </HeroSticker>
     </div>
+  );
+}
+
+function HeroSticker({
+  className,
+  children,
+  label,
+  sparkle = false,
+}: {
+  className: string;
+  children: ReactNode;
+  label: string;
+  sparkle?: boolean;
+}) {
+  return (
+    <span className={`hero-link-sticker ${className}`}>
+      <span className="hero-sticker-label">{label}</span>
+      <svg
+        className="hero-sticker-shape"
+        viewBox="0 0 320 112"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          vectorEffect="non-scaling-stroke"
+          d="M16 3H304A13 13 0 0 0 317 16V24Q305 24 305 32Q305 40 317 40V48Q305 48 305 56Q305 64 317 64V72Q305 72 305 80Q305 88 317 88V96A13 13 0 0 0 304 109H16A13 13 0 0 0 3 96V88Q15 88 15 80Q15 72 3 72V64Q15 64 15 56Q15 48 3 48V40Q15 40 15 32Q15 24 3 24V16A13 13 0 0 0 16 3Z"
+        />
+      </svg>
+      <span className="hero-sticker-text">{children}</span>
+      {sparkle && (
+        <svg
+          className="hero-link-rays"
+          viewBox="0 0 100 60"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M22 44l-12-16M50 34V10M78 44l12-16" />
+        </svg>
+      )}
+    </span>
   );
 }
