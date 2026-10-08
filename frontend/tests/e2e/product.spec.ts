@@ -497,3 +497,73 @@ test('Google sign-in is offered beside email and reaches the workspace', async (
     await page.evaluate(() => localStorage.length + sessionStorage.length),
   ).toBe(0);
 });
+
+test('desktop shortener centers its panel and expands upward and downward with output below input', async ({
+  page,
+}) => {
+  for (const [width, height] of [
+    [1366, 768],
+    [1440, 900],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    const heading = page.getByRole('heading', { level: 1 });
+    const destination = page.getByLabel('Destination URL');
+    await destination.fill('https://example.com/a-long-story-to-share');
+    const headingBox = await heading.boundingBox();
+    const fieldBox = await destination.boundingBox();
+    expect(fieldBox!.x).toBeGreaterThan(headingBox!.x + headingBox!.width);
+    const panel = page.locator('.hero .bench');
+    const before = (await panel.boundingBox())!;
+    const strip = (await page
+      .getByRole('list', { name: 'Highlights' })
+      .boundingBox())!;
+    const header = (await page.locator('.site-header').boundingBox())!;
+    expect(Math.abs(strip.y + strip.height - height)).toBeLessThan(1);
+    expect(
+      Math.abs(
+        before.y + before.height / 2 - (header.y + header.height + strip.y) / 2,
+      ),
+    ).toBeLessThan(1);
+    await page.screenshot({
+      path: `test-results/shortener-centered-idle-${width}.png`,
+    });
+    await page.getByRole('button', { name: 'Shorten URL' }).click();
+    const result = page.getByLabel('Short URL', { exact: true });
+    await expect(result).toHaveValue(/https:\/\/smolink\.test\//);
+    await expect(result).toBeFocused();
+    await page.locator('.ticket-result').evaluate(async (element) => {
+      await Promise.all(
+        element.getAnimations().map((animation) => animation.finished),
+      );
+    });
+    const after = (await panel.boundingBox())!;
+    const form = (await panel.locator('form').boundingBox())!;
+    const ticket = (await panel.locator('.ticket-result').boundingBox())!;
+    expect(ticket.y).toBeGreaterThan(form.y + form.height);
+    expect(after.y).toBeLessThan(before.y);
+    expect(after.y + after.height).toBeGreaterThan(before.y + before.height);
+    expect(
+      Math.abs(after.y + after.height / 2 - before.y - before.height / 2),
+    ).toBeLessThan(3);
+    const resultBox = await result.boundingBox();
+    expect(resultBox!.y).toBeGreaterThan(76);
+    expect(resultBox!.y + resultBox!.height).toBeLessThan(height);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    await page.screenshot({
+      path: `test-results/shortener-split-${width}.png`,
+      animations: 'disabled',
+    });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page
+    .getByLabel('Destination URL')
+    .fill('https://example.com/another-long-story-to-share');
+  await page.getByRole('button', { name: 'Shorten URL' }).click();
+  const result = page.getByLabel('Short URL', { exact: true });
+  await expect(result).toBeFocused();
+  const resultBox = await result.boundingBox();
+  expect(resultBox!.y).toBeGreaterThan(64);
+  expect(resultBox!.y + resultBox!.height).toBeLessThan(844);
+});

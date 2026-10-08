@@ -58,27 +58,31 @@ export function Home({ links }: { links: ProductGateway }) {
   ] as const;
   return (
     <>
-      <section className="hero" aria-labelledby="hero-heading">
-        <div className="container hero-inner">
-          <h1 id="hero-heading" className="display">
-            Long story. <span className="pop">Smol</span> link.
-          </h1>
-          <p className="hero-lede">
-            Paste a long link. Get a short one you can share, print, or say out
-            loud.
-          </p>
-          <ShortenPreview links={links} />
-        </div>
-      </section>
+      <div className="home-intro">
+        <section className="hero" aria-labelledby="hero-heading">
+          <div className="container hero-inner">
+            <div className="hero-copy">
+              <h1 id="hero-heading" className="display">
+                Long story. <span className="pop">Smol</span> link.
+              </h1>
+              <p className="hero-lede">
+                Paste a long link. Get a short one you can share, print, or say
+                out loud.
+              </p>
+            </div>
+            <ShortenPreview links={links} />
+          </div>
+        </section>
 
-      <ul className="strip" aria-label="Highlights">
-        {highlights.map((item) => (
-          <li key={item}>
-            <Icon name="spark" size={18} />
-            {item}
-          </li>
-        ))}
-      </ul>
+        <ul className="strip" aria-label="Highlights">
+          {highlights.map((item) => (
+            <li key={item}>
+              <Icon name="spark" size={18} />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <section
         className="features container"

@@ -82,6 +82,26 @@ Build, lint, formatting, document checks, and whitespace checks passed. Four pro
 
 New social-link documentation prose scored 1.98 findings per 100 words. The temporary review server on port 3100 stopped after checks.
 
+## Split hero follow-up
+
+The user requested a 40/60 desktop layout to keep the newest short link visible without a manual scroll. The headline and description now sit on the left. The form and newest result share the right panel. At widths of 900px or less, the columns stack.
+
+The result appears above the form. Its URL receives focus and selects its text. Focus preserves the scroll position when the result is visible. The browser brings an offscreen result into view. The test first failed against the stacked layout. The first focus method moved the desktop scroll position by 74px. Focus with `preventScroll` resolved that movement.
+
+The final Chromium fixture suite passed all 24 tests. The focused test checked 1366 × 768 and 1440 × 900 with no desktop scrolling. It also checked result visibility at 390 × 844. Four production Chromium checks passed with injected API responses. Build, lint, formatting, document checks, and whitespace checks passed. Visual review covered desktop idle and result states, plus the mobile layout. Firefox and WebKit did not run. No backend or root graph files changed.
+
+Result captures: `test-results/shortener-split-1366.png` and `test-results/shortener-split-1440.png`. Idle captures: `test-results/chromium-1440.png` and `test-results/chromium-390.png`. Build sizes: JavaScript 370.35 kB (gzip 117.50 kB), CSS 34.82 kB (gzip 7.34 kB). New stable prose scored 0.00 findings per 100 words. The handoff draft scored 1.12 findings per 100 words.
+
+## Centered panel follow-up
+
+The user requested output below input, with the panel centered and the yellow strip at the bottom on initial load. The result now follows the form. The hero and strip share an intro that fills the remaining desktop viewport. The card grows upward and downward around its center when the content fits. Taller content extends the page. Mobile keeps the stacked layout and brings the result into view when needed.
+
+The browser check first failed because the strip ended 219px above the viewport bottom. After the change, the check passed at 1366 × 768 and 1440 × 900. It checks the strip position, center alignment, output order, growth in both directions, and result visibility without desktop scrolling.
+
+The final Chromium fixture suite passed all 24 tests. Four production Chromium checks passed with injected API responses. Build, lint, formatting, document checks, and whitespace checks passed. Visual review covered idle and result states. Firefox and WebKit did not run. Backend and root graph files remain outside the write scope.
+
+Idle captures: `test-results/shortener-centered-idle-1366.png` and `test-results/shortener-centered-idle-1440.png`. Result captures: `test-results/shortener-split-1366.png` and `test-results/shortener-split-1440.png`. Build sizes: JavaScript 370.40 kB (gzip 117.50 kB), CSS 34.99 kB (gzip 7.37 kB). New prose scored 0.46 findings per 100 words.
+
 ## Blockers and cross-boundary dependencies
 
 The cross-boundary entries continue the supplied handoff. This task did not run backend or deployment tests. Source checks confirmed the missing PKCE helper and mounted route structure.

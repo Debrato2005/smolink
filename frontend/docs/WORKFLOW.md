@@ -34,7 +34,7 @@ Guest creation is first-class. Never force login before shortening.
 2. Optionally enter an alias (3–64 letters, numbers, or hyphens, saved in lowercase) and an expiry in the local timezone.
 3. Submit once. The form disables duplicate submission and keeps every value.
 4. Fixture mode returns a URL on the reserved `smolink.test` domain. Live mode uses the returned public URL after adapter checks and adds one line: short links start redirecting when the redirect service launches.
-5. The result ticket shows the short URL, the before and after length, and the expiry. If an alias makes the link longer, the ticket says so.
+5. The result ticket appears below the form and shows the short URL, the before and after length, and the expiry. Its short URL receives focus and selects its text. The browser brings the URL into view only when needed. If an alias makes the link longer, the ticket says so.
 6. Copy awaits `navigator.clipboard.writeText`. Denial shows a selectable manual-copy field. QR preview exists in fixture mode only.
 
 Field errors appear next to their fields. Conflicts (`409`), validation (`422`), limits (`429` with wait seconds), and service failures (`503`) use explicit text. A failure after dispatch warns that the link may exist. No failure becomes success, and no fixture replaces a live failure.

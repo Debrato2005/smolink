@@ -46,6 +46,10 @@ The navbar has boxed GitHub and X links. The GitHub badge reads the repository s
 
 The URL field and Shorten button must sit in the first viewport at 390 × 844. Long URLs never cause page overflow. The result ticket scales its URL text with `cqi` units. Shared inputs use `min-width: 0` so intrinsic control widths cannot widen a page.
 
+The home hero uses a 40/60 split on desktop. The headline and description sit on the left. The form and newest result share the right panel. The hero and yellow highlights strip fill the first viewport when their content fits. The panel stays vertically centered as the result appears below the form. Taller content can extend the page. At widths of 900px or less, the columns stack in normal document flow.
+
+The result URL receives focus and selects its text. Focus keeps the scroll position when the URL is visible. If the URL is outside the viewport or behind the header, the browser brings it into view.
+
 ## Component sources and grammar
 
 Check current neobrutalism.dev first. Map every adopted style to Smolink tokens. The button keeps the Base UI primitive with plain CSS. Style real anchors directly when navigation needs button styling. Never render links through the Button primitive.

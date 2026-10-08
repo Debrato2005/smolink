@@ -23,6 +23,18 @@ type State =
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 function Ticket({ link, links }: { link: CreatedLink; links: ProductGateway }) {
+  const resultInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const input = resultInput.current;
+    if (!input) return;
+    input.focus({ preventScroll: true });
+    const bounds = input.getBoundingClientRect();
+    const headerBottom =
+      document.querySelector('.site-header')?.getBoundingClientRect().bottom ??
+      0;
+    if (bounds.top < headerBottom || bounds.bottom > window.innerHeight)
+      input.scrollIntoView({ block: 'center' });
+  }, []);
   const before = characters(link.destination);
   const after = characters(link.shortUrl);
   const saved = before - after;
@@ -44,6 +56,7 @@ function Ticket({ link, links }: { link: CreatedLink; links: ProductGateway }) {
           className="ticket-url mono"
           style={{ '--chars': after } as CSSProperties}
           readOnly
+          ref={resultInput}
           value={link.shortUrl}
           onFocus={(e) => e.target.select()}
         />
