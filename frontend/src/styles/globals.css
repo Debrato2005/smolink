@@ -789,6 +789,21 @@ table {
   pointer-events: none;
   transform: translateY(-50%);
 }
+.hero-backdrop-fill {
+  fill: var(--accent-blue);
+}
+.hero-ink-rays,
+.hero-link-arrow,
+.hero-link-rays {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--ink);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hero-ink-rays {
+  stroke-width: 16px;
+}
 .hero-inner {
   position: relative;
   z-index: 1;
@@ -844,11 +859,55 @@ table {
   margin-top: var(--space-1);
 }
 .hero-link-illustration {
+  position: relative;
+  container-type: inline-size;
   width: 100%;
-  height: auto;
+  aspect-ratio: 3 / 1;
   max-height: 164px;
-  object-fit: contain;
-  object-position: left center;
+  text-align: left;
+}
+.hero-link-sticker {
+  position: absolute;
+  display: block;
+  padding: 2cqw;
+  border: var(--border-default) solid var(--ink);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  font-weight: 700;
+  white-space: nowrap;
+  transform: rotate(-6deg);
+}
+.hero-link-long {
+  top: 36%;
+  left: 5%;
+  background: var(--paper);
+  font-size: 2.65cqw;
+  line-height: 1.35;
+}
+.hero-link-long > span {
+  display: block;
+}
+.hero-link-short {
+  top: 45%;
+  right: 5%;
+  background: var(--accent-yellow);
+  font-size: 3.5cqw;
+  line-height: 1.2;
+  transform: rotate(-10deg);
+}
+.hero-link-arrow {
+  position: absolute;
+  top: 20%;
+  left: 58%;
+  width: 14%;
+  stroke-width: 7px;
+}
+.hero-link-rays {
+  position: absolute;
+  top: 5%;
+  right: 1%;
+  width: 22%;
+  stroke-width: 5px;
 }
 .hero .bench {
   width: 100%;
@@ -1792,7 +1851,6 @@ table {
     width: 100%;
     max-width: 400px;
     max-height: 128px;
-    object-position: center;
   }
   .header-inner {
     padding-inline: 16px;

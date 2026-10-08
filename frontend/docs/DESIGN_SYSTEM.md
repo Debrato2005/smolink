@@ -48,11 +48,13 @@ The URL field and Shorten button must sit in the first viewport at 390 × 844. L
 
 The home hero uses a 40/60 split on desktop. The headline and description sit on the left. The form and newest result share the right panel. The hero and yellow highlights strip fill the first viewport when their content fits. The panel stays vertically centered as the result appears below the form. Taller content can extend the page. At widths of 900px or less, the columns stack in normal document flow.
 
-The hero copy starts with a paper label and the headline Long links? Smol it. The headline uses the installed Inter 900 font through a separate family alias. This keeps other Inter weights unchanged. The second line uses a flat yellow highlight with an ink border and hard shadow. A transparent sticker illustration shows a long example URL becoming a short link. It has one accessible description. On phones, the copy is centered and the illustration scales down.
+The hero copy starts with a paper label and the headline Long links? Smol it. The headline uses the installed Inter 900 font through a separate family alias. This keeps other Inter weights unchanged. The second line uses a flat yellow highlight with an ink border and hard shadow.
+
+The hero shows the example links as real text in a React component. CSS supplies the sticker borders, yellow fill, rotation, and hard shadows. Inline SVG supplies the curved arrow, ink rays, and blue backdrop. Decorative SVG stays outside the accessibility tree and ignores pointer input. On phones, the copy remains centered and the stickers scale with their container.
 
 The user-selected hero reference permits a rounded label, 12px panel corners, and 6px input and button corners in this section. The rest of the interface keeps square corners. The hero Shorten button uses yellow with black text and a hard shadow.
 
-The hero uses a pale blue surface with the original grid across the full section. A static blue illustration sits behind the form and ignores pointer input. On phones, the illustration moves behind the stacked form. The grid keeps its original size and alignment. The headline highlight has a black border and hard shadow. The long-link sticker now ends with /that/keeps/going/on/and/on/and/on.
+The hero uses a pale blue surface with the original grid across the full section. A static blue SVG sits behind the form and ignores pointer input. On phones, the backdrop moves behind the stacked form. The grid keeps its original size and alignment. The headline highlight has a black border and hard shadow. The long-link sticker ends with /that/keeps/going/on/and/on/and/on.
 
 The result URL receives focus and selects its text. Focus keeps the scroll position when the URL is visible. If the URL is outside the viewport or behind the header, the browser brings it into view.
 

@@ -101,7 +101,11 @@ These sources are references, not runtime dependencies or permission to copy art
 
 On October 8, 2026, the user supplied two hero references and requested components from [neobrutalism.dev](https://www.neobrutalism.dev/docs) and [neubrutalism.com](https://neubrutalism.com/). The [Button](https://www.neobrutalism.dev/docs/button), [Card](https://www.neobrutalism.dev/docs/card), [Badge](https://www.neobrutalism.dev/docs/badge), and [Input](https://www.neobrutalism.dev/docs/input) documentation informed the hero control treatment. The existing Base UI button still owns interaction behavior. No component CLI or package installation ran.
 
-The hero uses the installed Inter 900 font file through a separate CSS family alias. Existing font license notices apply. The transparent sticker artwork in public/hero-link-stickers.png was generated with the built-in image tool from the user's copy reference. It is an illustration, not a generated result or live link. Its natural size is 2172 by 724 pixels. The user later requested a longer URL ending and a separate 1536 by 1024 blue background illustration. Both use transparent built-in image output. The prompt and visual comparison receipts are recorded in [design-qa.md](../design-qa.md).
+The hero uses the installed Inter 900 font file through a separate CSS family alias. Existing font license notices apply.
+
+Component sources were checked again on October 8, 2026. Neobrutalism.dev supplies ready-made React [cards](https://www.neobrutalism.dev/docs/card), [badges](https://www.neobrutalism.dev/docs/badge), and [SVG stars](https://www.neobrutalism.dev/docs/stars). [Neubrutalism.com](https://neubrutalism.com/#code) supplies CSS examples for cards, buttons, and fields. Neither reviewed collection supplied the exact long-link to short-link composition. HeroArtwork.tsx uses original React, CSS, and SVG with existing Smolink tokens. No upstream component source was copied for this change. No package or CLI installation ran.
+
+The earlier generated PNG files are historical artwork. The current hero no longer uses them. Both unused files were removed from public assets. The earlier prompts and browser comparison receipts remain historical evidence in [design-qa.md](../design-qa.md).
 
 ## Browser and security sources
 

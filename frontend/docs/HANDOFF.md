@@ -132,6 +132,25 @@ Artwork paths: public/hero-link-stickers.png and public/hero-blue-backdrop.png. 
 
 Commands: `npm run lint`, `npm run build`, `npm run docs:check`, `git diff --check`, and `SMOLINK_E2E_REUSE=1 npm run test:e2e -- --project=chromium --grep "desktop shortener|home reflows"`. New prose scored 0.00 findings per 100 words.
 
+## Hero component conversion — October 8, 2026
+
+The user requested real components and research into ready-made alternatives. The URL labels now remain selectable and editable in source. The full grid, headline box, pale blue surface, 40/60 split, and centered form remain in place. The newest result still appears below the input.
+
+`src/components/HeroArtwork.tsx` supplies real text with CSS stickers and decorative inline SVG. Both unused hero PNG files were removed from public assets. Earlier prompts and comparison receipts remain historical evidence. Current captures and browser checks are in `.local/hero-components/`. The source ledger records the reviewed cards, badges, SVG stars, and CSS patterns. No package or CLI installation ran.
+
+Checks from `frontend/`, with Node 22.23.2 and the provisioned Chromium runtime:
+
+```bash
+SMOLINK_E2E_REUSE=1 npm run test:e2e -- --project=chromium --grep 'desktop shortener|home reflows'
+npm run build
+npm run lint
+npm run format:check
+npm run docs:check
+git diff --check
+```
+
+Six existing Chromium fixture checks passed, including responsive reflow and centered panel expansion. Build, TypeScript, lint, formatting, document structure, and whitespace checks passed. Browser checks at 1440, 390, and 320px confirmed selectable text, the original full grid, no raster hero requests, and no page errors. The prose draft lint score was 2.03 findings per 100 words. Firefox, WebKit, and live backend checks did not run for this change. Root graph maintenance remains outside the frontend write scope. The preview is http://127.0.0.1:3100/.
+
 ## Blockers and cross-boundary dependencies
 
 The cross-boundary entries continue the supplied handoff. This task did not run backend or deployment tests. Source checks confirmed the missing PKCE helper and mounted route structure.

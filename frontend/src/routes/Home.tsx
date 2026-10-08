@@ -1,5 +1,6 @@
 import { ShortenPreview } from '../features/shorten/ShortenPreview';
 import { Icon } from '../components/ui/Icon';
+import { HeroBackdrop, HeroLinkExample } from '../components/HeroArtwork';
 import type { ProductGateway } from '../lib/api/contracts';
 
 const highlights = [
@@ -60,14 +61,7 @@ export function Home({ links }: { links: ProductGateway }) {
     <>
       <div className="home-intro">
         <section className="hero" aria-labelledby="hero-heading">
-          <img
-            className="hero-backdrop"
-            src="/hero-blue-backdrop.png"
-            alt=""
-            aria-hidden="true"
-            width="1536"
-            height="1024"
-          />
+          <HeroBackdrop />
           <div className="container hero-inner">
             <div className="hero-copy">
               <span className="hero-eyebrow">Less URL. More you.</span>
@@ -79,13 +73,7 @@ export function Home({ links }: { links: ProductGateway }) {
                 Paste a long URL, get a smol link in seconds.
                 <span>No sign-up needed. Just shorten and share.</span>
               </p>
-              <img
-                className="hero-link-illustration"
-                src="/hero-link-stickers.png"
-                alt="An example URL that keeps going on and on and on becomes smol.link/idea."
-                width="1536"
-                height="512"
-              />
+              <HeroLinkExample />
             </div>
             <ShortenPreview links={links} />
           </div>

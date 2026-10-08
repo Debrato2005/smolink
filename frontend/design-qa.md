@@ -47,7 +47,7 @@ Build and lint passed. These checks do not prove live backend integration. Firef
 
 ## Artwork provenance and prompt
 
-Saved asset: `public/hero-link-stickers.png`. Natural dimensions: 2172 by 724 pixels. Current file size: 685548 bytes. The text edit below supersedes the initial prompt. Tool mode: built-in image generation with transparent output and the supplied copy reference. No fallback CLI ran.
+Historical asset: `public/hero-link-stickers.png`. Natural dimensions: 2172 by 724 pixels. File size at this checkpoint: 685548 bytes. The text edit below supersedes the initial prompt. Tool mode: built-in image generation with transparent output and the supplied copy reference. No fallback CLI ran. The component conversion below removed this public asset.
 
 Prompt:
 
@@ -78,6 +78,14 @@ The heavy type and black box match the requested treatment. The pale blue ground
 
 Six focused Chromium fixture checks passed on this source state. Build and lint passed. There are no remaining P0, P1, or P2 findings in this scope. The full grid differs from the partial grid in the second reference by direct user instruction.
 
-Saved assets: `public/hero-link-stickers.png` (2172 by 724 pixels, 685548 bytes) and `public/hero-blue-backdrop.png` (1536 by 1024 pixels, 1121812 bytes). Both use transparent output from the built-in image tool. Exact text-edit and blue-asset prompts: `.local/hero-reference-review/refinement-prompts.json`. The original sticker is retained in `.local/hero-reference-review/stickers-before-longer-text.png`. Grid and image checks are in `.local/hero-reference-review/refinement-checks.json`.
+Historical assets: `public/hero-link-stickers.png` (2172 by 724 pixels, 685548 bytes) and `public/hero-blue-backdrop.png` (1536 by 1024 pixels, 1121812 bytes). Both used transparent output from the built-in image tool. The component conversion below removed both public assets. Exact text-edit and blue-asset prompts: `.local/hero-reference-review/refinement-prompts.json`. The original sticker is retained in `.local/hero-reference-review/stickers-before-longer-text.png`. Grid and image checks are in `.local/hero-reference-review/refinement-checks.json`.
+
+## React component conversion — October 8, 2026
+
+The user requested real components and research into ready-made alternatives. The URL labels now remain selectable and editable in source. The full grid, headline box, pale blue surface, 40/60 split, and centered form remain in place. The newest result still appears below the input.
+
+Current source: `src/components/HeroArtwork.tsx`. CSS styles real text as stickers. Inline SVG draws the arrow, ink rays, and blue shape. The research receipt is in [SOURCE_LEDGER.md](docs/SOURCE_LEDGER.md#hero-reference-research).
+
+Before capture: `.local/hero-components/before.png`. Current captures: `.local/hero-components/after-1440.png`, `after-390.png`, and `after-320.png`. Browser checks in `.local/hero-components/checks.json` confirm selectable URL text, the original full grid, no raster hero requests, and no page errors. Six existing Chromium fixture checks passed, including responsive reflow and centered panel expansion. Firefox, WebKit, and live backend checks did not run for this change.
 
 Current final result: passed
