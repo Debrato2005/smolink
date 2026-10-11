@@ -3,6 +3,67 @@ import AxeBuilder from '@axe-core/playwright';
 
 test.use({ timezoneId: 'Asia/Kolkata' });
 
+for (const width of [320, 901, 1051, 1440]) {
+  test(`account poster stays balanced and within the page at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    for (const path of ['/login', '/register']) {
+      await page.goto(path);
+      const form = page.locator('.auth-content');
+      await expect(
+        form.getByRole('button', { name: 'Continue with Google' }),
+      ).toBeEnabled();
+      const poster = page.locator('.auth-poster');
+      if (width > 860) {
+        const card = (await poster.boundingBox())!;
+        const content = (await form.boundingBox())!;
+        expect(card.height).toBeGreaterThanOrEqual(500);
+        expect(card.height).toBeLessThanOrEqual(600);
+        expect(Math.abs(card.width - content.width)).toBeLessThan(1);
+        expect(
+          Math.abs(card.y + card.height / 2 - content.y - content.height / 2),
+        ).toBeLessThan(1);
+        const rows = await poster
+          .locator('.poster-stubs span')
+          .evaluateAll((elements) =>
+            elements.map((element) => {
+              const rect = element.getBoundingClientRect();
+              return {
+                x: rect.x,
+                width: rect.width,
+                fits: element.scrollWidth <= element.clientWidth,
+              };
+            }),
+          );
+        for (const row of rows) {
+          expect(Math.abs(row.x - rows[0]!.x)).toBeLessThan(1);
+          expect(Math.abs(row.width - rows[0]!.width)).toBeLessThan(1);
+          expect(row.fits).toBe(true);
+        }
+      } else {
+        await expect(poster).toBeHidden();
+        const content = (await form.boundingBox())!;
+        expect(
+          Math.abs(content.x + content.width / 2 - width / 2),
+        ).toBeLessThan(1);
+      }
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        ),
+      ).toBe(false);
+      expect(
+        (await new AxeBuilder({ page }).include('.auth-layout').analyze())
+          .violations,
+      ).toEqual([]);
+      await page.screenshot({
+        path: testInfo.outputPath(`${path.slice(1)}.png`),
+      });
+    }
+  });
+}
+
 test('calendar sets a local expiry and preserves the time when the date changes', async ({
   page,
 }) => {
@@ -86,6 +147,109 @@ test('contact fields compose an email draft and do not report a sent message', a
   await expect(dialog).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(contact).toBeFocused();
+});
+
+test('wide workspace fills the available width for links and analytics', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Use test account' }).click();
+  const navigation = page.getByRole('navigation', {
+    name: 'Workspace navigation',
+  });
+  for (const width of [1920, 2560]) {
+    await page.setViewportSize({ width, height: 1080 });
+    for (const collapsed of [false, true]) {
+      if (collapsed)
+        await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+      await navigation
+        .getByRole('link', { name: 'All links', exact: true })
+        .click();
+      await expect(
+        page.getByRole('link', { name: 'portfolio', exact: true }),
+      ).toBeVisible();
+      const content = page.locator('.workspace-content');
+      const bounds = (await content.boundingBox())!;
+      expect(bounds.x + bounds.width).toBeCloseTo(width, 0);
+      await page.screenshot({
+        path: testInfo.outputPath(
+          `links-${width}-${collapsed ? 'collapsed' : 'expanded'}.png`,
+        ),
+      });
+      await navigation
+        .getByRole('link', { name: 'Create a link', exact: true })
+        .click();
+      const bench = page.locator('.workspace-create .bench');
+      await expect(bench).toBeVisible();
+      expect(
+        await bench.evaluate((element) => {
+          const content = element.closest('.workspace-content')!;
+          return Math.abs(
+            element.getBoundingClientRect().right -
+              content.getBoundingClientRect().right +
+              parseFloat(getComputedStyle(content).paddingRight),
+          );
+        }),
+      ).toBeLessThan(1);
+      await page
+        .getByLabel('Destination URL')
+        .fill('https://example.com/workspace-width');
+      await page
+        .getByLabel('Custom alias')
+        .fill(`width-${width}-${collapsed ? 'collapsed' : 'expanded'}`);
+      await page.getByRole('button', { name: 'Shorten URL' }).click();
+      await expect(
+        page.getByText('Your link is ready', { exact: true }),
+      ).toBeVisible();
+      await page.screenshot({
+        path: testInfo.outputPath(
+          `create-${width}-${collapsed ? 'collapsed' : 'expanded'}.png`,
+        ),
+        animations: 'disabled',
+      });
+      await navigation
+        .getByRole('link', { name: 'All links', exact: true })
+        .click();
+      await page.getByRole('link', { name: 'portfolio', exact: true }).click();
+      await expect(page.locator('.detail-meta')).toBeVisible();
+      const meta = (await page.locator('.detail-meta').boundingBox())!;
+      const danger = (await page.locator('.danger-zone').boundingBox())!;
+      const editor = (await page.locator('.edit-form').boundingBox())!;
+      expect(Math.abs(editor.width - meta.width)).toBeLessThan(1);
+      expect(Math.abs(meta.height - danger.height)).toBeLessThan(1);
+      expect(Math.abs(editor.y - meta.y)).toBeLessThan(3);
+      expect(
+        Math.abs(editor.y + editor.height - danger.y - danger.height),
+      ).toBeLessThan(3);
+      expect(Math.abs(meta.x - danger.x)).toBeLessThan(3);
+      expect(danger.y - meta.y - meta.height).toBeGreaterThanOrEqual(20);
+      expect(danger.y - meta.y - meta.height).toBeLessThanOrEqual(30);
+      await page.screenshot({
+        path: testInfo.outputPath(
+          `details-${width}-${collapsed ? 'collapsed' : 'expanded'}.png`,
+        ),
+      });
+      await page.getByRole('link', { name: 'View analytics' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Link analytics', exact: true }),
+      ).toBeVisible();
+      await expect(page.locator('.chart-panel')).toBeVisible();
+      const analytics = (await content.boundingBox())!;
+      expect(analytics.x + analytics.width).toBeCloseTo(width, 0);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        ),
+      ).toBe(false);
+      await page.screenshot({
+        path: testInfo.outputPath(
+          `analytics-${width}-${collapsed ? 'collapsed' : 'expanded'}.png`,
+        ),
+      });
+      if (collapsed)
+        await page.getByRole('button', { name: 'Expand sidebar' }).click();
+    }
+  }
 });
 
 test('workspace controls filter links, keep URL state and collapse the sidebar', async ({

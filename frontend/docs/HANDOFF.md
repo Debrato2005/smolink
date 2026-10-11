@@ -443,3 +443,43 @@ The compact-height check first failed at 1440px: the footer was about 599px tall
 Command: `npm run test:e2e -- --project=chromium --grep "footer links"`. Captures: `test-results/fixture/controls-footer-links-contact-and-*/footer.png`. Next task: connect Ko-fi after the user supplies its profile URL.
 
 Prose lint: 0.99 findings per 100 words.
+
+## Account poster correction
+
+Replaced the oversized heading and staggered link boxes with a compact heading and aligned rows. Narrowed the desktop composition and centered the poster beside the form. Existing account actions and production limits stay unchanged.
+
+The first desktop check failed because the old poster exceeded the height limit. Six Chromium checks passed after the change. Four layout checks cover sign-in and registration at 320px, 901px, 1051px, and 1440px. They check poster height, shared centers, row alignment, text fit, page overflow, and accessibility. Existing Google sign-in and hover checks also passed. Reviewed phone and desktop screenshots. Build, typecheck, and lint passed. These are fixture checks.
+
+Command: `npm run test:e2e -- --project=chromium --grep "account poster|Google sign-in|boxed blocks lift"`. Captures: `test-results/fixture/controls-account-poster-*/login.png` and `register.png`. Main production JavaScript: 500.05 kB, gzip 160.62 kB. The default Vite chunk warning remains. Root graph maintenance is outside the frontend write scope. Next task: connect Ko-fi after the user supplies its profile URL.
+
+Prose lint: 0.96 findings per 100 words.
+
+## Yellow account poster and wider workspace
+
+Enlarged the account poster and changed its background to pale yellow. Both desktop columns now share a width. Increased the heading and link-row sizes, centered the poster content vertically, and changed the borders and shadows to ink. Adjusted the form heading to fit the desktop column.
+
+Removed the workspace content width cap. The first wide-screen check found 492px of unused space at 1920px. The first account check also failed against the new minimum poster height. After the changes, seven Chromium checks passed. They cover account layouts at four widths, accessibility, hover, workspace controls, and wide links and analytics pages with both sidebar states. An additional capture check waited for the loaded chart. Reviewed screenshots at 1920px and 2560px. Build, typecheck, and lint passed. These are fixture checks.
+
+Command: `npm run test:e2e -- --project=chromium --grep "wide workspace|workspace controls|account poster|boxed blocks lift"`. Captures remain in `test-results/fixture/controls-account-poster-*` and `controls-wide-workspace-*`. Main production JavaScript: 500.05 kB, gzip 160.62 kB. The default Vite chunk warning remains. Root graph maintenance is outside the frontend write scope. Next task: connect Ko-fi after the user supplies its profile URL.
+
+Prose lint: 1.78 findings per 100 words.
+
+## Create form width and link details spacing
+
+Removed the create form's separate width cap. Reworked the link summary into a compact identity and action row. Moved the delete card below the metadata beside the editor. The confirmation dialog keeps its existing behavior.
+
+The first create-width check failed with 756px left unused inside the workspace at 1920px. After the change, four focused Chromium checks passed. They cover wide workspace pages, narrow creation with expiry and QR, hover behavior, and confirmed deletion with cancellation. Wide checks cover 1920px and 2560px with both sidebar states. Creation produces a real fixture result before capture. Screenshots wait for the result reveal to finish. Reviewed create and detail captures. Build, typecheck, and lint passed. These are fixture checks.
+
+Commands: `npm run test:e2e -- --project=chromium --grep "wide workspace|narrow workspace|boxed blocks lift"` and `--grep "confirmed deletion"`. The final capture check ran separately. Captures remain in `test-results/fixture/controls-wide-workspace-*`. Main production JavaScript: 500.22 kB, gzip 160.65 kB. The default Vite chunk warning remains. Root graph maintenance is outside the frontend write scope. Next task: connect Ko-fi after the user supplies its profile URL.
+
+Prose lint: 0.88 findings per 100 words.
+
+## Symmetric detail cards
+
+Changed the detail layout from unequal columns to equal columns. The two right-hand cards now share a height, and their combined edges match the editor. Save and Delete use full-width buttons. Mobile cards keep natural heights.
+
+The first width check failed with a column difference of about 259px. After the change, four focused Chromium checks passed. They cover equal widths, matching outer edges and right-card heights at 1920px and 2560px, both sidebar states, narrow creation with expiry and QR, hover behavior, and confirmed deletion. Reviewed wide screenshots. Build, typecheck, and lint passed. These are fixture checks.
+
+Command: `npm run test:e2e -- --project=chromium --grep "wide workspace|narrow workspace|boxed blocks lift|confirmed deletion"`. Captures: `test-results/fixture/controls-wide-workspace-*/details-*.png`. Main production JavaScript: 500.22 kB, gzip 160.65 kB. The default Vite chunk warning remains. Root graph maintenance is outside the frontend write scope. Next task: connect Ko-fi after the user supplies its profile URL.
+
+Prose lint: 1.63 findings per 100 words.

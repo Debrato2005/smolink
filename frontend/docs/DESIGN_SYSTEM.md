@@ -68,6 +68,18 @@ The QR skeleton uses three muted corner markers and soft blocks inside the fixed
 
 The frame keeps the same size when the image appears. The short URL and disabled download control reserve their final space during loading. Download becomes available after generation.
 
+## Account layout
+
+Account pages use equal desktop columns with a larger pale-yellow poster beside the form. Dark text, borders, and shadows keep the contrast clear. The poster's content is centered vertically. The poster and form share a vertical center. Three colored link rows share left and right edges. Below 860px, the poster is hidden and the form stays centered. Decorative link rows remain outside the accessibility tree.
+
+## Workspace layout
+
+Workspace content fills the available width beside the sidebar. Tables, summary strips, and analytics charts retain their side padding. Expanding or collapsing the sidebar changes the space available to the content. No fixed width cap leaves a blank strip on wide screens.
+
+The create form also fills the available workspace width. On wide desktop screens, the link summary puts its identity on the left and its actions on the right. Smaller screens stack those groups. Metadata and the delete card share a column beside the editor. Below the existing detail breakpoint, those cards follow the editor in one column.
+
+Desktop link details use equal-width columns. The editor and the combined metadata/delete column share top and bottom edges. The two right-hand cards have equal heights with one consistent gap. Save and Delete span their card widths. On smaller screens, the cards stack and use their natural heights.
+
 ## Footer
 
 The footer uses one compact row on desktop. A smaller original logo sits beside the GitHub creator credit and copyright. Contact, OnlyChai, and Ko-fi are the only actions. The headline, description, navigation columns, repository button, and large creator card were removed because they repeated existing content. Phones stack the brand and actions, with equal columns for the support buttons. The fixture-only Developer tools remain available.

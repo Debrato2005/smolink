@@ -188,15 +188,19 @@ export function LinkDetail({
                 <span>clicks</span>
               </div>
               <div className="ticket-body">
-                <span
-                  className={`status-label status-${linkStatus(data).toLowerCase()}`}
-                >
-                  <span aria-hidden="true" />
-                  {linkStatus(data)}
-                </span>
-                <h2 className="mono break-word">/{data.shortCode}</h2>
-                <p className="muted break-word">{data.shortUrl}</p>
-                <LinkActions key={data.shortUrl} link={data} links={links} />
+                <div className="link-summary-copy">
+                  <span
+                    className={`status-label status-${linkStatus(data).toLowerCase()}`}
+                  >
+                    <span aria-hidden="true" />
+                    {linkStatus(data)}
+                  </span>
+                  <h2 className="mono break-word">/{data.shortCode}</h2>
+                  <p className="muted break-word">{data.shortUrl}</p>
+                </div>
+                <div className="link-summary-actions">
+                  <LinkActions key={data.shortUrl} link={data} links={links} />
+                </div>
               </div>
             </section>
             {message && (
@@ -215,46 +219,49 @@ export function LinkDetail({
                   reload();
                 }}
               />
-              <aside className="detail-meta">
-                <h2>The little details</h2>
-                <dl>
-                  <dt>Created</dt>
-                  <dd>
-                    {new Date(data.createdAt).toLocaleDateString('en', {
-                      dateStyle: 'medium',
-                      timeZone: 'UTC',
-                    })}{' '}
-                    · UTC
-                  </dd>
-                  <dt>Lifetime clicks</dt>
-                  <dd>{data.clicks.toLocaleString()}</dd>
-                  <dt>Short code</dt>
-                  <dd className="mono break-word">{data.shortCode}</dd>
-                </dl>
-                <p className="field-help">
-                  The short code stays the same when you change the destination.
-                </p>
-              </aside>
-            </div>
-            <section className="danger-zone">
-              <div>
-                <h2>Time to let this one go?</h2>
-                <p>
-                  Deleting removes the link and its click history. You cannot
-                  undo it.
-                </p>
+              <div className="detail-side">
+                <aside className="detail-meta">
+                  <h2>The little details</h2>
+                  <dl>
+                    <dt>Created</dt>
+                    <dd>
+                      {new Date(data.createdAt).toLocaleDateString('en', {
+                        dateStyle: 'medium',
+                        timeZone: 'UTC',
+                      })}{' '}
+                      · UTC
+                    </dd>
+                    <dt>Lifetime clicks</dt>
+                    <dd>{data.clicks.toLocaleString()}</dd>
+                    <dt>Short code</dt>
+                    <dd className="mono break-word">{data.shortCode}</dd>
+                  </dl>
+                  <p className="field-help">
+                    The short code stays the same when you change the
+                    destination.
+                  </p>
+                </aside>
+                <section className="danger-zone">
+                  <div>
+                    <h2>Time to let this one go?</h2>
+                    <p>
+                      Deleting removes the link and its click history. You
+                      cannot undo it.
+                    </p>
+                  </div>
+                  <Button
+                    className="button-danger"
+                    onClick={() => {
+                      setConfirm(true);
+                      setDeleteError(null);
+                    }}
+                  >
+                    Delete link
+                    <Icon name="trash" />
+                  </Button>
+                </section>
               </div>
-              <Button
-                className="button-danger"
-                onClick={() => {
-                  setConfirm(true);
-                  setDeleteError(null);
-                }}
-              >
-                Delete link
-                <Icon name="trash" />
-              </Button>
-            </section>
+            </div>
             <Modal
               open={confirm}
               onOpenChange={(value) => {

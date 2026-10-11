@@ -181,17 +181,27 @@ export function AuthPage({
   return (
     <section className="auth-layout container">
       <aside className="auth-poster">
-        <p className="poster-display">
-          Every link,
+        <h2 className="poster-display">
+          Every link.
           <br />
-          kept in one
-          <br />
-          place.
-        </p>
+          One place.
+        </h2>
         <div className="poster-stubs" aria-hidden="true">
-          <span className="mono">/portfolio</span>
-          <span className="mono">/launch-notes</span>
-          <span className="mono">/summer-playlist</span>
+          <span className="mono">
+            <Icon name="link" size={18} />
+            /portfolio
+            <Icon name="arrow" size={16} />
+          </span>
+          <span className="mono">
+            <Icon name="link" size={18} />
+            /launch-notes
+            <Icon name="arrow" size={16} />
+          </span>
+          <span className="mono">
+            <Icon name="link" size={18} />
+            /summer-playlist
+            <Icon name="arrow" size={16} />
+          </span>
         </div>
         <p className="poster-note">
           Your links, their edits, and their clicks in one workspace.
