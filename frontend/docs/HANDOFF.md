@@ -2,11 +2,35 @@
 
 **Owner:** Current frontend continuation checkpoint
 
-Checkpoint: October 17, 2026 (Asia/Calcutta). The push-readiness verification below is current. The October 12 performance audit and earlier redesign receipts remain historical.
+Checkpoint: October 17, 2026 (Asia/Kolkata). The push-readiness, security, and interactive line-grid evidence below is current. The October 12 performance audit and earlier redesign receipts remain historical.
 
 ## Current objective
 
-The current objective is to prepare the existing frontend performance change set for a safe push. Repository checks pass at the available boundaries. No commit or push occurred. Live product acceptance retains the existing contract blockers.
+The current objective was to make the complete frontend change set ready for a safe push and run a full daily security audit at the available repository and browser boundaries. The square-line grid remains part of this change set. It displaces around pointer velocity, returns through connected spring tension, and carries a bounded wave from a primary pointer press. No commit, push, staging operation, deployment, or system-package installation occurred. Live product and deployment acceptance retain the existing contract blockers.
+
+## Push-readiness and security checkpoint
+
+The current frontend diff is push-ready at the available repository boundaries. A fresh `npm ci` installed 233 packages and reported zero vulnerabilities. TypeScript, ESLint with zero warnings, Prettier check, document validation, nine Vitest checks, the production build, and `git diff --check` pass. The full fixture browser suite passes 88 of 88 cases with one worker: 44 in Chromium and 44 in Firefox. The production browser suite passes 10 of 10 cases with one worker: five in Chromium and five in Firefox. The production suite checks live transport selection, refusal to fall back to fixtures, hidden server diagnostics, empty browser credential storage, email-fragment removal, request normalization, conflict and rate-limit handling, malformed success responses, and explicit unavailable owner routes. The build emits a 412.80 kB main JavaScript chunk with a 133.42 kB gzip estimate. No runtime package or lockfile changed.
+
+The security audit reviewed the frontend attack surface, runtime configuration, transport and response adapters, browser credential handling, unsafe redirects and URLs, HTML and code-execution sinks, external links, repository and history secrets, dependency integrity and install scripts, shipped bundle contents, source maps, repository-local agent skills, CI and deployment files, webhooks, LLM integrations, and the applicable OWASP and STRIDE paths. It found zero reportable findings at the daily audit's 8-of-10 confidence threshold. `npm audit` found zero known dependency vulnerabilities. High-confidence worktree and frontend-history scans found no credentials. The built output contains no fixture hosts, fixture tokens, developer-only fixture strings, high-confidence secret prefixes, or source maps. The lockfile uses registry packages with integrity metadata. No production dependency has an install script. Candidate strings from local Compose credentials, Redis Lua evaluation, known skill references, the no-referrer GitHub badge, and absent deployment hardening were excluded as local-development behavior, non-frontend behavior, expected references, or unimplemented deployment evidence instead of being mislabeled as current vulnerabilities.
+
+The machine-readable report is stored at `.gstack/security-reports/2026-10-17-180020.json`. The report parses as valid JSON, and `.gstack/` is ignored so the local audit receipt cannot enter the push accidentally. The cached `origin/main` comparison is zero commits ahead and zero behind; this run did not fetch the remote reference.
+
+WebKit remains environment-blocked before application execution because this host lacks `libevent-2.1-7t64` and `libgstreamer-plugins-bad1.0-0`. The Playwright WebKit binary is present. Physical touch-device behavior, live backend authorization, deployed TLS/CORS/security headers, proxy identity, and a professional penetration test remain `NOT_ESTABLISHED`. These limits prevent a full release-readiness claim, but they do not invalidate the observed push-readiness checks for the current frontend diff.
+
+## Interactive line-grid checkpoint
+
+`SquareGrid.tsx` is one fixed-viewport Canvas 2D decorative leaf mounted by the application shell. It keeps the original 64px cells and draws interpolating horizontal and vertical curves through every shared intersection. Motion changes geometry only. The line color and width stay unchanged while the mesh bends. Pointer response covers a 200px neighborhood and has a hard 16px displacement cap. The force is primarily radial with a small directional pull, so moving cells form a rounded bulge instead of a block of tilted squares. Increased velocity pickup makes the bend visible without restoring the earlier large folds. Lower bounce, connected tension, and a longer return keep motion smooth. Its animation frame runs only while the mesh is moving. Resize, intersection, visibility, pointer, and motion-preference resources have explicit cleanup. Touch movement does not compete with scrolling. Reduced motion resets to the static mesh. The original SVG line tile remains the fallback when Canvas 2D is unavailable.
+
+The component adapts the React Bits DotGrid physics model without installing a package. The current upstream registry and license were checked on October 17, 2026. The MIT + Commons Clause notice ships in `public/licenses/react-bits.txt`. The Source Ledger records the bounded adoption and replacement boundary.
+
+The route-persistence assertion first failed because the grid was absent from `/login`. It now proves that the shell retains the canvas across routes, pointer displacement and click waves change the canvas pixels, and reduced motion keeps those pixels static. The current full fixture suite passes in Chromium and Firefox. It includes viewport and axe checks at 320, 390, 768, 1024, and 1440px. Reviewed desktop, mobile, login, and motion captures show the continuous line grid behind the unchanged content composition. The final motion capture spans several neighboring cells as one smooth, rounded deformation without a color shift or large fold.
+
+Root Graphify maintenance remains outside the frontend write scope.
+
+Exact next task: provide the two WebKit host libraries and run the fixture and production WebKit suites. Then inspect the line-grid interaction on a physical touch device and measure deployed security headers and delivery after the hosting contract exists.
+
+## Previous push-readiness verification
 
 ## Push-readiness verification
 

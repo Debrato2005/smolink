@@ -105,6 +105,47 @@ test('keyboard, navigation recovery, resize and reduced motion remain usable', a
   await expect(page.getByLabel('Destination URL')).toBeVisible();
 });
 
+test('square background persists across routes, reacts to pointer input, and becomes static for reduced motion', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const grid = page.locator('[data-square-grid]');
+  const canvas = grid.locator('canvas');
+  await expect(grid).toBeVisible();
+  await expect(canvas).toHaveAttribute('data-renderer', 'canvas-2d');
+
+  const frame = () =>
+    canvas.evaluate((element) => (element as HTMLCanvasElement).toDataURL());
+  const resting = await frame();
+  await page.mouse.move(1040, 660);
+  await page.mouse.move(1220, 660, { steps: 4 });
+  await page.waitForTimeout(80);
+  expect(await frame()).not.toBe(resting);
+
+  await page.reload();
+  await expect(canvas).toHaveAttribute('data-renderer', 'canvas-2d');
+  const beforeShock = await frame();
+  await page.mouse.click(1120, 700);
+  await page.waitForTimeout(80);
+  expect(await frame()).not.toBe(beforeShock);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.waitForTimeout(100);
+  const reduced = await frame();
+  await page.mouse.move(940, 720);
+  await page.mouse.move(1200, 720, { steps: 4 });
+  await page.mouse.click(1120, 700);
+  await page.waitForTimeout(100);
+  expect(await frame()).toBe(reduced);
+
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/login');
+  await expect(grid).toBeVisible();
+  await expect(canvas).toHaveAttribute('data-renderer', 'canvas-2d');
+});
+
 test('home reload starts at the full hero after scrolling or following a section link', async ({
   page,
 }) => {

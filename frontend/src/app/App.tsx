@@ -24,6 +24,7 @@ import type {
 import { Button } from '../components/ui/Button';
 import { Contact } from '../components/Contact';
 import { Icon } from '../components/ui/Icon';
+import { SquareGrid } from '../components/SquareGrid';
 import { ErrorBoundary } from './ErrorBoundary';
 import { NavigationFocus } from './router/NavigationFocus';
 
@@ -135,6 +136,7 @@ function Shell({
   }
   return (
     <>
+      <SquareGrid />
       <a href="#main" className="skip-link">
         Skip to content
       </a>

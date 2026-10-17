@@ -6,7 +6,7 @@ Smolink's React application is a presentation layer over explicit HTTP contracts
 
 ## Current status
 
-The app uses a neobrutalist Smolink system built from three references: a sky-blue page grid, a sticky navbar with boxed hover, focus, and active states, a 40/60 desktop hero with text on the left and the shortener on the right, color-filled feature cards, and a result ticket. Sign-in offers Continue with Google beside email. Development data (`npm run dev`) shows every journey. Production connects guest creation only and marks QR, accounts, click stats, and redirects as coming soon until backend contracts exist.
+The app uses a neobrutalist Smolink system built from three references: a sky-blue interactive square-mesh page background, a sticky navbar with boxed hover, focus, and active states, a 40/60 desktop hero with text on the left and the shortener on the right, color-filled feature cards, and a result ticket. The original grid intersections move with pointer velocity, return with spring tension, and carry click waves throughout the route shell. Reduced motion and canvas failure keep the original static grid. Sign-in offers Continue with Google beside email. Development data (`npm run dev`) shows every journey. Production connects guest creation only and marks QR, accounts, click stats, and redirects as coming soon until backend contracts exist.
 
 Read the [current handoff](docs/HANDOFF.md) for observed checks and blockers. The [implementation queue](docs/BUILD_CHECKLIST.md) owns task status.
 
@@ -74,7 +74,7 @@ A local override belongs in ignored `.env.local` or `.env.<mode>.local`. An inhe
 src/app/             router, shell, navigation focus, render boundary
 src/routes/          page composition and unavailable shells
 src/features/shorten/ destination preview interaction
-src/components/ui/   shared consumed primitives
+src/components/      hero artwork, square grid, and shared consumed primitives
 src/lib/api/         transport, errors, contracts, adapters, gateways
 src/lib/config/      explicit runtime configuration
 src/styles/          canonical tokens and shared styles

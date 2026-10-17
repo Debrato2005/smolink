@@ -8,6 +8,8 @@ The QR preview uses [node-qrcode](https://github.com/soldair/node-qrcode) 1.5.4 
 
 GitHub and X icon paths come from [Simple Icons](https://github.com/simple-icons/simple-icons) under CC0. The [license](public/licenses/simple-icons.txt) ships with the app. No icon package is installed.
 
+The page square-grid physics adapts the [React Bits DotGrid](https://reactbits.dev/backgrounds/dot-grid) interaction model. Smolink uses local Canvas 2D code and installs no React Bits package. The upstream [MIT + Commons Clause notice](public/licenses/react-bits.txt) ships with the app.
+
 React DayPicker and its date helpers keep their full MIT notices in the public license folder. The build copies these notices unchanged.
 
 [React DayPicker](public/licenses/react-day-picker.txt), [date-fns](public/licenses/date-fns.txt), [date-fns timezone helpers](public/licenses/date-fns-tz.txt), [date-fns-jalali](public/licenses/date-fns-jalali.txt), and [Hijri converter](public/licenses/hijri-converter.txt).
