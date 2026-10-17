@@ -18,8 +18,10 @@ for (const width of [320, 901, 1051, 1440]) {
       if (width > 860) {
         const card = (await poster.boundingBox())!;
         const content = (await form.boundingBox())!;
-        expect(card.height).toBeGreaterThanOrEqual(500);
-        expect(card.height).toBeLessThanOrEqual(600);
+        // Firefox can report fractional float noise around an integer CSS size.
+        const height = Math.round(card.height * 100) / 100;
+        expect(height).toBeGreaterThanOrEqual(500);
+        expect(height).toBeLessThanOrEqual(600);
         expect(Math.abs(card.width - content.width)).toBeLessThan(1);
         expect(
           Math.abs(card.y + card.height / 2 - content.y - content.height / 2),

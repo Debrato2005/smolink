@@ -135,12 +135,14 @@ test('home reload starts at the full hero after scrolling or following a section
     await expect(hero).toBeVisible();
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
     await expect(page).toHaveURL(/\/$/);
+    if (width < 1261)
+      await page.getByRole('button', { name: 'Open navigation' }).click();
     await page
-      .locator('.site-footer')
-      .getByRole('link', { name: 'Questions' })
+      .locator(width < 1261 ? '.mobile-nav' : '.desktop-nav')
+      .getByRole('link', { name: 'Questions', exact: true })
       .click();
     await expect(page).toHaveURL(/\/#questions$/);
-    expect(await page.evaluate(() => scrollY)).toBeGreaterThan(100);
+    await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(100);
   }
 });
 
@@ -269,8 +271,8 @@ test('boxed blocks lift on hover without changing layout and respect reduced mot
         .poll(() => block.evaluate((el) => getComputedStyle(el).transform))
         .toBe(`matrix(1, 0, 0, 1, -${lift}, -${lift})`);
       const after = await block.boundingBox();
-      expect(after!.width).toBe(before!.width);
-      expect(after!.height).toBe(before!.height);
+      expect(after!.width).toBeCloseTo(before!.width, 2);
+      expect(after!.height).toBeCloseTo(before!.height, 2);
       expect(after!.x).toBeCloseTo(before!.x - lift);
       expect(after!.y).toBeCloseTo(before!.y - lift);
       expect(

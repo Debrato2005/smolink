@@ -93,7 +93,7 @@ The app render boundary supplies a safe reload path. Bootstrap configuration/gat
 
 Use native platform behavior, the selected shared primitive, small local code, then a new dependency. Each dependency needs a consumer, alternatives, license, cost, accessibility implications, and replacement boundary in the Source Ledger. No state, form, schema, motion, or GPU framework is required by this scaffold.
 
-Keep simple routes eager. There is no heavy feature to split yet. Future dashboard/analytics owners should load by route when their bundle cost justifies it. Heavy visual systems must remain optional and isolated. Do not add artificial chunks to improve a diagram.
+Keep simple routes eager. The calendar retains its existing lazy boundary. Vite removes fixture-only dashboard, details, and analytics route elements from production. The live workspace layout keeps its existing availability notice and never mounts those elements. Development keeps the components eager. Remove these build gates when live owner integration makes the screens reachable.
 
 No generated API code exists. Backend imports require settings and unfinished test work, so this scaffold records a bounded creation contract from source. If generation is later selected, generate from an inspected OpenAPI snapshot, record its revision, and do not hand-edit generated outputs. Types never replace runtime validation.
 

@@ -53,7 +53,7 @@ export function WorkspaceLayout({
       <aside className="workspace-sidebar">
         <div className="sidebar-heading">
           <Link to="/" className="sidebar-brand" aria-label="Smolink home">
-            <img src="/smolink-symbol.png" alt="" width={38} height={38} />
+            <img src="/smolink-symbol.webp" alt="" width={38} height={38} />
             <span>smolink</span>
           </Link>
           <button

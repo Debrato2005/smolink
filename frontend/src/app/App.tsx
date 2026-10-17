@@ -46,14 +46,14 @@ function Brand({ navbar = false }: { navbar?: boolean }) {
         <>
           <img
             className="brand-symbol"
-            src="/smolink-symbol.png"
+            src="/smolink-symbol.webp"
             alt=""
             width={592}
             height={570}
           />
           <img
             className="brand-wordmark"
-            src="/smolink-wordmark.png"
+            src="/smolink-wordmark.webp"
             alt=""
             width={1188}
             height={287}
@@ -62,7 +62,7 @@ function Brand({ navbar = false }: { navbar?: boolean }) {
       ) : (
         <img
           className="brand-logo"
-          src="/Interlocking%20S%20Smolink%20Retro%20Logo.png"
+          src="/smolink-logo.webp"
           alt=""
           width={1448}
           height={1086}
@@ -266,9 +266,15 @@ function Shell({
               <WorkspaceLayout email={email} links={links} onLogout={logout} />
             }
           >
+            {/* The live layout shows its existing notice and never mounts these
+                fixture screens. Keep their modules out of production. */}
             <Route
               index
-              element={<Dashboard links={links} revision={revision} />}
+              element={
+                import.meta.env.DEV ? (
+                  <Dashboard links={links} revision={revision} />
+                ) : null
+              }
             />
             <Route
               path="new"
@@ -291,21 +297,25 @@ function Shell({
             <Route
               path="urls/:id"
               element={
-                <LinkDetail
-                  key={location.pathname}
-                  links={links}
-                  revision={revision}
-                />
+                import.meta.env.DEV ? (
+                  <LinkDetail
+                    key={location.pathname}
+                    links={links}
+                    revision={revision}
+                  />
+                ) : null
               }
             />
             <Route
               path="urls/:id/analytics"
               element={
-                <Analytics
-                  key={location.pathname}
-                  links={links}
-                  revision={revision}
-                />
+                import.meta.env.DEV ? (
+                  <Analytics
+                    key={location.pathname}
+                    links={links}
+                    revision={revision}
+                  />
+                ) : null
               }
             />
           </Route>

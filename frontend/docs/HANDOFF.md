@@ -2,11 +2,43 @@
 
 **Owner:** Current frontend continuation checkpoint
 
-Checkpoint: October 9, 2026 (Asia/Calcutta). The current control and hover receipts are below. Earlier redesign and logo receipts remain historical.
+Checkpoint: October 17, 2026 (Asia/Calcutta). The push-readiness verification below is current. The October 12 performance audit and earlier redesign receipts remain historical.
 
 ## Current objective
 
-The current objective is to refine the reference tickets, enlarge the left hero, and add the requested controls. This includes calendar time entry, contact drafts, dropdowns, sidebar collapse, skeleton loading, and adjusted hover behavior. Earlier redesign receipts below remain historical. Live product acceptance still has the listed contract blockers.
+The current objective is to prepare the existing frontend performance change set for a safe push. Repository checks pass at the available boundaries. No commit or push occurred. Live product acceptance retains the existing contract blockers.
+
+## Push-readiness verification
+
+The bounded change set contains the production route gates, lossless WebP brand assets, performance audit, audit harness, browser regression repairs, and their documentation. All repository changes remain inside `frontend/`. The branch matches the cached `origin/main` reference with zero commits ahead or behind. This check did not fetch or change the remote reference.
+
+Node 22.23.2 and npm 10.9.8 satisfy the repository requirement. Typecheck, lint, Prettier formatting, document structure, the production build, the production fixture-string scan, and `git diff --check` pass. Nine Vitest contract and HTTP tests pass. The build emits a 406.88 kB main JavaScript chunk with a 130.80 kB gzip estimate. The shipped main chunk contains zero matches for `smolink.test`, `test-token`, or `fixtureLinks`.
+
+The three WebP files retain their source dimensions. ImageMagick reports zero changed pixels between each WebP and its PNG source. The complete Chromium fixture run passes 43 cases. After the missing pinned runtime was installed, the complete Firefox fixture run also passes 43 cases. The production suite passes five Chromium cases. One Firefox case reached its 30-second budget during a concurrent run; all five Firefox production cases pass with one worker in 26.0 seconds.
+
+Pinned Firefox 155.0 and WebKit 26.6 binaries are now present in the Playwright cache. No package or lockfile changed. WebKit still cannot start because the host lacks `libevent-2.1-7t64` and `libgstreamer-plugins-bad1.0-0`. No system package was installed. This is an environment blocker, not an application assertion failure.
+
+Exact next task: provide the two WebKit host libraries and run the fixture and production WebKit suites. Then measure deployed delivery headers and a real guest-creation journey after the hosting and backend contracts are available.
+
+## Performance optimization checkpoint
+
+The initial workspace was clean. All writes remain inside `frontend/`. No commit, push, deployment, dependency, backend, infrastructure, or authentication contract changed. Root Graphify maintenance remains outside this write boundary.
+
+The [performance report](PERFORMANCE_AUDIT.md) records the implementation, complete metric table, measurement method, regression checks, trade-offs, and remaining uncertainty. The [audit harness](../scripts/performance-audit.js) reproduces production traces and captures. Local raw receipts remain under `.local/performance/`.
+
+The main production chunk decreases from 500.22 to 406.88 kB. Vite reports gzip sizes of 160.65 and 130.80 kB. Lossless WebP brand assets save 771.53 kB per uncached load. Three mobile samples give median LCP of 1.572 → 1.348 seconds and a startup blocking proxy of 137 → 61 ms. Field INP and Lighthouse are N/A. Response timing varies between protocols, so no consistent responsiveness improvement is claimed.
+
+Build, typecheck, lint, formatting, document structure, and diff checks passed. Nine contract/HTTP tests passed. Ten production browser cases passed across Chromium and Firefox. The final combined fixture run passed 84 of 86 cases. Two timing failures then passed in a serial rerun covering four cases. Earlier failures exposed a stale footer selector and subpixel geometry assertions. Tests now use current navigation, wait for scrolling, and allow fractional rounding. The app's visual rules remain unchanged.
+
+WebKit could not start because host libraries are missing. No system packages were installed. Fixture checks do not prove live accounts, redirects, persistence, or analytics. Production HTTP checks inject controlled responses. Physical devices, screen readers, deployed delivery, and field metrics remain untested.
+
+Controlled captures at mobile, tablet, and desktop sizes preserve appearance. Forty-six production captures match exactly. A settled email-page repeat and 15 controlled fixture asset comparisons also match exactly. Initial sticky-header and hover capture differences remain recorded locally. Image comparisons report zero changed pixels and unchanged dimensions for all three WebPs.
+
+Twenty repeated route/calendar/contact cycles retain the same DOM and listener counts in both builds. Heap grows similarly in both builds, so bounded heap retention remains unknown.
+
+Exact next task: measure deployed delivery headers and a real guest-creation journey after the hosting and backend contracts are available. Preserve the existing cross-boundary blockers below.
+
+## Historical receipts
 
 ## What changed in this task
 

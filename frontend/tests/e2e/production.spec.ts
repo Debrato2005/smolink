@@ -149,3 +149,30 @@ test('production success uses returned public URL while account and QR gaps rema
   ).toBeVisible();
   expect(calls).toHaveLength(1);
 });
+
+test('production workspace paths keep their unavailable notice without owner requests', async ({
+  page,
+}) => {
+  const calls: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/api/v1')) calls.push(request.url());
+  });
+  for (const path of [
+    '/dashboard',
+    '/dashboard?view=analytics',
+    '/dashboard/new',
+    '/dashboard/urls/1',
+    '/dashboard/urls/1/analytics',
+  ]) {
+    await page.goto(path);
+    await expect(
+      page.getByRole('heading', { name: 'Your workspace is on its way.' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Destination URL')).toHaveCount(0);
+    await page
+      .getByRole('link', { name: 'Shorten a link', exact: true })
+      .click();
+    await expect(page.getByLabel('Destination URL')).toBeVisible();
+  }
+  expect(calls).toEqual([]);
+});
