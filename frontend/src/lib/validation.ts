@@ -21,6 +21,8 @@ export function validateLink(destination: string, alias = '', expiry = '') {
     )
       throw new Error();
     normalized = url.href;
+    if (normalized.length > 2048)
+      fields.destination = 'Use a URL with at most 2048 characters.';
   } catch {
     fields.destination =
       'Enter a complete http:// or https:// URL without credentials.';
@@ -33,7 +35,11 @@ export function validateLink(destination: string, alias = '', expiry = '') {
   let expiresAt: string | undefined;
   if (expiry) {
     const date = new Date(expiry);
-    if (!Number.isFinite(date.valueOf()) || date.valueOf() <= Date.now())
+    if (
+      !Number.isFinite(date.valueOf()) ||
+      localDateInput(date.toISOString()) !== expiry ||
+      date.valueOf() <= Date.now()
+    )
       fields.expires_at = 'Choose a future expiry time.';
     else expiresAt = date.toISOString();
   }
