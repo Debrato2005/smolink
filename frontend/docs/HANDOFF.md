@@ -2,9 +2,61 @@
 
 **Owner:** Current frontend continuation checkpoint
 
-Checkpoint: October 17, 2026 (Asia/Kolkata). The push-readiness, security, and interactive line-grid evidence below is current. The October 12 performance audit and earlier redesign receipts remain historical.
+## Frontend validation security check: October 25, 2026
+
+The shared validator now rejects normalized URLs beyond 2048 characters and
+impossible local expiry dates. Both regression cases failed before the fixes
+and now pass. Six validation, adapter, and runtime cases pass. Production
+build, TypeScript, lint, formatting, and document structure checks pass with
+Node 22.23.4. No visual layout changed in this task.
+
+Backend source and tests match their initial content. The existing backend
+lockfile change and mobile/confetti work remain. Full frontend transport and
+browser checks remain blocked by server socket restrictions. Advisory checks
+remain blocked by DNS failures. The root security report records the open
+backend findings and the conditional frontend push commands.
+
+Exact next task: run `npm audit`, `npm test`, and fixture/production Playwright
+checks on a host that permits local servers and network access. Resolve actual
+failures before frontend publication. No commit or push occurred.
+
+Checkpoint: October 18, 2026 (Asia/Kolkata). The remaining-page mobile review is current. Earlier checkpoints retain their dated scope.
 
 ## Current objective
+
+October 18, 2026 (Asia/Kolkata). Reviewed the remaining account routes, workspace creation and overview, fallback pages, and common success, validation, empty, error, expired-session, and missing-token states. The review includes contact, QR, deletion, calendar, populated 30-day reports, and production coming-soon pages at 320px, 390px, and 430px.
+
+The review produced 147 paired captures, including 36 desktop states at 1440px. Every desktop comparison shows zero changed pixels. The final captured routes have no horizontal page overflow. Long aliases previously overflowed mobile lists and delete descriptions. Account-switch links also split across lines. The fixes wrap long aliases, separate account prompts from their actions, widen dialog content, stack confirmation actions, and expand contact and QR actions. Calendar date and time fields now stack with 16px text. These changes stay inside the 560px media query.
+
+Three browser regressions first failed against the old styles. The focused Chromium and Firefox run then passed all six cases. The broader relevant browser run passed all 28 cases. Command: `SMOLINK_E2E_REUSE=1 npm run test:e2e -- --project=chromium --project=firefox --grep 'account poster|calendar|contact fields|QR loading|narrow workspace|account forms cover|mobile navigation closes|demo workspace supports|workspace and analytics reflow.*320px' --workers=1`.
+
+Build, typecheck, lint, changed-code formatting, document structure, and `git diff --check` pass. The requested `graphify update .` completed. Captures and metrics remain in `test-results/remaining-mobile-before/` and `test-results/remaining-mobile-after/`. Production captures prove layout only. Live backend, WebKit, and physical-device checks did not run. Prose lint: 1.84 findings per 100 words.
+
+Exact next task: check the mobile dialogs and calendar on a physical phone with its keyboard open before release.
+
+## First mobile layout checkpoint
+
+October 18, 2026 (Asia/Kolkata). Mobile layout changes stay inside the 720px and 560px media queries. The phone hero omits tiny illustrative tickets and uses a smaller headline. Wider form content, separate input and submit controls, and larger section gaps reduce crowding. Results use the panel width, 16px URL text, and full-width Copy and QR buttons. Account, workspace, detail, and analytics screens gain room. Phone navigation exposes every destination and Sign out after a desktop sidebar collapse.
+
+The new checks first failed on narrow input widths at 320px, 390px, and 430px. The broader Chromium and Firefox run passed 34 of 36 cases. It exposed a hidden Sign out control after resize and a Firefox measurement of 11.99994px for a 12px gap. The control visibility is fixed, and the geometry check rounds to hundredths. The final targeted run passes all ten cases in 34.8 seconds, including desktop shortener behavior.
+
+Commands: `SMOLINK_E2E_REUSE=1 npm run test:e2e -- --project=chromium --project=firefox --grep 'phone shortener|workspace controls|desktop shortener centers' --workers=1`. Build, typecheck, lint, changed-code formatting, document structure, and `git diff --check` pass. The requested `graphify update .` completed.
+
+Reviewed fresh mobile captures for home, results, sign-in, dashboard, details, and analytics. Six 1440px desktop image comparisons show zero changed pixels, with identical measured geometry. Captures and metrics remain in `test-results/mobile-layout-before/` and `test-results/mobile-layout-after/`. The captured routes have no horizontal overflow or page errors. This is fixture evidence. WebKit, physical devices, and live backend checks did not run. Prose lint: 1.65 findings per 100 words.
+
+Exact next task: review the mobile form with the keyboard open on a physical phone before release.
+
+## Copy confetti checkpoint
+
+October 18, 2026 (Asia/Kolkata). Successful copy actions now show a short confetti burst from the shared copy button. The effect covers creation results, dashboard rows, and link details without a new dependency. It waits for clipboard success, preserves denial recovery, supports keyboard replay, and respects reduced motion. A body portal prevents clipping, ignores pointer input, stays below dialogs, and clears after one second or unmount.
+
+The browser regression first failed because the burst was absent. The final focused command passes both Chromium and Firefox: `SMOLINK_E2E_REUSE=1 npm run test:e2e -- --project=chromium --project=firefox --grep clipboard --workers=1` (2 passed, 24.2s). It covers pending and denied writes, success, cleanup, keyboard replay, and reduced motion. A concurrent rerun exceeded the default timeout during graph extraction. The final run passed without competing work.
+
+Build, typecheck, lint, changed-code formatting, document structure, and `git diff --check` pass. Reviewed fresh captures at 1440px, 320px, and in the dashboard. Browser checks found no page errors or horizontal overflow. Captures remain in `test-results/copy-confetti-review/`. This is fixture evidence. WebKit, the full browser suite, and live backend checks did not run for this change. The requested `graphify update .` completed. Prose lint: 0.51 findings per 100 words.
+
+Exact next task: review the copy interaction in a physical touch browser before release.
+
+## Previous objective
 
 The current objective was to make the complete frontend change set ready for a safe push and run a full daily security audit at the available repository and browser boundaries. The square-line grid remains part of this change set. It displaces around pointer velocity, returns through connected spring tension, and carries a bounded wave from a primary pointer press. No commit, push, staging operation, deployment, or system-package installation occurred. Live product and deployment acceptance retain the existing contract blockers.
 

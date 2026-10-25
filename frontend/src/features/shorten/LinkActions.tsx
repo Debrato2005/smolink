@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
 import { Modal } from '../../components/ui/Modal';
 import { ErrorNotice } from '../../components/ui/Feedback';
+import { CopyConfetti } from './CopyConfetti';
 
 export function LinkActions({
   link,
@@ -18,6 +19,12 @@ export function LinkActions({
   const [open, setOpen] = useState(false);
   const [qr, setQr] = useState('');
   const [error, setError] = useState<unknown>(null);
+  const [burst, setBurst] = useState<{
+    x: number;
+    y: number;
+    id: number;
+  } | null>(null);
+  const copyButton = useRef<HTMLButtonElement>(null);
   const pending = useRef<AbortController | null>(null);
   const copyBusy = useRef(false);
   const alive = useRef(true);
@@ -28,16 +35,34 @@ export function LinkActions({
       pending.current?.abort();
     };
   }, []);
+  useEffect(() => {
+    if (!burst) return;
+    const timer = window.setTimeout(() => setBurst(null), 1000);
+    return () => window.clearTimeout(timer);
+  }, [burst]);
   async function copyLink() {
     if (copyBusy.current) return;
     copyBusy.current = true;
     try {
       await navigator.clipboard.writeText(link.shortUrl);
-      if (alive.current) setCopy('copied');
     } catch {
       if (alive.current) setCopy('denied');
+      return;
     } finally {
       copyBusy.current = false;
+    }
+    if (!alive.current) return;
+    setCopy('copied');
+    const bounds = copyButton.current?.getBoundingClientRect();
+    if (
+      bounds &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      setBurst({
+        x: bounds.left + bounds.width / 2,
+        y: bounds.top + bounds.height / 2,
+        id: performance.now(),
+      });
     }
   }
   async function showQr() {
@@ -58,8 +83,10 @@ export function LinkActions({
   }
   return (
     <>
+      {burst && <CopyConfetti key={burst.id} x={burst.x} y={burst.y} />}
       <div className="link-actions">
         <Button
+          ref={copyButton}
           className={
             compact ? 'button-secondary button-small' : 'button-secondary'
           }

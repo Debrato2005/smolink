@@ -50,6 +50,21 @@ for (const width of [320, 901, 1051, 1440]) {
           Math.abs(content.x + content.width / 2 - width / 2),
         ).toBeLessThan(1);
       }
+      if (width <= 560) {
+        const accountAction = form.locator('.auth-switch a');
+        expect(
+          await accountAction.evaluate((element) => {
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            return [...range.getClientRects()].filter(
+              (rect) => rect.width > 0 && rect.height > 0,
+            ).length;
+          }),
+        ).toBe(1);
+        expect(
+          (await accountAction.boundingBox())!.height,
+        ).toBeGreaterThanOrEqual(44);
+      }
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth > innerWidth,
@@ -111,6 +126,75 @@ test('calendar sets a local expiry and preserves the time when the date changes'
     '',
   );
   await expect(page.locator('.ticket-meta')).toContainText(display);
+});
+
+test('phone calendar separates readable date and time fields and keeps Done reachable', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 600 });
+  await page.goto('/');
+  await page.getByLabel('Set an expiry').check();
+  const expiry = page.getByLabel('Expiry date and time');
+  await expiry.click();
+  const calendar = page.getByRole('dialog', { name: 'Choose expiry date' });
+  await calendar.getByRole('button', { name: /next month/i }).waitFor();
+  await page.evaluate(() => document.fonts.ready);
+  const date = calendar.getByLabel('Date', { exact: true });
+  const time = calendar.getByLabel('Time', { exact: true });
+  const popup = await calendar.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      left: bounds.left,
+      right: bounds.right,
+      contentWidth:
+        element.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight),
+      fits: element.scrollWidth <= element.clientWidth + 1,
+    };
+  });
+  const dateBounds = (await date.boundingBox())!;
+  const timeBounds = (await time.boundingBox())!;
+  expect(
+    timeBounds.y - dateBounds.y - dateBounds.height,
+  ).toBeGreaterThanOrEqual(11.5);
+  for (const field of [date, time]) {
+    expect((await field.boundingBox())!.width).toBeGreaterThanOrEqual(
+      popup.contentWidth - 1,
+    );
+    expect(
+      await field.evaluate((element) =>
+        parseFloat(getComputedStyle(element).fontSize),
+      ),
+    ).toBeGreaterThanOrEqual(16);
+  }
+  expect(popup.left).toBeGreaterThanOrEqual(-1);
+  expect(popup.right).toBeLessThanOrEqual(321);
+  expect(popup.fits).toBe(true);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  const future = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  await date.fill(future);
+  await time.fill('18:30');
+  const done = calendar.getByRole('button', { name: 'Done', exact: true });
+  await done.scrollIntoViewIfNeeded();
+  await expect(done).toBeInViewport({ ratio: 1 });
+  await done.click();
+  await expect(calendar).toBeHidden();
+  await expect(expiry).toBeFocused();
+  const display = await page.evaluate(
+    (value) =>
+      new Date(value).toLocaleString('en', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }),
+    `${future}T18:30`,
+  );
+  await expect(expiry).toContainText(display);
 });
 
 test('contact fields compose an email draft and do not report a sent message', async ({
@@ -285,6 +369,24 @@ test('workspace controls filter links, keep URL state and collapse the sidebar',
   await expect(
     navigation.getByRole('link', { name: 'Overview', exact: true }),
   ).toHaveAttribute('aria-current', 'page');
+  await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+  await page.setViewportSize({ width: 320, height: 844 });
+  for (const name of ['All links', 'Overview', 'Create a link']) {
+    const link = navigation.getByRole('link', { name, exact: true });
+    await expect(link.locator('span')).toBeVisible();
+    const bounds = (await link.boundingBox())!;
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(320);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
+  }
+  const signOut = page.getByRole('button', { name: 'Sign out', exact: true });
+  await expect(signOut.locator('span')).toBeVisible();
+  await expect(signOut).toBeInViewport({ ratio: 1 });
+  await navigation
+    .getByRole('link', { name: 'Create a link', exact: true })
+    .click();
+  await expect(page.getByLabel('Destination URL')).toBeVisible();
 });
 
 test('shortening shows a skeleton while pending and a result only after completion', async ({
@@ -370,6 +472,70 @@ for (const width of [320, 1440]) {
   });
 }
 
+for (const width of [320, 390, 430]) {
+  test(`phone shortener gives inputs and result actions room at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/');
+    const destination = page.getByLabel('Destination URL');
+    const submit = page.getByRole('button', { name: 'Shorten URL' });
+    await destination.waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    const header = (await page.locator('.site-header').boundingBox())!;
+    const input = (await destination.boundingBox())!;
+    const button = (await submit.boundingBox())!;
+    for (const control of [input, button]) {
+      expect(control.x).toBeGreaterThanOrEqual(0);
+      expect(control.x + control.width).toBeLessThanOrEqual(width);
+      expect(control.y).toBeGreaterThanOrEqual(header.y + header.height);
+      expect(control.y + control.height).toBeLessThanOrEqual(844);
+    }
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    expect(input.width).toBeGreaterThanOrEqual(width - 80);
+    const inputGap =
+      Math.round((button.y - input.y - input.height) * 100) / 100;
+    expect(inputGap).toBeGreaterThanOrEqual(12);
+    await page.screenshot({ path: testInfo.outputPath('phone-form.png') });
+
+    await destination.fill('https://example.com/a-long-story-to-share');
+    await submit.click();
+    const ticket = page.locator('.ticket-result');
+    const result = page.getByLabel('Short URL', { exact: true });
+    await expect(result).not.toHaveValue('');
+    await ticket.evaluate(async (element) => {
+      await Promise.all(
+        element.getAnimations().map((animation) => animation.finished),
+      );
+    });
+    expect(
+      await result.evaluate((element) =>
+        parseFloat(getComputedStyle(element).fontSize),
+      ),
+    ).toBeGreaterThanOrEqual(16);
+    const content = await ticket.locator('.ticket-body').evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      const left = parseFloat(style.paddingLeft);
+      const right = parseFloat(style.paddingRight);
+      return { x: bounds.x + left, width: element.clientWidth - left - right };
+    });
+    for (const name of ['Copy link', 'View QR code']) {
+      const action = ticket.getByRole('button', { name, exact: true });
+      const bounds = (await action.boundingBox())!;
+      expect(Math.abs(bounds.x - content.x)).toBeLessThan(1);
+      expect(Math.abs(bounds.width - content.width)).toBeLessThan(1);
+      expect(bounds.height).toBeGreaterThanOrEqual(48);
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+    ).toBe(false);
+    await page.screenshot({ path: testInfo.outputPath('phone-result.png') });
+  });
+}
+
 for (const width of [320, 901, 1440]) {
   test(`hero tickets and separator share symmetric alignment at ${width}px`, async ({
     page,
@@ -423,23 +589,27 @@ for (const width of [320, 901, 1440]) {
         ? Math.abs(geometry.highlight.x - geometry.titleLeft)
         : Math.abs(geometry.highlight.centerX - geometry.titleCenter),
     ).toBeLessThan(1);
-    expect(
-      Math.abs(geometry.tickets[0]!.centerY - geometry.tickets[1]!.centerY),
-    ).toBeLessThan(1);
-    expect(
-      Math.abs(geometry.tickets[0]!.height - geometry.tickets[1]!.height),
-    ).toBeLessThan(1);
-    for (const ticket of geometry.tickets) {
-      expect(ticket.x).toBeGreaterThanOrEqual(0);
-      expect(Math.abs(ticket.label.centerX - ticket.centerX)).toBeLessThan(1);
-      expect(ticket.textFits).toBe(true);
+    if (width <= 560) {
+      await expect(page.locator('.hero-link-illustration')).toBeHidden();
+    } else {
+      expect(
+        Math.abs(geometry.tickets[0]!.centerY - geometry.tickets[1]!.centerY),
+      ).toBeLessThan(1);
+      expect(
+        Math.abs(geometry.tickets[0]!.height - geometry.tickets[1]!.height),
+      ).toBeLessThan(1);
+      for (const ticket of geometry.tickets) {
+        expect(ticket.x).toBeGreaterThanOrEqual(0);
+        expect(Math.abs(ticket.label.centerX - ticket.centerX)).toBeLessThan(1);
+        expect(ticket.textFits).toBe(true);
+      }
+      expect(
+        Math.abs(geometry.scissors.centerY - geometry.arrow.centerY),
+      ).toBeLessThan(1);
+      expect(
+        Math.abs(geometry.scissors.centerX - geometry.group.centerX),
+      ).toBeLessThan(1);
     }
-    expect(
-      Math.abs(geometry.scissors.centerY - geometry.arrow.centerY),
-    ).toBeLessThan(1);
-    expect(
-      Math.abs(geometry.scissors.centerX - geometry.group.centerX),
-    ).toBeLessThan(1);
     expect(geometry.overflow).toBe(false);
     await page.screenshot({ path: testInfo.outputPath('hero-symmetric.png') });
   });

@@ -114,7 +114,7 @@ test('expiry validation, alias conflict and service errors preserve the entered 
   ).toBeVisible();
 });
 
-test('clipboard denial gives a selectable fallback and success awaits the clipboard', async ({
+test('clipboard success celebrates after writing, repeats from the keyboard, and respects reduced motion', async ({
   page,
 }) => {
   await page.goto('/');
@@ -137,6 +137,8 @@ test('clipboard denial gives a selectable fallback and success awaits the clipbo
   await expect(page.getByRole('alert')).toContainText(
     'Clipboard access was denied',
   );
+  const confetti = page.locator('.copy-confetti');
+  await expect(confetti).toHaveCount(0);
   const fallback = page.getByLabel(/Copy [a-z0-9]+ manually/);
   await fallback.focus();
   expect(
@@ -148,19 +150,82 @@ test('clipboard denial gives a selectable fallback and success awaits the clipbo
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: {
-        writeText: async (value: string) => {
-          document.documentElement.dataset.copiedValue = value;
-        },
+        writeText: (value: string) =>
+          new Promise<void>((resolve) => {
+            document.documentElement.dataset.copiedValue = '';
+            document.documentElement.dataset.copyPending = 'true';
+            document.addEventListener(
+              'complete-copy',
+              () => {
+                document.documentElement.dataset.copiedValue = value;
+                delete document.documentElement.dataset.copyPending;
+                resolve();
+              },
+              { once: true },
+            );
+          }),
       },
     });
   });
   await page.getByRole('button', { name: 'Copy link', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-copy-pending',
+    'true',
+  );
+  await expect(confetti).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Copied', exact: true }),
+  ).toHaveCount(0);
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event('complete-copy'));
+  });
   await expect(
     page.getByRole('button', { name: 'Copied', exact: true }),
   ).toBeVisible();
+  await expect(confetti).toBeVisible();
+  await expect(confetti).toHaveAttribute('aria-hidden', 'true');
+  await expect(confetti).toHaveCSS('pointer-events', 'none');
   expect(
     await page.evaluate(() => document.documentElement.dataset.copiedValue),
   ).toBe(await page.getByLabel('Short URL', { exact: true }).inputValue());
+  await expect(confetti).toHaveCount(0);
+
+  const copiedButton = page.getByRole('button', {
+    name: 'Copied',
+    exact: true,
+  });
+  await copiedButton.focus();
+  await copiedButton.press('Enter');
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-copy-pending',
+    'true',
+  );
+  await expect(confetti).toHaveCount(0);
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event('complete-copy'));
+  });
+  await expect(confetti).toBeVisible();
+  await expect(copiedButton).toBeFocused();
+  await expect(confetti).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await copiedButton.press('Space');
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-copy-pending',
+    'true',
+  );
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event('complete-copy'));
+  });
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-copied-value',
+    await page.getByLabel('Short URL', { exact: true }).inputValue(),
+  );
+  await expect(copiedButton).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Link copied to clipboard.' }),
+  ).toHaveText('Link copied to clipboard.');
+  await expect(confetti).toHaveCount(0);
 });
 
 test('account forms cover registration, verification, recovery, reset and locked sign-in', async ({
@@ -454,6 +519,14 @@ test('narrow workspace supports long links, future expiry, QR and confirmed zero
   ).toBeVisible();
   await page.getByRole('link', { name: 'Back to all links' }).click();
   await page.getByLabel('Search links').fill(alias);
+  await expect(
+    page.getByRole('link', { name: alias, exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
   await page.getByRole('link', { name: alias, exact: true }).click();
   await page.getByRole('button', { name: 'Save changes' }).waitFor();
   await expect(page.getByLabel('Expiry date and time')).not.toContainText(
@@ -474,6 +547,51 @@ test('narrow workspace supports long links, future expiry, QR and confirmed zero
     ),
   ).toBe(true);
   await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Delete link', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Delete this link?' });
+  const description = dialog.getByText(
+    `Remove /${alias} and its click history. This cannot be undone.`,
+    { exact: true },
+  );
+  await expect(description).toBeVisible();
+  for (const element of [dialog, description]) {
+    expect(
+      await element.evaluate(
+        (node) => node.scrollWidth <= node.clientWidth + 1,
+      ),
+    ).toBe(true);
+  }
+  const content = await dialog.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      x:
+        bounds.x +
+        parseFloat(style.borderLeftWidth) +
+        parseFloat(style.paddingLeft),
+      width:
+        element.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight),
+    };
+  });
+  const cancel = dialog.getByRole('button', { name: 'Cancel', exact: true });
+  const remove = dialog.getByRole('button', {
+    name: 'Delete link',
+    exact: true,
+  });
+  const cancelBounds = (await cancel.boundingBox())!;
+  const removeBounds = (await remove.boundingBox())!;
+  for (const bounds of [cancelBounds, removeBounds]) {
+    expect(Math.abs(bounds.x - content.x)).toBeLessThan(1);
+    expect(Math.abs(bounds.width - content.width)).toBeLessThan(1);
+    expect(bounds.height).toBeGreaterThanOrEqual(48);
+  }
+  expect(
+    removeBounds.y - cancelBounds.y - cancelBounds.height,
+  ).toBeGreaterThanOrEqual(11.5);
+  await cancel.click();
+  await expect(dialog).toBeHidden();
   await page.getByRole('link', { name: 'View analytics' }).click();
   await page.getByRole('combobox', { name: 'Date range', exact: true }).click();
   await page.getByRole('option', { name: 'Last 30 days', exact: true }).click();

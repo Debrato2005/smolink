@@ -52,9 +52,13 @@ The hero copy starts with a paper label and the headline Long links? Smol it. Th
 
 The hero uses equal-height tickets with matching top and bottom edges. The white ticket takes 46% of the group width. The yellow ticket takes 40%. Labels sit above each ticket's center. The vertical cut line sits at the group's center, with upright scissors between equal dashed sections. The arrow points toward the yellow ticket. Text has no strike-through and stays clear of the notches.
 
-The left section moves 16px left on desktop. The ticket group matches the headline width. The ticket group moves up to 20px left on desktop, independently of the headline's left edge. Narrow desktop widths use a smaller offset to keep the border visible. The long URL uses three balanced lines with larger text. Rounded stroke joins and a smaller hard shadow keep the notches clear. The yellow highlight aligns with the headline's left edge on desktop. Supporting text stays centered. Phones keep the highlight and ticket group centered. Ink rays sit outside the yellow ticket's top-right corner.
+The left section moves 16px left on desktop. The ticket group matches the headline width. The ticket group moves up to 20px left on desktop, independently of the headline's left edge. Narrow desktop widths use a smaller offset to keep the border visible. The long URL uses three balanced lines with larger text. Rounded stroke joins and a smaller hard shadow keep the notches clear. The yellow highlight aligns with the headline's left edge on desktop. Supporting text stays centered. Between 561px and 900px, the highlight and ticket group stay centered. Narrower phones keep a centered highlight and omit the illustrative tickets. Ink rays sit outside the yellow ticket's top-right corner above 560px.
 
-Decorative SVG stays outside the accessibility tree and ignores pointer input. On phones, the stickers scale with their container. The desktop columns use more width and less space on the left.
+Decorative SVG stays outside the accessibility tree and ignores pointer input. Above 560px, the stickers scale with their container. The desktop columns use more width and less space on the left.
+
+At widths of 720px or less, the hero uses a smaller headline and wider form content. Form sections use 24px gaps. Joined controls stack with a 12px gap at 560px or less. The illustrative tickets and corner rays are hidden at those phone widths. The blue backdrop remains.
+
+Mobile result tickets use the shortener panel's inner width. Their URL text stays at 16px, and longer values remain selectable. Copy and QR controls fill the result width with at least 48px of height. Account cards use larger gaps, and password options stack at 560px or less.
 
 The user-selected references permit small rounded corners on the hero, shared controls, popup panels, skeletons, and sidebar avatar. Large landing cards remain square. The hero Shorten button uses yellow with black text and a hard shadow.
 
@@ -74,6 +78,8 @@ The frame keeps the same size when the image appears. The short URL and disabled
 
 Account pages use equal desktop columns with a larger pale-yellow poster beside the form. Dark text, borders, and shadows keep the contrast clear. The poster's content is centered vertically. The poster and form share a vertical center. Three colored link rows share left and right edges. Below 860px, the poster is hidden and the form stays centered. Decorative link rows remain outside the accessibility tree.
 
+At 560px or less, account-switch prompts and their links use separate rows. Each link has a minimum height of 44px.
+
 ## Workspace layout
 
 Workspace content fills the available width beside the sidebar. Tables, summary strips, and analytics charts retain their side padding. Expanding or collapsing the sidebar changes the space available to the content. No fixed width cap leaves a blank strip on wide screens.
@@ -81,6 +87,10 @@ Workspace content fills the available width beside the sidebar. Tables, summary 
 The create form also fills the available workspace width. On wide desktop screens, the link summary puts its identity on the left and its actions on the right. Smaller screens stack those groups. Metadata and the delete card share a column beside the editor. Below the existing detail breakpoint, those cards follow the editor in one column.
 
 Desktop link details use equal-width columns. The editor and the combined metadata/delete column share top and bottom edges. The two right-hand cards have equal heights with one consistent gap. Save and Delete span their card widths. On smaller screens, the cards stack and use their natural heights.
+
+At 560px or less, workspace navigation shows all three destinations with icons and labels. The separate Sign out action remains visible after a desktop sidebar collapse. Summary values use stacked rows, filters fill the panel width, and table rows have larger gaps. Mobile detail and analytics cards use 16px side padding to preserve usable content width.
+
+Long short codes wrap within phone link rows.
 
 ## Footer
 
@@ -125,15 +135,21 @@ Decorative shapes are limited to the brand mark, the strip's spark icons, the au
 
 The expiry control has one calendar trigger. Its popup contains the calendar, editable date and time, timezone hint, Clear, and Done. Calendar selection preserves the time. The field error stays beside the trigger. The calendar loads only when needed and shows a skeleton during the download.
 
-The workspace uses a paper sidebar with grouped navigation, a yellow current-page marker, and a collapse control. Collapsed desktop navigation keeps accessible link names. Mobile collapse hides the workspace navigation until expansion. Status and analytics ranges use Base UI Select. Sort uses a searchable Base UI Combobox. Query parameters still own filter state.
+At 560px or less, the calendar's date and time fields stack with 16px text and a 16px gap. The popup scrolls when space is limited, so Clear and Done remain reachable.
+
+The workspace uses a paper sidebar with grouped navigation, a yellow current-page marker, and a collapse control. Collapsed desktop navigation keeps accessible link names. Widths from 561px to 860px keep the collapsible workspace navigation. Narrower phones keep all destinations visible. Status and analytics ranges use Base UI Select. Sort uses a searchable Base UI Combobox. Query parameters still own filter state.
 
 Contact me opens a dialog with Name, Email, and Message fields. Open email draft prepares a mailto link to debrato2005@gmail.com. The visitor sends the message from their email app. The interface never claims delivery. Contact values stay in memory.
+
+At 560px or less, dialogs use 16px side padding and wrap long descriptions. Confirmation actions fill separate rows. Contact and QR download actions fill the available content width.
 
 ## Motion and accessibility
 
 CSS owns control and content motion. Navigation items move their transform and shadow over 180ms and their fill and border over 120ms. Buttons and inputs use the 120ms press and lift. The result ticket prints with one clip-path reveal. The page square mesh uses a local Canvas 2D animation loop only while displacement or a click wave is active. It does not update React state per frame. It keeps one line color, caps pointer displacement at 16px, and uses interpolating curves through the grid intersections so the moving bulge stays round. The highlights strip is static because continuous animation is prohibited. Avoid transitions of layout properties.
 
 Feature cards, step cards, and question rows lift 6px and grow their hard shadow by 6px on hover. The shortener panel stays still. Other boxes keep the existing 2px lift. Reduced motion and touch-only pointers disable the lift. Loading states use bordered skeletons and accessible status text.
+
+After a successful copy, 24 small confetti pieces burst from the copy button for 900ms. The decoration uses existing accent tokens, ignores pointer input, and stays below dialogs. A body portal prevents ticket and table clipping. Repeated copies restart the burst. The portal clears after one second and on unmount. Reduced motion prevents new bursts and hides an active burst.
 
 Reduced motion removes every transition, animation, lift, grid displacement, and click wave. Boxes, shadows, and the static square mesh stay visible, so state never depends on motion.
 
