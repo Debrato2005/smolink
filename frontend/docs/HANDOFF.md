@@ -2,6 +2,65 @@
 
 **Owner:** Current frontend continuation checkpoint
 
+## Playful neobrutalist overhaul: October 26, 2026
+
+The user asked for a creative, fun redesign of the whole frontend from the
+three neobrutalism references. The user chose a whole-app overhaul and lifted
+the bans on tilt, marquee, and stickers, with accessibility guards. Palette
+and font families did not change. No dependency changed.
+
+Changes:
+
+- Home: tilted green label, coral-shadow highlight, stacked blue and coral
+  paper sheets and a starburst behind the shortener, and a live link ruler
+  that states the exact character count. The highlights strip is a marquee
+  with a Pause highlights control, an off-screen stop, and a static
+  reduced-motion list. Feature cards have fixed tilts and corner Coming soon
+  stickers. Step numbers are large tilted blocks with arrows. Questions use a
+  two-column layout with a yellow open state. The ink closing band has a
+  dashed cut line with scissors.
+- Auth: full-yellow poster with a logo sticker and a coral tab on the form.
+- Workspace: yellow sidebar, colored summary cells, ink table header, round
+  status chips, and a tilted empty-state icon.
+- Dialogs: yellow heading band and a 14px shadow. Not-found page: a struck
+  "lost ticket" that shows the missing path.
+- Tokens: shadows are 3, 6, 10, and 14px. New `--tilt-*`, `--font-poster`,
+  and `--marquee-duration` tokens.
+
+Tests: three browser checks changed with the design contract. The highlights
+locator uses `.strip`. The oval check became a paper-sheet check. The hover
+check compares layout offsets because tilted cards straighten on hover. One
+new browser check covers the ruler count, marquee pause and play, the single
+labelled list, and reduced motion. It was written after the implementation,
+so no red run was observed. At 1366 × 768 the first run found the panel
+off-center after a result. A compact ruler row and a short-screen rule fixed
+it.
+
+Observed on Windows 11 with Node 24.19.0 and the installed Google Chrome as
+`SMOLINK_CHROMIUM_PATH`, not the pinned Chromium:
+
+- `npx playwright test --project=chromium --workers=2`: 49 passed.
+- `SMOLINK_E2E_TARGET=production npx playwright test --project=chromium --workers=1`: 5 passed.
+- `npm test`: 11 passed. `npm run typecheck`, `npm run lint`, and
+  `npm run build` pass. The main chunk is 416.91 kB (134.55 kB gzip). The
+  fixture-string scan prints 0.
+- Impeccable `detect` reports zero findings. `git diff --check` passes.
+  `graphify update .` completed.
+- Playwright captures through Edge at 1440 and 390 px: home, result, QR
+  dialog, sign-in, dashboard, details, analytics, and not-found. No page
+  errors and no horizontal overflow.
+
+Limits: Firefox and WebKit did not run because their Playwright runtimes are
+not installed on this host. `npm run format:check` reports 57 files because
+this checkout uses CRLF line endings. Changed files are formatted. Physical
+devices and live backend checks did not run. Root
+`docs/frontend-design-system.md` may still state the old bans. Reconcile it in
+a separately authorized root task. `frontend/.claude/launch.json` is a local
+preview helper that attaches to port 3000.
+
+Exact next task: run the fixture suite in Firefox and WebKit, then review the
+marquee and tilted cards on a physical phone.
+
 ## Frontend validation security check: October 25, 2026
 
 The shared validator now rejects normalized URLs beyond 2048 characters and

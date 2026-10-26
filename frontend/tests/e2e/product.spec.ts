@@ -645,9 +645,7 @@ test('desktop shortener centers its panel and expands upward and downward with o
     expect(fieldBox!.x).toBeGreaterThan(headingBox!.x + headingBox!.width);
     const panel = page.locator('.hero .bench');
     const before = (await panel.boundingBox())!;
-    const strip = (await page
-      .getByRole('list', { name: 'Highlights' })
-      .boundingBox())!;
+    const strip = (await page.locator('.strip').boundingBox())!;
     const header = (await page.locator('.site-header').boundingBox())!;
     expect(Math.abs(strip.y + strip.height - height)).toBeLessThan(1);
     expect(
@@ -676,23 +674,12 @@ test('desktop shortener centers its panel and expands upward and downward with o
     expect(
       Math.abs(after.y + after.height / 2 - before.y - before.height / 2),
     ).toBeLessThan(3);
-    const oval = await page
-      .locator('.hero-backdrop-fill')
-      .evaluate((element) => {
-        const ellipse = element as SVGEllipseElement;
-        const matrix = ellipse.getScreenCTM()!;
-        const center = new DOMPoint(
-          ellipse.cx.baseVal.value,
-          ellipse.cy.baseVal.value,
-        ).matrixTransform(matrix);
-        const radiusY = Math.hypot(
-          matrix.b * ellipse.rx.baseVal.value,
-          matrix.d * ellipse.ry.baseVal.value,
-        );
-        return { top: center.y - radiusY, bottom: center.y + radiusY };
-      });
-    expect(oval.top).toBeLessThan(after.y - 12);
-    expect(oval.bottom).toBeGreaterThan(after.y + after.height + 12);
+    // The stacked paper sheets grow with the panel and stay visible past it.
+    for (const sheet of await page.locator('.hero-sheet').all()) {
+      const box = (await sheet.boundingBox())!;
+      expect(box.y).toBeLessThan(after.y);
+      expect(box.y + box.height).toBeGreaterThan(after.y + after.height);
+    }
     const resultBox = await result.boundingBox();
     expect(resultBox!.y).toBeGreaterThan(76);
     expect(resultBox!.y + resultBox!.height).toBeLessThan(height);

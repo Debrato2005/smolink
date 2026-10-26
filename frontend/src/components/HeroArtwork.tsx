@@ -1,33 +1,23 @@
 import type { ReactNode } from 'react';
 import { Icon } from './ui/Icon';
 
+// Two flat paper sheets stacked behind the shortener, and a starburst sticker
+// on its corner. The sheets size from the panel, so they grow with a result.
 export function HeroBackdrop() {
   return (
     <>
-      <svg
-        className="hero-backdrop"
-        viewBox="0 0 1536 1024"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <ellipse
-          className="hero-backdrop-fill"
-          cx="768"
-          cy="512"
-          rx="700"
-          ry="280"
-          transform="rotate(-24 768 512)"
-        />
-      </svg>
-      <svg
-        className="hero-ink-rays"
-        viewBox="0 0 100 100"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path d="M20 35l-5-28M48 40l15-26M73 54l22-16" />
-      </svg>
+      <span className="hero-sheet hero-sheet-blue" aria-hidden="true" />
+      <span className="hero-sheet hero-sheet-coral" aria-hidden="true" />
+      <span className="hero-burst" aria-hidden="true">
+        <svg viewBox="0 0 100 100" focusable="false">
+          <path d="M50 2l8.6 15.8 17.4-4.6-1.4 17.9 16.6 6.6-11.2 14 11.2 14-16.6 6.6 1.4 17.9-17.4-4.6L50 98l-8.6-15.8-17.4 4.6 1.4-17.9L8.8 62.3l11.2-14-11.2-14 16.6-6.6-1.4-17.9 17.4 4.6z" />
+        </svg>
+        <span>
+          Free
+          <br />
+          &amp; fast
+        </span>
+      </span>
     </>
   );
 }

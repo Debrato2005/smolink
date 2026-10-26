@@ -19,9 +19,16 @@
   --border-default: 3px;
   --border-thick: 4px;
   --shadow-sm: 3px 3px 0 0 var(--ink);
-  --shadow-md: 5px 5px 0 0 var(--ink);
-  --shadow-lg: 8px 8px 0 0 var(--ink);
+  --shadow-md: 6px 6px 0 0 var(--ink);
+  --shadow-lg: 10px 10px 0 0 var(--ink);
+  --shadow-xl: 14px 14px 0 0 var(--ink);
   --radius-default: 0px;
+  /* Fixed sticker tilts. Never random: each element keeps its own angle. */
+  --tilt-1: -2deg;
+  --tilt-2: 1.5deg;
+  --tilt-3: -1deg;
+  --tilt-4: 2deg;
+  --marquee-duration: 28s;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 16px;
@@ -31,6 +38,7 @@
   --space-7: 64px;
   --space-8: 96px;
   --font-display: 'Space Grotesk', Arial, sans-serif;
+  --font-poster: 'Smolink Hero', 'Inter', Arial, sans-serif;
   --font-body: 'Inter', Arial, sans-serif;
   --font-mono: 'Space Mono', 'Courier New', monospace;
   --text-sm: 0.875rem;

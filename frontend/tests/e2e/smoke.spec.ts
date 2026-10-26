@@ -146,6 +146,52 @@ test('square background persists across routes, reacts to pointer input, and bec
   await expect(canvas).toHaveAttribute('data-renderer', 'canvas-2d');
 });
 
+test('link ruler measures the address, and the highlights marquee pauses and stays static for reduced motion', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const destination = page.getByLabel('Destination URL');
+  await expect(page.getByText('0 characters.')).toBeVisible();
+  await destination.fill(
+    `https://example.com/${'a'.repeat(120)}`, // 140 characters
+  );
+  await expect(page.locator('.ruler-readout')).toHaveText(
+    '140 characters. Whoa. Snip, snip.',
+  );
+  await destination.fill('https://ex.co/a');
+  await expect(page.locator('.ruler-readout')).toHaveText(
+    '15 characters. Already pretty smol.',
+  );
+  // Screen readers get one labelled list. Repeated copies stay hidden.
+  const strip = page.locator('.strip');
+  await expect(strip.getByRole('list')).toHaveCount(1);
+  await expect(
+    page.getByRole('list', { name: 'Highlights' }).getByRole('listitem'),
+  ).toHaveCount(5);
+  const track = page.locator('.marquee-track');
+  const state = () =>
+    track.evaluate((el) => getComputedStyle(el).animationPlayState);
+  expect(await state()).toBe('running');
+  const pause = page.getByRole('button', { name: 'Pause highlights' });
+  await pause.click();
+  expect(await state()).toBe('paused');
+  const play = page.getByRole('button', { name: 'Play highlights' });
+  await expect(play).toHaveAttribute('aria-pressed', 'true');
+  await play.click();
+  expect(await state()).toBe('running');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await track.evaluate((el) => getComputedStyle(el).animationName)).toBe(
+    'none',
+  );
+  await expect(pause).toBeHidden();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
 test('home reload starts at the full hero after scrolling or following a section link', async ({
   page,
 }) => {
@@ -303,7 +349,19 @@ test('boxed blocks lift on hover without changing layout and respect reduced mot
       await expect
         .poll(() => block.evaluate((el) => getComputedStyle(el).transform))
         .toBe('none');
-      const before = await block.boundingBox();
+      // Layout boxes ignore transforms and tilts, so they prove the lift and
+      // the sticker straightening never move neighbouring content.
+      const layout = () =>
+        block.evaluate((el) => {
+          const box = el as HTMLElement;
+          return [
+            box.offsetLeft,
+            box.offsetTop,
+            box.offsetWidth,
+            box.offsetHeight,
+          ];
+        });
+      const before = await layout();
       const shadow = await block.evaluate(
         (el) => getComputedStyle(el).boxShadow,
       );
@@ -311,11 +369,7 @@ test('boxed blocks lift on hover without changing layout and respect reduced mot
       await expect
         .poll(() => block.evaluate((el) => getComputedStyle(el).transform))
         .toBe(`matrix(1, 0, 0, 1, -${lift}, -${lift})`);
-      const after = await block.boundingBox();
-      expect(after!.width).toBeCloseTo(before!.width, 2);
-      expect(after!.height).toBeCloseTo(before!.height, 2);
-      expect(after!.x).toBeCloseTo(before!.x - lift);
-      expect(after!.y).toBeCloseTo(before!.y - lift);
+      expect(await layout()).toEqual(before);
       expect(
         await block.evaluate((el) => getComputedStyle(el).boxShadow),
       ).not.toBe(shadow);

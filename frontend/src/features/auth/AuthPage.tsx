@@ -181,6 +181,9 @@ export function AuthPage({
   return (
     <section className="auth-layout container">
       <aside className="auth-poster">
+        <span className="poster-sticker" aria-hidden="true">
+          <img src="/smolink-symbol.webp" alt="" width={592} height={570} />
+        </span>
         <h2 className="poster-display">
           Every link.
           <br />

@@ -22,7 +22,7 @@ Product copy never says demo, sample, or synthetic. Production marks backend-mis
 | Ground    | `--sky-surface` under one shell-level continuous square mesh at `--grid-size` (64px). Content surfaces stay opaque paper |
 | Accents   | Yellow, red (coral), blue, green. Black text on every accent                                                             |
 | Borders   | 2px internal rules. 3px controls and panels. 4px header edge and error emphasis                                          |
-| Shadows   | 3, 4, 5, or 8px positive offsets. Zero blur. Colored offsets only on ink surfaces                                        |
+| Shadows   | 3, 4, 6, 10, or 14px positive offsets. Zero blur. Colored offsets on ink surfaces and the hero highlight                |
 | Shape     | Radius 0 by default. The hero permits the supplied rounded label and form treatment                                      |
 | Spacing   | 4px optical step, then 8, 16, 24, 32, 48, 64, and 96px                                                                   |
 | Type      | Space Grotesk 700 headings. Inter 900 hero, 400/600 interface. Space Mono URLs and codes                                 |
@@ -42,7 +42,7 @@ The navbar has boxed GitHub and X links. The GitHub badge reads the repository s
 | ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | HIGH       | Public home             | Display headline with a yellow highlight, shortener card, yellow strip, color cards, step cards, boxed questions, ink closing band |
 | MEDIUM     | Account pages           | Ink poster with offset link stubs. Boxed form card with Continue with Google above an email form                                   |
-| CONTROLLED | Workspace and analytics | Ink side rail, three-column summary strip, flat table rows. Flat rows. Boxed panels lift slightly on hover                         |
+| CONTROLLED | Workspace and analytics | Yellow side rail, colored three-column summary strip, ink table header, flat rows. Boxed panels lift slightly on hover              |
 
 The URL field and Shorten button must sit in the first viewport at 390 × 844. Long URLs never cause page overflow. The result ticket scales its URL text with `cqi` units. Shared inputs use `min-width: 0` so intrinsic control widths cannot widen a page.
 
@@ -52,7 +52,7 @@ The hero copy starts with a paper label and the headline Long links? Smol it. Th
 
 The hero uses equal-height tickets with matching top and bottom edges. The white ticket takes 46% of the group width. The yellow ticket takes 40%. Labels sit above each ticket's center. The vertical cut line sits at the group's center, with upright scissors between equal dashed sections. The arrow points toward the yellow ticket. Text has no strike-through and stays clear of the notches.
 
-The left section moves 16px left on desktop. The ticket group matches the headline width. The ticket group moves up to 20px left on desktop, independently of the headline's left edge. Narrow desktop widths use a smaller offset to keep the border visible. The long URL uses three balanced lines with larger text. Rounded stroke joins and a smaller hard shadow keep the notches clear. The yellow highlight aligns with the headline's left edge on desktop. Supporting text stays centered. Between 561px and 900px, the highlight and ticket group stay centered. Narrower phones keep a centered highlight and omit the illustrative tickets. Ink rays sit outside the yellow ticket's top-right corner above 560px.
+The left section moves 16px left on desktop. The ticket group matches the headline width. The ticket group moves up to 20px left on desktop, independently of the headline's left edge. Narrow desktop widths use a smaller offset to keep the border visible. The long URL uses three balanced lines with larger text. Rounded stroke joins and a smaller hard shadow keep the notches clear. The yellow highlight aligns with the headline's left edge on desktop. Supporting text stays centered. Between 561px and 900px, the highlight and ticket group stay centered. Narrower phones keep a centered highlight and omit the illustrative tickets.
 
 Decorative SVG stays outside the accessibility tree and ignores pointer input. Above 560px, the stickers scale with their container. The desktop columns use more width and less space on the left.
 
@@ -64,7 +64,9 @@ The user-selected references permit small rounded corners on the hero, shared co
 
 The hero uses a pale blue surface with the original continuous square-line grid across the full section. Its intersections keep the original 64px rhythm. Precise-pointer velocity displaces nearby intersections, connected tension bends the square cells, and spring force returns the mesh. A primary pointer press sends one bounded wave through the grid. Touch movement does not compete with scrolling. Reduced motion removes displacement and click waves. The original static SVG tile remains when Canvas 2D is unavailable.
 
-The blue oval stays centered behind the form. It grows with the panel when the result appears below the input. Its diagonal follows opposite panel corners. It stays above the grid and below the form. Ink marks stay at the panel corner, clear of the ticket text. On phones, the backdrop stays behind the stacked form. The headline highlight has a black border and hard shadow. The long-link sticker ends with /that/keeps/going/on/and/on/and/on.
+Two flat paper sheets, blue and coral, sit behind the form with fixed opposite tilts. They share the panel's box, so they grow when the result appears below the input. They stay above the grid and below the form. A yellow starburst sticker sits on the panel's top-right corner. On phones, the sheets stay behind the stacked form with smaller offsets. The headline highlight has a black border and a coral hard shadow with an ink outline.
+
+The link ruler sits below the URL field. It is a tape measure that fills as the address grows, with a tick every 10 characters and scissors at the fill end. It states the exact character count and a short verdict about that count. The verdict never predicts the result. The ruler turns coral above 120 characters. The long-link sticker ends with /that/keeps/going/on/and/on/and/on.
 
 The result URL receives focus and selects its text. Focus keeps the scroll position when the URL is visible. If the URL is outside the viewport or behind the header, the browser brings it into view.
 
@@ -107,8 +109,8 @@ Check current neobrutalism.dev first. Map every adopted style to Smolink tokens.
 | Header           | Sticky paper bar, 4px ink edge. Cropped symbol and original Smolink wordmark sit side by side without a frame. Navigation and utility buttons sit at right. |
 | Navigation item  | Plain text at rest with a transparent 3px border. See the state table                                                                                       |
 | Shortener card   | Paper panel, 3px border, large shadow. Joined URL field and ink Shorten button. Heading kept for screen readers                                             |
-| Highlights strip | Static yellow band with spark icons. Only true, live capabilities                                                                                           |
-| Feature card     | Solid accent fill, 3px border, medium shadow, boxed icon. Coming soon badge in production when the backend is missing                                       |
+| Highlights strip | Yellow marquee with star marks and a Pause highlights control. One labelled list for screen readers. Only true, live capabilities                         |
+| Feature card     | Solid accent fill, 3px border, medium shadow, fixed tilt, boxed icon. Straightens on hover. Coming soon sticker on the corner in production                 |
 | Step card        | Paper card with a numbered yellow circle. Numbers mark a real sequence                                                                                      |
 | Ticket           | Stub and body split by a dashed rule with two notches. Green stub for results, blue stub for link details                                                   |
 | Field            | Visible label, 3px border, adjacent error with an alert icon, then help text. Focus lifts with a 4px hard shadow                                            |
@@ -129,7 +131,7 @@ Check current neobrutalism.dev first. Map every adopted style to Smolink tokens.
 | Error         | Adjacent text, associated field, structural emphasis. Red is supplementary                    |
 | Selected      | Programmatic state plus explicit text, border, or fill                                        |
 
-Decorative shapes are limited to the brand mark, the strip's spark icons, the auth poster stubs, and the supplied hero illustrations. Do not add scattered stars or blobs.
+Decorative shapes are limited to the brand mark, the marquee star marks, the hero starburst and paper sheets, the closing star, the dashed cut line with scissors, the auth poster stubs and sticker, the lost-ticket on the not-found page, and the supplied hero illustrations. Each has one fixed place and tilt. Do not add scattered stars or blobs.
 
 ## Requested controls
 
@@ -137,7 +139,7 @@ The expiry control has one calendar trigger. Its popup contains the calendar, ed
 
 At 560px or less, the calendar's date and time fields stack with 16px text and a 16px gap. The popup scrolls when space is limited, so Clear and Done remain reachable.
 
-The workspace uses a paper sidebar with grouped navigation, a yellow current-page marker, and a collapse control. Collapsed desktop navigation keeps accessible link names. Widths from 561px to 860px keep the collapsible workspace navigation. Narrower phones keep all destinations visible. Status and analytics ranges use Base UI Select. Sort uses a searchable Base UI Combobox. Query parameters still own filter state.
+The workspace uses a yellow sidebar with grouped navigation, a paper current-page marker, and a collapse control. Collapsed desktop navigation keeps accessible link names. Widths from 561px to 860px keep the collapsible workspace navigation. Narrower phones keep all destinations visible. Status and analytics ranges use Base UI Select. Sort uses a searchable Base UI Combobox. Query parameters still own filter state.
 
 Contact me opens a dialog with Name, Email, and Message fields. Open email draft prepares a mailto link to debrato2005@gmail.com. The visitor sends the message from their email app. The interface never claims delivery. Contact values stay in memory.
 
@@ -145,7 +147,7 @@ At 560px or less, dialogs use 16px side padding and wrap long descriptions. Conf
 
 ## Motion and accessibility
 
-CSS owns control and content motion. Navigation items move their transform and shadow over 180ms and their fill and border over 120ms. Buttons and inputs use the 120ms press and lift. The result ticket prints with one clip-path reveal. The page square mesh uses a local Canvas 2D animation loop only while displacement or a click wave is active. It does not update React state per frame. It keeps one line color, caps pointer displacement at 16px, and uses interpolating curves through the grid intersections so the moving bulge stays round. The highlights strip is static because continuous animation is prohibited. Avoid transitions of layout properties.
+CSS owns control and content motion. Navigation items move their transform and shadow over 180ms and their fill and border over 120ms. Buttons and inputs use the 120ms press and lift. The result ticket prints with one clip-path reveal. The page square mesh uses a local Canvas 2D animation loop only while displacement or a click wave is active. It does not update React state per frame. It keeps one line color, caps pointer displacement at 16px, and uses interpolating curves through the grid intersections so the moving bulge stays round. The highlights marquee moves one group per loop with a linear CSS animation. The Pause highlights control stops it (WCAG 2.2.2). It also stops when it leaves the viewport. Reduced motion shows one static, wrapping list and hides the control. Avoid transitions of layout properties.
 
 Feature cards, step cards, and question rows lift 6px and grow their hard shadow by 6px on hover. The shortener panel stays still. Other boxes keep the existing 2px lift. Reduced motion and touch-only pointers disable the lift. Loading states use bordered skeletons and accessible status text.
 
@@ -157,6 +159,6 @@ Target WCAG 2.2 AA. This is not a conformance claim. Require semantic landmarks,
 
 ## Forbidden patterns and deferred decisions
 
-Gradients are prohibited, including backgrounds, text, borders, masks, charts, and shaders. The page grid uses solid Canvas 2D strokes over a solid fill, with the original SVG line tile as its fallback. Also prohibit glassmorphism, blur, glow, soft elevation, unrequested rounded landing cards, pervasive pills, unrequested floating blobs, random rotation, and hero-metric cards. Continuous marquee motion is prohibited.
+Gradients are prohibited, including backgrounds, text, borders, masks, charts, and shaders. The page grid uses solid Canvas 2D strokes over a solid fill, with the original SVG line tile as its fallback. Also prohibit glassmorphism, blur, glow, soft elevation, unrequested rounded landing cards, pervasive pills, unrequested floating blobs, random rotation, and hero-metric cards. Tilts are fixed per element and come from the `--tilt-*` tokens. Moving content needs a visible pause control and a static reduced-motion state. (User decision, October 26, 2026.)
 
 Dark mode is `DEFERRED`. Paper Shaders is `EVALUATED_DEFERRED`. The DotGrid motion model from React Bits is `SELECTED_BOUNDED_USE` for the local square field. Other React Bits components remain `REFERENCE_ONLY`. Figma synchronization is planned external work.

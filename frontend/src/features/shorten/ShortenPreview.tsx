@@ -77,6 +77,48 @@ function Ticket({ link, links }: { link: CreatedLink; links: ProductGateway }) {
   );
 }
 
+const rulerLength = 120;
+function verdict(count: number) {
+  if (count === 0) return 'Paste a link to measure it.';
+  if (count <= 25) return 'Already pretty smol.';
+  if (count <= 60) return 'Getting long.';
+  if (count <= 100) return 'That is a long one.';
+  return 'Whoa. Snip, snip.';
+}
+
+// A tape measure for the pasted address. The count is exact; the verdict is
+// only a playful reading of that count, never a promise about the result.
+function LinkRuler({ value }: { value: string }) {
+  const count = characters(value.trim());
+  const fill = Math.min(count / rulerLength, 1);
+  return (
+    <div
+      className="link-ruler"
+      data-overflow={count > rulerLength || undefined}
+    >
+      <div
+        className="ruler-track"
+        aria-hidden="true"
+        style={{ '--fill': fill } as CSSProperties}
+      >
+        <span className="ruler-fill" />
+        <span className="ruler-ticks">
+          {Array.from({ length: rulerLength / 10 }, (_, index) => (
+            <i key={index} />
+          ))}
+        </span>
+        <span className="ruler-cursor">
+          <Icon name="scissors" size={18} />
+        </span>
+      </div>
+      <p className="ruler-readout">
+        <strong>{count}</strong> {count === 1 ? 'character' : 'characters'}.{' '}
+        <span>{verdict(count)}</span>
+      </p>
+    </div>
+  );
+}
+
 export function ShortenPreview({
   links,
   onCreated,
@@ -170,6 +212,7 @@ export function ShortenPreview({
             </Button>
           }
         />
+        <LinkRuler value={destination} />
         <div className="bench-options">
           <Field
             id="alias"

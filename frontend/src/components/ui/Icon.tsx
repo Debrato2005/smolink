@@ -25,6 +25,8 @@ const paths = {
   info: 'M12 11v6M12 7v1M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
   spark: 'M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9L4.9 19.1',
   alert: 'M12 3l10 18H2zM12 10v5M12 17.5v.5',
+  pause: 'M7 4h3v16H7zM14 4h3v16h-3z',
+  play: 'M7 4l13 8-13 8z',
   scissors:
     'M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.2 7.8L20 19M8.2 16.2L20 5',
 } as const;
