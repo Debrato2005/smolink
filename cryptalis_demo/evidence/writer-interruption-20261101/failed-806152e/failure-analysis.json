@@ -1,0 +1,9 @@
+{
+  "measured_revision": "806152e9105b31b2bc706a8587263eddf42e95e9",
+  "cause": "Controller required host exit0; installed Uvicorn re-raises SIGTERM after server shutdown and exits-15.",
+  "first_run_outcome": "FAIL before lifecycle mutation; native POST201 and independent commit check passed",
+  "diagnosis": "Installed uvicorn.Server.capture_signals restores original signal handlers, then signal.raise_signal for captured signals after graceful server shutdown.",
+  "uvicorn_server_sha256": "c1be9d133467a42ab88d7168e408ef5a90257661a901899426214a3d1fc2d026",
+  "correction": "Accept exit0 or-SIGTERM, record actual exit and require port no longer serves; other codes fail. No claim that every Python finalizer ran.",
+  "cleanup": "Host, Redis, PostgreSQL, OpenBao stopped; private custody retained."
+}

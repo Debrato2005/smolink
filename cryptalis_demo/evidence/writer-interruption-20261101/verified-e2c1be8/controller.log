@@ -1,0 +1,1 @@
+{"status": "PASS", "transitions": [{"operation": "protect", "stop_to_first_committed_post_seconds": 4.07101209}, {"operation": "rotate-wrapping", "stop_to_first_committed_post_seconds": 4.501487089}, {"operation": "rotate-payload", "stop_to_first_committed_post_seconds": 12.169280113}]}

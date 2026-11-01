@@ -1,0 +1,1 @@
+{"operation": "rotate-search", "error": "TransitionFailure", "code": "search_rotation_requires_searchable_fields", "remedy": null}

@@ -1,0 +1,8 @@
+{
+  "operation": "rotate-payload",
+  "elapsed_seconds": 9.9064243480002,
+  "result": {
+    "phase": "ACTIVE",
+    "committed_rows": 10003
+  }
+}

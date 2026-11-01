@@ -1,0 +1,8 @@
+{
+  "operation": "protect",
+  "elapsed_seconds": 1.7723547010000402,
+  "result": {
+    "phase": "ACTIVE",
+    "committed_rows": 10001
+  }
+}

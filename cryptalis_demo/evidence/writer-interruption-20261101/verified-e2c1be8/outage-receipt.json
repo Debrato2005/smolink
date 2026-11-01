@@ -1,0 +1,603 @@
+{
+  "status": "PASS",
+  "started_at_utc": "2026-11-01T07:01:00.922151+00:00",
+  "demo_revision": "e2c1be8f2001884d9e0bed14f3c24097590ff8b4",
+  "frozen_demo_revision": "269aed4bcfcbbf40ffea444f2e2a748013c862d4",
+  "source_sha256_before": {
+    "backend/app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/app/api/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/app/api/v1/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/app/api/v1/dependencies/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/app/api/v1/dependencies/auth.py": "476e799e913b5bee15a2314cc955da9093b01575e01ddccf59140deb0c2a66a7",
+    "backend/app/api/v1/dependencies/rate_limit.py": "2ad974cdc23ddfd4681a0a1f8b1d5c4cf1917f2db59619d8dfd6ff2cf82a0229",
+    "backend/app/api/v1/endpoints/auth.py": "272944ecca7e6b6c4c4a66c000dcff1bb23ad27c7425f95d7d4db61491dc497e",
+    "backend/app/api/v1/endpoints/health.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/app/api/v1/endpoints/urls.py": "d080e88ea41404ceab3780de3342914b129e3f79d1155901d2d6f31ce8044126",
+    "backend/app/api/v1/router.py": "fa882a03872dddfdd0d2756e0b1cbdbe574b1f4cb7393b4df0ccb4717102fcbb",
+    "backend/app/core/config.py": "b773b6057ad36230bb6b8a39912965569e0e5de8070fa2e537da641f6f1a6e23",
+    "backend/app/core/rate_limit.py": "019ccd2f270c77d80cbfda973bedde4ae07201bf52f149c877a57833fed10dd9",
+    "backend/app/core/redis.py": "9eb34285f36648fa6067f0357441d1215d0d372a4586f06d926f4fde170987c5",
+    "backend/app/db/base.py": "7fe30a19c437f9e2a5ebd25bc4243f3648388d128f3bc08bd207e98178d2f3ab",
+    "backend/app/db/session.py": "f338b1964389273eb2928cce8250fc3150bbc3921923251135240a2c968dd4a2",
+    "backend/app/main.py": "74b8db826cec1be6502b1dc61d0106641a9616ea13d9836414aa04c11ef09bdc",
+    "backend/app/models/__init__.py": "9577e15cd725101acec6978d977c5ee71f7d9752e5ebf7dec995fc7081258be2",
+    "backend/app/models/auth_identity.py": "ac72d7041b60ee9ed2c20350e6f499fbbfd9c6655b8fbe4e4fde5f6b441702fe",
+    "backend/app/models/click_event.py": "8d714ead466305a517fbdcc555856b1a921aa2b37f0f4b4408cb838268b4b559",
+    "backend/app/models/email_verification_token.py": "513c0ebd6852a3522e007a48d128230519ef1525613e9f93008dd9a663c20255",
+    "backend/app/models/oauth_authorization_request.py": "1e1998c100f19d171c4b33e5a1b30ebf3b0d6ddfac38b2e30a11f8882db9435f",
+    "backend/app/models/password_reset_token.py": "3b1971e7a4c070a99a0fe8cb12e102e89c74852016e1fa7947c6c2aaea74bba1",
+    "backend/app/models/refresh_token.py": "40af568880f162062b35218180571417a887434e1841947e8aff0ebd267fec66",
+    "backend/app/models/url.py": "3c39f1138311b2ad1f8e97742819dcee7d765b7ccd76f62d179a61c2e7b8fa39",
+    "backend/app/models/user.py": "25508551f74ea8abcd77b43fba02d7af807bf0be0774d6bdaf27d60dc1197482",
+    "backend/app/repositories/auth_repository.py": "d0311f8566adc97273ddd0fc450603b783c6ad7fd4db22938f0dda76b6b2ce3c",
+    "backend/app/repositories/url_repository.py": "7efbb578556d77a1e664dd1235745273a88d619edb2a9d17b5c56f65381729a9",
+    "backend/app/repositories/user_repository.py": "2008d9078f09c95cb4a12de06ad0cee8ffd77da1e22fe027c13c6cf0a9787925",
+    "backend/app/schemas/auth.py": "3cf87a4cb0110c366c8eb1eb0489040d6dad688bdc33f4794bca0244477c2651",
+    "backend/app/schemas/url.py": "0ba3009e0246a6aea3180653c4e4226a219a24c978e8ebc1178766c0a13e210f",
+    "backend/app/services/auth_service.py": "c2ac2129f63089ca19c33926c2234cd3aa5eaca1072110a19bf4ebd11061e119",
+    "backend/app/services/email_service.py": "01f331280a166ccbd529bbaf5604fc780197d84a98039922b44f13e5d0088c2f",
+    "backend/app/services/url_service.py": "463f51dc94c192bfc06c8910a6f64d8e1919584dca6d21f6d169a3a20853d3d8",
+    "backend/app/utils/aliases.py": "87d8666cde83a77a79f75bacf7fdcb8bca018b755f9a84feaaa9a04023603132",
+    "backend/app/utils/base62.py": "be154d41201a802923ae8d7489772be0d3b89e50a9bacd9945af84130d580804",
+    "backend/app/utils/oidc.py": "650568c381fa6e53b25780b8b1e2c380d2f84a4ae9e11a4234a94ad3aa1cabf4",
+    "backend/app/utils/security.py": "f09a0aada6c25e296408eaed8d35c599a324de4d9f8488493bce065db690dd96",
+    "backend/app/utils/snowflake.py": "542d4cc38a6f2d16a59709c8d617b308ab356262b850c6a648d4380b089b5e6e",
+    "backend/pyproject.toml": "9cb63081c9d4d44e3de96dcb64183ed2d5bff6e9427f77f6cc506b056ec65eea",
+    "backend/uv.lock": "162777f9b588356f462145bf72ae984b55ae29ffc1e3f5a7db7aba85496dbec8",
+    "cryptalis_demo/__init__.py": "a2f50e41f08d25aec75b89724f1e9603177a8a2d444baf1d9dde0d1a0e7a91da",
+    "cryptalis_demo/benchmark.py": "a89c77ee8c69a4ae23373e8288d22a297f070ae62f2a28c919f6c209fdfd8f52",
+    "cryptalis_demo/capture_swagger.py": "d18bd9a778cec5c75d645394d380cfb48e417bb41746c7331960b29824ebb164",
+    "cryptalis_demo/host.py": "095939ac754c98c65e4db8c6562f5464a6ce7a552316a4608c9f1daf259fe69b",
+    "cryptalis_demo/journey.py": "c85102ced42cd8e54376071fdb62e4ec30b3c26772d7da1054b014a0d56108dc",
+    "cryptalis_demo/manage.py": "dc499226f8fd18abbfc67744a5068141fb05543e58c250c9d95cf6f4352692f6",
+    "cryptalis_demo/manifest.json": "c28b98410ca533b469bfab773ef743f59fb57f02c1101fe6a3050fc4dd5d64d8",
+    "cryptalis_demo/measure_outage.py": "5d9a78c0986df4e717e3c793c57a465bfdb82befad517ab4cbfc77436eb6db6e",
+    "cryptalis_demo/measure_pair.py": "35cbc754ace8c54017013a5bb6b9631cee8dd3fb1cccdfd7f90878b36321fa2f",
+    "cryptalis_demo/provision_provider.py": "92d4b1f12a7c6e192455c2cbbc45ef9255f6f39e760e7af0c2c538ddda044455",
+    "cryptalis_demo/recover.py": "7e24694128ecf1d36047775b7544fce8508696678331c576943b3f7276edcca0",
+    "cryptalis_demo/render_measurements.py": "caae1d58438e64f9d5c7e9ac2f9544c36b66d0221bcfd82b23f2b596121ac639",
+    "cryptalis_demo/requirements.txt": "cfa82b8bde8b4853983a0653d87663ef7856c63583c80e911009ad12885cbfca",
+    "cryptalis_demo/setup.py": "c4fb852a8b2f3b31b867db5e2d287ac81754b02c6007f1adc9034cb7a431b017"
+  },
+  "library_revision": "655d52271d90effb4df918a9547f61c89055fbc7",
+  "wheel_sha256": "eedecae8fd72a06bdf8ed95bd0aae377cabdfd51df325c50463f4f4f4b65060a",
+  "provisioning_helper_revision": "fb53e9f46941c80a989c47651bca455adf488977",
+  "provisioning_helper_sha256": {
+    "fresh_cluster_qualification.py": "6dc0f3910b6b623b81af609eb738757793b2f941e300c84ae197951cfa30672b",
+    "openbao_qualification.py": "3818b4e94994951eb93113ffa8323ce5dc28b66b37571eea1fba9ce338f0c6ba",
+    "test_postgres.py": "13c723f64d61719a3d85aa3f464eac3e3d6575c22b7b81622805c338e087e6c8"
+  },
+  "python": "3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]",
+  "executable": "/workspace/smolink-preview/.venv/bin/python",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "dependencies": {
+    "cryptalis": "0.1.0a1",
+    "cryptography": "50.0.2",
+    "SQLAlchemy": "2.1.3",
+    "psycopg": "3.3.6",
+    "hvac": "2.4.0",
+    "fastapi": "0.162.0",
+    "uvicorn": "0.54.0",
+    "redis": "8.1.0"
+  },
+  "commands": [
+    {
+      "stage": "installed-runtime",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "/workspace/cryptalis-production/scripts/test_postgres.py",
+        "--installed-wheel",
+        "/workspace/scratch/cryptalis-package-20261101/artifacts/cryptalis-0.1.0a1-py3-none-any.whl",
+        "--runtime-binding-only"
+      ]
+    },
+    {
+      "stage": "setup",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "-m",
+        "cryptalis_demo.setup",
+        "--workdir",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/database",
+        "--provider-config",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/openbao/provider-config.json",
+        "--cryptalis-checkout",
+        "/workspace/cryptalis-production",
+        "--rows",
+        "10000"
+      ]
+    },
+    {
+      "stage": "cold-import-provider-probe",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "-c",
+        "import json,os,sys,time\nfrom uuid import UUID,uuid4\nstarted=time.monotonic_ns()\nimport cryptalis\nlibrary_import=(time.monotonic_ns()-started)/1e9\nfrom cryptalis_demo.host import load_config,import_application,make_provider\nc=load_config(sys.argv[1])\nstarted=time.monotonic_ns(); import_application(c); app_import=(time.monotonic_ns()-started)/1e9\nstarted=time.monotonic_ns(); p=make_provider(c['providers'][c.get('active_provider',0)]); construction=(time.monotonic_ns()-started)/1e9\nfrom cryptalis.crypto import KeyContext\ncontext=KeyContext(UUID('b62c0af3-f128-4d0b-ac6a-dfc40ae6d128'),UUID(int=901),'payload',uuid4(),1)\nroot=os.urandom(32)\nstarted=time.monotonic_ns(); wrapped=p.wrap(root,context); wrapping=(time.monotonic_ns()-started)/1e9\nstarted=time.monotonic_ns(); recovered=p.unwrap(wrapped,context); unwrapping=(time.monotonic_ns()-started)/1e9\nif recovered!=root: raise RuntimeError('Provider roundtrip failed')\nprint(json.dumps(dict(installed_library_import_seconds=library_import,original_application_import_seconds=app_import,provider_construct_seconds=construction,provider_wrap_seconds=wrapping,provider_unwrap_seconds=unwrapping,provider_roundtrip='PASS',scope='Fresh interpreter and provider object; separate HTTPS sessions with metadata+Transit requests; local provider service warmed by provisioning; no raw root output')))\n",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/database/config.json"
+      ]
+    },
+    {
+      "stage": "native-host",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "-m",
+        "cryptalis_demo.host",
+        "--config",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/database/config.json",
+        "--mode",
+        "native",
+        "--port",
+        "52931"
+      ]
+    },
+    {
+      "stage": "protect",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "-m",
+        "cryptalis_demo.manage",
+        "protect",
+        "--config",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/database/config.json",
+        "--writers-stopped",
+        "One local host gracefully stopped and reaped; no other writer or in-flight request"
+      ]
+    },
+    {
+      "stage": "protect-host",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "-m",
+        "cryptalis_demo.host",
+        "--config",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/database/config.json",
+        "--mode",
+        "protected",
+        "--port",
+        "52931"
+      ]
+    },
+    {
+      "stage": "rotate-wrapping",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "-m",
+        "cryptalis_demo.manage",
+        "rotate-wrapping",
+        "--config",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/database/config.json",
+        "--writers-stopped",
+        "One local host gracefully stopped and reaped; no other writer or in-flight request"
+      ]
+    },
+    {
+      "stage": "rotate-wrapping-host",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "-m",
+        "cryptalis_demo.host",
+        "--config",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/database/config.json",
+        "--mode",
+        "protected",
+        "--port",
+        "52931"
+      ]
+    },
+    {
+      "stage": "rotate-payload",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "-m",
+        "cryptalis_demo.manage",
+        "rotate-payload",
+        "--config",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/database/config.json",
+        "--writers-stopped",
+        "One local host gracefully stopped and reaped; no other writer or in-flight request"
+      ]
+    },
+    {
+      "stage": "rotate-payload-host",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "-m",
+        "cryptalis_demo.host",
+        "--config",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/database/config.json",
+        "--mode",
+        "protected",
+        "--port",
+        "52931"
+      ]
+    },
+    {
+      "stage": "search-refusal",
+      "argv": [
+        "/workspace/smolink-preview/.venv/bin/python",
+        "-m",
+        "cryptalis_demo.manage",
+        "rotate-search",
+        "--config",
+        "/workspace/scratch/smolink-writer-interruption-private-20261101-r2/database/config.json",
+        "--writers-stopped",
+        "All one-host writers stopped; search capability check only"
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "operation": "protect",
+      "stop_to_first_committed_post_seconds": 4.07101209,
+      "graceful_stop_seconds": 0.214266964,
+      "stopped_host_exit_code": -15,
+      "lifecycle_process_wall_seconds": 2.772633419,
+      "public_project_call_seconds": 1.7723547010000402,
+      "process_time_outside_project_call_seconds": 1.0002787179999597,
+      "project_result": {
+        "phase": "ACTIVE",
+        "committed_rows": 10001
+      },
+      "fresh_host": {
+        "spawn_to_health200_seconds": 0.972306566,
+        "health_polls": 93
+      },
+      "first_write": {
+        "status": 201,
+        "json": {
+          "id": 7447502753309392896,
+          "short_code": "outage-6cf44f8e470e",
+          "short_url": "http://127.0.0.1:52931/outage-6cf44f8e470e",
+          "destination": "https://example.invalid/outage-proof-protect",
+          "expires_at": null,
+          "created_at": "2026-11-01T07:01:20.499799Z"
+        },
+        "request_seconds": 0.11113117,
+        "independent_committed_row": true,
+        "storage_kind": "bytea"
+      },
+      "resources": {
+        "samples": 179,
+        "groups": {
+          "operator": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 118132736,
+            "observed_cpu_increment_seconds": 2.06
+          },
+          "redis": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 5070848,
+            "observed_cpu_increment_seconds": 0.0
+          },
+          "application": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 120819712,
+            "observed_cpu_increment_seconds": 1.0299999999999998
+          },
+          "postgresql": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 78430208,
+            "observed_cpu_increment_seconds": 0.67
+          },
+          "openbao": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 94420992,
+            "observed_cpu_increment_seconds": 0.060000000000000005
+          }
+        }
+      }
+    },
+    {
+      "operation": "rotate-wrapping",
+      "stop_to_first_committed_post_seconds": 4.501487089,
+      "graceful_stop_seconds": 0.16509872,
+      "stopped_host_exit_code": -15,
+      "lifecycle_process_wall_seconds": 3.232824532,
+      "public_project_call_seconds": 2.09346199599986,
+      "process_time_outside_project_call_seconds": 1.13936253600014,
+      "project_result": {
+        "phase": "ACTIVE",
+        "committed_rows": 10002
+      },
+      "fresh_host": {
+        "spawn_to_health200_seconds": 0.979110394,
+        "health_polls": 94
+      },
+      "first_write": {
+        "status": 201,
+        "json": {
+          "id": 7447502772359921664,
+          "short_code": "outage-a5b8366e9086",
+          "short_url": "http://127.0.0.1:52931/outage-a5b8366e9086",
+          "destination": "https://example.invalid/outage-proof-rotate-wrapping",
+          "expires_at": null,
+          "created_at": "2026-11-01T07:01:25.052848Z"
+        },
+        "request_seconds": 0.123838872,
+        "independent_committed_row": true,
+        "storage_kind": "bytea"
+      },
+      "resources": {
+        "samples": 199,
+        "groups": {
+          "operator": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 117665792,
+            "observed_cpu_increment_seconds": 2.99
+          },
+          "redis": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 5070848,
+            "observed_cpu_increment_seconds": 0.01
+          },
+          "application": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 122449920,
+            "observed_cpu_increment_seconds": 1.0500000000000003
+          },
+          "postgresql": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 71827456,
+            "observed_cpu_increment_seconds": 0.13
+          },
+          "openbao": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 95207424,
+            "observed_cpu_increment_seconds": 0.11
+          }
+        }
+      }
+    },
+    {
+      "operation": "rotate-payload",
+      "stop_to_first_committed_post_seconds": 12.169280113,
+      "graceful_stop_seconds": 0.163873534,
+      "stopped_host_exit_code": -15,
+      "lifecycle_process_wall_seconds": 10.943761111,
+      "public_project_call_seconds": 9.9064243480002,
+      "process_time_outside_project_call_seconds": 1.0373367629998,
+      "project_result": {
+        "phase": "ACTIVE",
+        "committed_rows": 10003
+      },
+      "fresh_host": {
+        "spawn_to_health200_seconds": 0.934751505,
+        "health_polls": 88
+      },
+      "first_write": {
+        "status": 201,
+        "json": {
+          "id": 7447502823605927936,
+          "short_code": "outage-2ebd61b4f1ab",
+          "short_url": "http://127.0.0.1:52931/outage-2ebd61b4f1ab",
+          "destination": "https://example.invalid/outage-proof-rotate-payload",
+          "expires_at": null,
+          "created_at": "2026-11-01T07:01:37.273728Z"
+        },
+        "request_seconds": 0.126386062,
+        "independent_committed_row": true,
+        "storage_kind": "bytea"
+      },
+      "resources": {
+        "samples": 549,
+        "groups": {
+          "operator": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 118800384,
+            "observed_cpu_increment_seconds": 9.67
+          },
+          "redis": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 5070848,
+            "observed_cpu_increment_seconds": 0.0
+          },
+          "application": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 122449920,
+            "observed_cpu_increment_seconds": 1.0
+          },
+          "postgresql": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 84688896,
+            "observed_cpu_increment_seconds": 1.28
+          },
+          "openbao": {
+            "processes_observed": true,
+            "observed_max_summed_rss_bytes": 95338496,
+            "observed_cpu_increment_seconds": 0.12999999999999998
+          }
+        }
+      }
+    }
+  ],
+  "cleanup": [
+    {
+      "service": "redis",
+      "stopped": true,
+      "exit_code": 0
+    },
+    {
+      "service": "postgresql",
+      "stopped": true
+    },
+    {
+      "service": "openbao",
+      "stopped": true,
+      "custody_files_retained": true
+    }
+  ],
+  "timing_contract": {
+    "start": "time.monotonic_ns immediately before SIGTERM to the real running host",
+    "stop": "old Uvicorn process reaped with0 or expected-SIGTERM exit; health connection refused before lifecycle mutation. Uvicorn re-raises captured SIGTERM after server shutdown; this does not attest every Python finalizer.",
+    "end": "first HTTP201 response fully read; original route commits and refreshes before responding",
+    "independent_commit_check": "owner connection finds exact id/short_code after the201, outside interval",
+    "readiness": "fresh process health200 then actual POST201; health alone is not database readiness",
+    "workload": "10000 deterministic seeded URLs; only one host and no in-flight requests at SIGTERM",
+    "rate_limiter": "original real Redis limiter remains enabled; fewer than10 guest creates per window",
+    "limits": "One observation per operation; warm local services, fresh interpreter and empty process key cache. Not production RTO/downtime, concurrency or tail evidence."
+  },
+  "resource_contract": {
+    "sampling_interval_seconds": 0.02,
+    "scope": "tracked application/operator subprocesses plus descendant local PostgreSQL, Redis and OpenBao processes when visible",
+    "cpu": "observed /proc CPU increments; missing final ticks/short-lived processes make these lower bounds",
+    "memory": "observed maximum summed RSS; shared pages can be counted repeatedly, and sparse samples do not establish true peak or physical memory",
+    "exclusions": "controller/sampler, Docker daemon and unrelated host processes; shared-host contention uncontrolled"
+  },
+  "runtime_binding": {
+    "exit_code": 0,
+    "wall_seconds": 0.218397329
+  },
+  "provider_provision_seconds": 10.898481896,
+  "openbao_process_visible": true,
+  "openbao": {
+    "image": "openbao/openbao@sha256:5046911075e137e154ce49ab051502f4ec7cf367d484ae4a4dce665d9b90561f",
+    "version": "2.7.2",
+    "custody": "single-node local TLS OpenBao; generated Transit keys; narrow 8-hour tokens",
+    "limits": "Local functional custody only. Production provider gate remains UNKNOWN."
+  },
+  "setup": {
+    "exit_code": 0,
+    "wall_seconds": 2.171056282
+  },
+  "dataset": {
+    "rows": 10000,
+    "sha256": "18eeb4c2a044c9782ab7841e645ce17862f7bc9648189c5ce5d3bf4f3d404d22",
+    "pattern": "same original Url fields, deterministic IDs, 2/3 seeded verified owner",
+    "server_version": "16.15"
+  },
+  "public_base_url": "http://127.0.0.1:52931",
+  "providers": [
+    {
+      "endpoint": "https://127.0.0.1:41919",
+      "provider_id": "ab7b2e1c-6f03-420c-863d-ae9ebeb9c687",
+      "key_name": "preview-v1",
+      "key_version": 1
+    },
+    {
+      "endpoint": "https://127.0.0.1:41919",
+      "provider_id": "5841f452-8ba9-4197-b204-2dd573bcc081",
+      "key_name": "preview-v2",
+      "key_version": 1
+    }
+  ],
+  "redis_version": "Redis server v=7.4.2 sha=a0a6f23d:0 malloc=libc bits=64 build=883893089dad1aa6",
+  "cold_probe_process": {
+    "exit_code": 0,
+    "wall_seconds": 1.068691041
+  },
+  "cold_import_provider_probe": {
+    "installed_library_import_seconds": 0.000151985,
+    "original_application_import_seconds": 0.726744987,
+    "provider_construct_seconds": 0.005750386,
+    "provider_wrap_seconds": 0.066369143,
+    "provider_unwrap_seconds": 0.007075813,
+    "provider_roundtrip": "PASS",
+    "scope": "Fresh interpreter and provider object; separate HTTPS sessions with metadata+Transit requests; local provider service warmed by provisioning; no raw root output"
+  },
+  "native_cold_start": {
+    "spawn_to_health200_seconds": 0.825137472,
+    "health_polls": 78
+  },
+  "initial_committed_post": {
+    "status": 201,
+    "json": {
+      "id": 7447502735802368000,
+      "short_code": "outage-06aed8d0c6cf",
+      "short_url": "http://127.0.0.1:52931/outage-06aed8d0c6cf",
+      "destination": "https://example.invalid/outage-proof-native-initial",
+      "expires_at": null,
+      "created_at": "2026-11-01T07:01:16.270600Z"
+    },
+    "request_seconds": 0.048674842,
+    "independent_committed_row": true,
+    "storage_kind": "str"
+  },
+  "search_rotation": {
+    "outcome": "REFUSED",
+    "writer_interruption": "UNMEASURED",
+    "error": {
+      "operation": "rotate-search",
+      "error": "TransitionFailure",
+      "code": "search_rotation_requires_searchable_fields",
+      "remedy": null
+    },
+    "command_wall_seconds": 1.068584325
+  },
+  "source_sha256_after": {
+    "backend/app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/app/api/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/app/api/v1/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/app/api/v1/dependencies/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/app/api/v1/dependencies/auth.py": "476e799e913b5bee15a2314cc955da9093b01575e01ddccf59140deb0c2a66a7",
+    "backend/app/api/v1/dependencies/rate_limit.py": "2ad974cdc23ddfd4681a0a1f8b1d5c4cf1917f2db59619d8dfd6ff2cf82a0229",
+    "backend/app/api/v1/endpoints/auth.py": "272944ecca7e6b6c4c4a66c000dcff1bb23ad27c7425f95d7d4db61491dc497e",
+    "backend/app/api/v1/endpoints/health.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/app/api/v1/endpoints/urls.py": "d080e88ea41404ceab3780de3342914b129e3f79d1155901d2d6f31ce8044126",
+    "backend/app/api/v1/router.py": "fa882a03872dddfdd0d2756e0b1cbdbe574b1f4cb7393b4df0ccb4717102fcbb",
+    "backend/app/core/config.py": "b773b6057ad36230bb6b8a39912965569e0e5de8070fa2e537da641f6f1a6e23",
+    "backend/app/core/rate_limit.py": "019ccd2f270c77d80cbfda973bedde4ae07201bf52f149c877a57833fed10dd9",
+    "backend/app/core/redis.py": "9eb34285f36648fa6067f0357441d1215d0d372a4586f06d926f4fde170987c5",
+    "backend/app/db/base.py": "7fe30a19c437f9e2a5ebd25bc4243f3648388d128f3bc08bd207e98178d2f3ab",
+    "backend/app/db/session.py": "f338b1964389273eb2928cce8250fc3150bbc3921923251135240a2c968dd4a2",
+    "backend/app/main.py": "74b8db826cec1be6502b1dc61d0106641a9616ea13d9836414aa04c11ef09bdc",
+    "backend/app/models/__init__.py": "9577e15cd725101acec6978d977c5ee71f7d9752e5ebf7dec995fc7081258be2",
+    "backend/app/models/auth_identity.py": "ac72d7041b60ee9ed2c20350e6f499fbbfd9c6655b8fbe4e4fde5f6b441702fe",
+    "backend/app/models/click_event.py": "8d714ead466305a517fbdcc555856b1a921aa2b37f0f4b4408cb838268b4b559",
+    "backend/app/models/email_verification_token.py": "513c0ebd6852a3522e007a48d128230519ef1525613e9f93008dd9a663c20255",
+    "backend/app/models/oauth_authorization_request.py": "1e1998c100f19d171c4b33e5a1b30ebf3b0d6ddfac38b2e30a11f8882db9435f",
+    "backend/app/models/password_reset_token.py": "3b1971e7a4c070a99a0fe8cb12e102e89c74852016e1fa7947c6c2aaea74bba1",
+    "backend/app/models/refresh_token.py": "40af568880f162062b35218180571417a887434e1841947e8aff0ebd267fec66",
+    "backend/app/models/url.py": "3c39f1138311b2ad1f8e97742819dcee7d765b7ccd76f62d179a61c2e7b8fa39",
+    "backend/app/models/user.py": "25508551f74ea8abcd77b43fba02d7af807bf0be0774d6bdaf27d60dc1197482",
+    "backend/app/repositories/auth_repository.py": "d0311f8566adc97273ddd0fc450603b783c6ad7fd4db22938f0dda76b6b2ce3c",
+    "backend/app/repositories/url_repository.py": "7efbb578556d77a1e664dd1235745273a88d619edb2a9d17b5c56f65381729a9",
+    "backend/app/repositories/user_repository.py": "2008d9078f09c95cb4a12de06ad0cee8ffd77da1e22fe027c13c6cf0a9787925",
+    "backend/app/schemas/auth.py": "3cf87a4cb0110c366c8eb1eb0489040d6dad688bdc33f4794bca0244477c2651",
+    "backend/app/schemas/url.py": "0ba3009e0246a6aea3180653c4e4226a219a24c978e8ebc1178766c0a13e210f",
+    "backend/app/services/auth_service.py": "c2ac2129f63089ca19c33926c2234cd3aa5eaca1072110a19bf4ebd11061e119",
+    "backend/app/services/email_service.py": "01f331280a166ccbd529bbaf5604fc780197d84a98039922b44f13e5d0088c2f",
+    "backend/app/services/url_service.py": "463f51dc94c192bfc06c8910a6f64d8e1919584dca6d21f6d169a3a20853d3d8",
+    "backend/app/utils/aliases.py": "87d8666cde83a77a79f75bacf7fdcb8bca018b755f9a84feaaa9a04023603132",
+    "backend/app/utils/base62.py": "be154d41201a802923ae8d7489772be0d3b89e50a9bacd9945af84130d580804",
+    "backend/app/utils/oidc.py": "650568c381fa6e53b25780b8b1e2c380d2f84a4ae9e11a4234a94ad3aa1cabf4",
+    "backend/app/utils/security.py": "f09a0aada6c25e296408eaed8d35c599a324de4d9f8488493bce065db690dd96",
+    "backend/app/utils/snowflake.py": "542d4cc38a6f2d16a59709c8d617b308ab356262b850c6a648d4380b089b5e6e",
+    "backend/pyproject.toml": "9cb63081c9d4d44e3de96dcb64183ed2d5bff6e9427f77f6cc506b056ec65eea",
+    "backend/uv.lock": "162777f9b588356f462145bf72ae984b55ae29ffc1e3f5a7db7aba85496dbec8",
+    "cryptalis_demo/__init__.py": "a2f50e41f08d25aec75b89724f1e9603177a8a2d444baf1d9dde0d1a0e7a91da",
+    "cryptalis_demo/benchmark.py": "a89c77ee8c69a4ae23373e8288d22a297f070ae62f2a28c919f6c209fdfd8f52",
+    "cryptalis_demo/capture_swagger.py": "d18bd9a778cec5c75d645394d380cfb48e417bb41746c7331960b29824ebb164",
+    "cryptalis_demo/host.py": "095939ac754c98c65e4db8c6562f5464a6ce7a552316a4608c9f1daf259fe69b",
+    "cryptalis_demo/journey.py": "c85102ced42cd8e54376071fdb62e4ec30b3c26772d7da1054b014a0d56108dc",
+    "cryptalis_demo/manage.py": "dc499226f8fd18abbfc67744a5068141fb05543e58c250c9d95cf6f4352692f6",
+    "cryptalis_demo/manifest.json": "c28b98410ca533b469bfab773ef743f59fb57f02c1101fe6a3050fc4dd5d64d8",
+    "cryptalis_demo/measure_outage.py": "5d9a78c0986df4e717e3c793c57a465bfdb82befad517ab4cbfc77436eb6db6e",
+    "cryptalis_demo/measure_pair.py": "35cbc754ace8c54017013a5bb6b9631cee8dd3fb1cccdfd7f90878b36321fa2f",
+    "cryptalis_demo/provision_provider.py": "92d4b1f12a7c6e192455c2cbbc45ef9255f6f39e760e7af0c2c538ddda044455",
+    "cryptalis_demo/recover.py": "7e24694128ecf1d36047775b7544fce8508696678331c576943b3f7276edcca0",
+    "cryptalis_demo/render_measurements.py": "caae1d58438e64f9d5c7e9ac2f9544c36b66d0221bcfd82b23f2b596121ac639",
+    "cryptalis_demo/requirements.txt": "cfa82b8bde8b4853983a0653d87663ef7856c63583c80e911009ad12885cbfca",
+    "cryptalis_demo/setup.py": "c4fb852a8b2f3b31b867db5e2d287ac81754b02c6007f1adc9034cb7a431b017"
+  },
+  "source_stable": true,
+  "clean_after": true,
+  "resource_sampler": {
+    "terminated": true,
+    "error_type": null
+  },
+  "finished_at_utc": "2026-11-01T07:01:40.222950+00:00",
+  "outputs_sha256": {
+    "cold-import-provider-probe.log": "2f2b613e407b4e64cee31f1a65e2141ffaac344bd9944b11e9b4505bb8d4b9b4",
+    "installed-runtime.log": "1be868b73880c6038b313207a040016a262523d9acfc4e1e36e4931b2537a1ed",
+    "native-host.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "protect-host.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "protect.log": "5819739e501ea1175d072e169280fde0cfcbcd5071a6464d56c27bde57e81190",
+    "resource-samples.json": "78010e47718b545abdfbe52e816178b8c911164f940a21f8955356733a46a9ea",
+    "rotate-payload-host.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rotate-payload.log": "6aa90df1ecda0313d78c17ac73be9e72f40b87ed420a70cfdbc77722e5dac389",
+    "rotate-wrapping-host.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rotate-wrapping.log": "aca1135dfa9b7fa690591d3a8c7d460d3c165d3fdccfd7b2a1bcb8e45965b717",
+    "search-refusal.log": "f75daa4f5bb13b89459468431b51a5c507c81feda751e92b9240a5607774459f",
+    "setup.log": "7d8a80de6bdae8b06a6b05fb88c1c5ba4954db893622a838727f0995a0763183"
+  }
+}
