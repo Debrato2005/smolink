@@ -481,3 +481,25 @@ Empty package `__init__.py` files establish importable packages.
 `endpoints/health.py` is the empty endpoint placeholder. URL/auth routes,
 repositories, schemas, and services contain implementation.
 `uv.lock` and `graphify-out/` are generated. Do not rewrite them for prose style.
+
+## Separate Cryptalis preview host
+
+The `demo/cryptalis-preview-20261101` branch adds
+[`cryptalis_demo/`](../cryptalis_demo/README.md) around the original backend.
+It installs a built Cryptalis wheel and replaces only FastAPI's session
+dependency. Existing application files, model declarations, repositories and
+routes remain unchanged from `498d24bae999ed53ad85e1c1f1a09ea7fa151aa4`.
+
+The manifest protects `Url.destination` with an explicit single-tenant,
+storage-only profile. The host uses psycopg for both matched configurations,
+private PostgreSQL role files, separate deployment state and real TLS OpenBao
+Transit custody. Lifecycle commands call the public `Project` API. Fresh
+recovery stops the source cluster before target admission. The demonstration
+preserves current committed edits through decrypt-back and a native restart
+in a fresh environment without Cryptalis. Search-key rotation is refused for
+this storage-only profile. Auth email, unfinished endpoints and production
+qualification keep their earlier limits.
+
+This is external-library demonstration infrastructure. It does not add a
+Smolink endpoint or change Smolink's production architecture. See the demo's
+own receipts and exact revisions for executed evidence.

@@ -1,0 +1,105 @@
+{
+  "format": "cryptalis.demo-competitive-sources/v1",
+  "retrieved_date": "2026-11-01",
+  "competitors_installed": false,
+  "matched_competitor_benchmarks": false,
+  "production_gates": "UNKNOWN",
+  "web": [
+    {
+      "url": "https://cipherstash.com/docs/reference/proxy",
+      "requested_live": true,
+      "retrieved_date": "2026-11-01",
+      "http_status": 200,
+      "title": "Proxy | CipherStash Docs",
+      "published_update": "30 July 2026",
+      "content_sha256": "0ccccb57893dfd7ea565072b30f5a09ff47d9b4188869f78d046a8fa8d047949"
+    },
+    {
+      "url": "https://cipherstash.com/docs/get-started/choose-your-stack",
+      "requested_live": true,
+      "retrieved_date": "2026-11-01",
+      "http_status": 200,
+      "title": "Choose your stack | CipherStash Docs",
+      "published_update": "13 October 2026",
+      "content_sha256": "b82bbb1a55a4fbba67c371bf4404a1728ffee78353d22fb172b7b1226601c2f0"
+    },
+    {
+      "url": "https://cipherstash.com/docs/concepts/key-management",
+      "requested_live": true,
+      "retrieved_date": "2026-11-01",
+      "http_status": 200,
+      "title": "Key management | CipherStash Docs",
+      "published_update": "30 July 2026",
+      "content_sha256": "3b7492d5773ace939db638bf184648532e1e748853d17917f8b01781f4c83b64"
+    },
+    {
+      "url": "https://cipherstash.com/docs/guides/migration",
+      "requested_live": true,
+      "retrieved_date": "2026-11-01",
+      "http_status": 200,
+      "title": "Data migration | CipherStash Docs",
+      "published_update": "30 July 2026",
+      "content_sha256": "bf16816f0f2fda93d79b7ff4bdd083cb137348857763b4917492fb5cf3bdf0b5"
+    },
+    {
+      "url": "https://cipherstash.com/docs/reference/eql",
+      "requested_live": true,
+      "retrieved_date": "2026-11-01",
+      "http_status": 200,
+      "title": "EQL | CipherStash Docs",
+      "published_update": "31 August 2026",
+      "content_sha256": "0f683e6dc0b58f45b1df0c82bf81241db94c2bda80a7621b872f18c14e9b374d"
+    },
+    {
+      "url": "https://cipherstash.com/docs/concepts/searchable-encryption",
+      "requested_live": true,
+      "retrieved_date": "2026-11-01",
+      "http_status": 200,
+      "title": "Searchable encryption | CipherStash Docs",
+      "published_update": "31 August 2026",
+      "content_sha256": "325ad28da53b60ba4bce8c7042a70c9b828e769fe14c488f3a01e8cb7a19310f"
+    }
+  ],
+  "official_source": [
+    {
+      "name": "stack-readme",
+      "url": "https://raw.githubusercontent.com/cipherstash/stack/3a923ef0796aefd1cfae47598010f3a47c5e2516/README.md",
+      "revision": "3a923ef0796aefd1cfae47598010f3a47c5e2516",
+      "http_status": 200,
+      "sha256": "a6c06fd949b31ba52ff36fb3c787ba11f65933267a82915fd34a235ca778d3ce",
+      "retrieved_date": "2026-11-01"
+    },
+    {
+      "name": "proxy-readme",
+      "url": "https://raw.githubusercontent.com/cipherstash/proxy/c5389a6386e8cd29e277ba3e1c85a4a0368a7ebb/README.md",
+      "revision": "c5389a6386e8cd29e277ba3e1c85a4a0368a7ebb",
+      "http_status": 200,
+      "sha256": "4eb0672ea951fbf6d00208ef8a91a2f2c025e10b17f7e0c231a81c6897211262",
+      "retrieved_date": "2026-11-01"
+    },
+    {
+      "name": "proxy-architecture",
+      "url": "https://raw.githubusercontent.com/cipherstash/proxy/c5389a6386e8cd29e277ba3e1c85a4a0368a7ebb/ARCHITECTURE.md",
+      "revision": "c5389a6386e8cd29e277ba3e1c85a4a0368a7ebb",
+      "http_status": 200,
+      "sha256": "d61fa46da6ebabd3cd9355c52391b4e53441f2be98849f79dd16d4cff6b24f61",
+      "retrieved_date": "2026-11-01"
+    },
+    {
+      "name": "sqlalchemy-utils-encrypted",
+      "url": "https://raw.githubusercontent.com/kvesteri/sqlalchemy-utils/fbffdaca45a7835f128b79d392602a3c088df794/sqlalchemy_utils/types/encrypted/encrypted_type.py",
+      "revision": "fbffdaca45a7835f128b79d392602a3c088df794",
+      "http_status": 200,
+      "sha256": "1b35a5998856e65f45c000ec93e9de597a081efd541b02f293a413160e9ff7fa",
+      "retrieved_date": "2026-11-01"
+    },
+    {
+      "name": "postgres16-pgcrypto",
+      "url": "https://raw.githubusercontent.com/postgres/postgres/a2732c98671d86a06f7ec21d469a52a7bf4efdc9/doc/src/sgml/pgcrypto.sgml",
+      "revision": "a2732c98671d86a06f7ec21d469a52a7bf4efdc9",
+      "http_status": 200,
+      "sha256": "b5993f98dfd7b116de4e7ec75771c7eb3a167fa581deae6867cd949a5cb7d881",
+      "retrieved_date": "2026-11-01"
+    }
+  ]
+}

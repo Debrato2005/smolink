@@ -316,3 +316,19 @@ for target contracts and the walkthrough for current behavior.
 | 2026-08-23 | Optional-authenticated URL ownership | User-reported ownership test passed | Guest URLs remain ownerless and valid Bearer tokens assign `owner_id`; per-user limiter selection remains pending. |
 | 2026-08-24 | Authenticated URL-creation rate limiting | `uv run pytest -q -s` → 115 passed, 9 warnings | Guest creation uses 10/IP/minute and authenticated creation uses an independent 30/user/minute rolling Redis window; both return `429` with `Retry-After`. |
 | 2026-10-02 | Technical documentation and comment refactor | 43 selected tests passed, 9 warnings. Python AST/token checks, local links, and prose lint checked | Full collection fails on missing `create_pkce_challenge`. PostgreSQL refuses local connections. Docker is unavailable in WSL. Application code behavior is unchanged. |
+
+### 2026-11-01 — Separate Cryptalis preview demonstration branch
+
+The branch `demo/cryptalis-preview-20261101` adds an external installed-wheel
+host around unchanged backend commit `498d24bae999ed53ad85e1c1f1a09ea7fa151aa4`.
+The original API and existing Swagger UI return successful URL creation
+responses with `Url.destination` encrypted before PostgreSQL. A real TLS
+OpenBao provider retains roots outside the database. The local lifecycle
+exercises payload/wrapping rotation, protected backup, a separately initialized
+PostgreSQL restore after source shutdown, authenticated adoption, a later edit,
+current-value decrypt-back, generated-object removal and a package-free native
+restart. Search-key rotation refuses the storage-only manifest. Exact receipts
+and measurements belong to the [separate demo](../cryptalis_demo/README.md).
+
+This entry does not mark unfinished Smolink endpoints, the full Smolink suite,
+production deployment or Cryptalis's seven security gates complete.
