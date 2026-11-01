@@ -11,7 +11,6 @@ into its output. Mail delivery is not exercised: verification is an ORM write.
 import argparse
 import asyncio
 from datetime import datetime, timezone
-import json
 from pathlib import Path
 
 from .host import build_runtime, load_config, owner_engine, project, role_name, import_application
@@ -74,7 +73,6 @@ async def race(config, mode):
     """Two sessions pass the application check; only the database can refuse one."""
     runtime = await build_runtime(config, mode)
     try:
-        from sqlalchemy import delete, select
         from sqlalchemy.exc import IntegrityError
         from app.models.user import User
         from app.repositories.user_repository import get_user_by_email
@@ -125,8 +123,7 @@ def observe(config):
 
 def operate(config, action):
     _, registry = import_application(config)
-    from sqlalchemy import select  # noqa: F401
-    owner, operator = owner_engine.__call__(config), project(config, registry)
+    owner, operator = owner_engine(config), project(config, registry)
     try:
         if action == 'protect':
             print(operator.doctor(owner)['issues'])

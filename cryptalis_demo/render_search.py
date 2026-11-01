@@ -1,15 +1,10 @@
 """Render email-search measurements from raw receipts; never edit the tables by hand."""
 import argparse
 import json
-import math
 from pathlib import Path
 import statistics
 
-
-def percentile(values, fraction):
-    ordered = sorted(values)
-    return ordered[max(0, math.ceil(len(ordered) * fraction) - 1)]
-
+from .benchmark import percentile
 
 TARGETS = {'email_equality': ('Email equality', 3), 'id_point': ('Point read', 3), 'orm_in20': ('IN-20 (ORM, no Smolink route)', 8)}
 

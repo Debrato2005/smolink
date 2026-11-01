@@ -18,9 +18,11 @@ This does not replace the [frozen demonstration](../../REPORT.md), which keeps l
 
 ## API behavior
 
-[`journey.log`](journey.log) records one complete run on a fresh cluster. These five
-responses are identical before protection, while protected, after payload rotation,
-after search rotation and after removal:
+[`journey.log`](journey.log) records one complete run on a fresh cluster, and
+[`journey-final-wheel.log`](journey-final-wheel.log) repeats it on the later development
+wheel `7cc2631cb62e58ec215af6c62c2b7fda36f1f4990ee9c675452ca0f051cd0642`, which adds bounded upsert. Latency and storage below were not
+remeasured on that wheel. These five responses are identical before protection, while
+protected, after payload rotation, after search rotation and after removal:
 
 | Request | Status |
 |---|---|
