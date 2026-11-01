@@ -1,0 +1,73 @@
+--- native
+POST /auth/login 200
+GET /auth/me 200 alice.example@example.com
+POST /auth/login, wrong password 401
+POST /auth/login, unknown email 401
+POST /auth/register, taken email 409
+exit=0 milliseconds=658
+--- protect
+[]
+ACTIVE
+exit=0 milliseconds=1881
+--- protected
+POST /auth/login 200
+GET /auth/me 200 alice.example@example.com
+POST /auth/login, wrong password 401
+POST /auth/login, unknown email 401
+POST /auth/register, taken email 409
+exit=0 milliseconds=731
+--- race
+concurrent inserts of one email: ['23505', '23505', '23505', '23505', '23505', '23505', '23505', 'committed']
+exit=0 milliseconds=619
+--- observe
+users.email type: bytea | stored bytes: 99 | prefix: 4346310001010000
+plaintext visible: False
+indexes: ['CREATE UNIQUE INDEX users_pkey ON smolink_preview.users USING btree (id)', 'CREATE UNIQUE INDEX _cryptalis_00000000000000000000000000000388_eq ON smolink_preview.users USING btree ("substring"(email, 15, 32))']
+exit=0 milliseconds=176
+--- payload
+payload ACTIVE
+exit=0 milliseconds=8197
+--- protected
+POST /auth/login 200
+GET /auth/me 200 alice.example@example.com
+POST /auth/login, wrong password 401
+POST /auth/login, unknown email 401
+POST /auth/register, taken email 409
+exit=0 milliseconds=739
+--- search
+search ACTIVE
+exit=0 milliseconds=8434
+--- protected
+POST /auth/login 200
+GET /auth/me 200 alice.example@example.com
+POST /auth/login, wrong password 401
+POST /auth/login, unknown email 401
+POST /auth/register, taken email 409
+exit=0 milliseconds=707
+--- race
+concurrent inserts of one email: ['23505', '23505', '23505', '23505', '23505', '23505', '23505', 'committed']
+exit=0 milliseconds=595
+--- observe
+users.email type: bytea | stored bytes: 99 | prefix: 4346310001010000
+plaintext visible: False
+indexes: ['CREATE UNIQUE INDEX users_pkey ON smolink_preview.users USING btree (id)', 'CREATE UNIQUE INDEX _cryptalis_00000000000000000000000000000388_eq ON smolink_preview.users USING btree ("substring"(email, 15, 32))']
+exit=0 milliseconds=177
+--- remove
+PLAINTEXT_ACTIVE
+REMOVED
+exit=0 milliseconds=1942
+--- uninstall cryptalis
+cryptalis importable: False
+--- removed
+POST /auth/login 200
+GET /auth/me 200 alice.example@example.com
+POST /auth/login, wrong password 401
+POST /auth/login, unknown email 401
+POST /auth/register, taken email 409
+exit=0 milliseconds=608
+--- observe
+users.email type: character varying | stored bytes: 25 | prefix: 616c6963652e6578
+plaintext visible: True
+indexes: ['CREATE UNIQUE INDEX users_pkey ON smolink_preview.users USING btree (id)', 'CREATE UNIQUE INDEX ix_users_email ON smolink_preview.users USING btree (email)']
+exit=0 milliseconds=174
+finished
