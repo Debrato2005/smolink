@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import signal
 import socket
 import subprocess
 import sys
@@ -147,7 +148,7 @@ def main():
         'commands': [], 'transitions': [], 'cleanup': [],
         'timing_contract': {
             'start': 'time.monotonic_ns immediately before SIGTERM to the real running host',
-            'stop': 'old Uvicorn process reaped; health connection refused before lifecycle mutation',
+            'stop': 'old Uvicorn process reaped with0 or expected-SIGTERM exit; health connection refused before lifecycle mutation. Uvicorn re-raises captured SIGTERM after server shutdown; this does not attest every Python finalizer.',
             'end': 'first HTTP201 response fully read; original route commits and refreshes before responding',
             'independent_commit_check': 'owner connection finds exact id/short_code after the201, outside interval',
             'readiness': 'fresh process health200 then actual POST201; health alone is not database readiness',
@@ -307,7 +308,7 @@ print(json.dumps(dict(installed_library_import_seconds=library_import,original_a
             started = time.monotonic_ns()
             host.terminate()
             stop_code = host.wait(timeout=15)
-            if stop_code != 0:
+            if stop_code not in (0, -signal.SIGTERM):
                 raise RuntimeError('Old host reported shutdown failure.')
             stopped = time.monotonic_ns()
             try:
@@ -350,7 +351,7 @@ print(json.dumps(dict(installed_library_import_seconds=library_import,original_a
         report['status'] = 'PASS'
     except BaseException as error:
         primary = error
-        report.update(status='FAIL', error_type=type(error).__name__)
+        report.update(status='FAIL', error_type=type(error).__name__, error_phase=sampler.phase)
     finally:
         sampler.phase = 'cleanup'
         for name, process in (('host', host), ('redis', redis)):
