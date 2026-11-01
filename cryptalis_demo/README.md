@@ -1,5 +1,10 @@
 # Cryptalis preview in the original Smolink backend
 
+For the saved revisions, completed evidence, stopped-service state and next
+steps, start with the [demonstration handoff](HANDOFF.md). The
+[report](REPORT.md) and [supplemental writer-interruption measurements](evidence/writer-interruption-20261101/README.md)
+retain their own exact measurement revisions and limits.
+
 This branch uses Smolink commit `498d24bae999ed53ad85e1c1f1a09ea7fa151aa4`.
 All original application, model, query and route files stay unchanged. The
 integration replaces the FastAPI session dependency and uses an installed
