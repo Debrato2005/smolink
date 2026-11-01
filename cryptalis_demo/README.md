@@ -1,5 +1,8 @@
 # Cryptalis preview in the original Smolink backend
 
+Protected account email, equality, uniqueness, search-key rotation and those
+targets are measured separately in [this development run](evidence/email-search-20261102/README.md).
+
 For the saved revisions, completed evidence, stopped-service state and next
 steps, start with the [demonstration handoff](HANDOFF.md). The
 [report](REPORT.md) and [supplemental writer-interruption measurements](evidence/writer-interruption-20261101/README.md)

@@ -1,0 +1,44 @@
+{
+  "schema": "cryptalis.protection/v1",
+  "profile": "cf1",
+  "domain_id": "b62c0af3-f128-4d0b-ac6a-dfc40ae6d128",
+  "models": [
+    {
+      "model": "User",
+      "table_id": "00000000-0000-0000-0000-000000000387",
+      "tenancy": {
+        "single_tenant": true
+      },
+      "fields": [
+        {
+          "name": "email",
+          "field_id": "00000000-0000-0000-0000-000000000388",
+          "protect": true,
+          "queries": [
+            "unique"
+          ],
+          "accept_leakage": [
+            "equality",
+            "unique"
+          ]
+        }
+      ]
+    },
+    {
+      "model": "Url",
+      "table_id": "00000000-0000-0000-0000-000000000385",
+      "tenancy": {
+        "single_tenant": true
+      },
+      "fields": [
+        {
+          "name": "destination",
+          "field_id": "00000000-0000-0000-0000-000000000386",
+          "protect": true,
+          "queries": [],
+          "accept_leakage": []
+        }
+      ]
+    }
+  ]
+}

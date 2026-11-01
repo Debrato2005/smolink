@@ -29,6 +29,8 @@ def main():
     parser.add_argument('--provider-config', type=Path, required=True)
     parser.add_argument('--cryptalis-checkout', type=Path, required=True)
     parser.add_argument('--rows', type=int, default=10000)
+    parser.add_argument('--users', type=int, default=0, help='Extra deterministic accounts for email search.')
+    parser.add_argument('--manifest', default='manifest.json')
     args = parser.parse_args()
     if not args.workdir.is_absolute() or not 1 <= args.rows <= 1000000:
         parser.error('Use a new absolute work directory and 1..1000000 rows.')
@@ -46,7 +48,7 @@ def main():
         private = write_home(args.workdir, port, manifest, credentials,
                              source_database=manifest['database'])
         secret = secrets.token_urlsafe(48)
-        config = {**providers, 'schema': 'smolink_preview',
+        config = {**providers, 'schema': 'smolink_preview', 'manifest': args.manifest,
             'owner_conninfo_file': str(private / '.cryptalis-test-url'),
             'runtime_conninfo_file': str(private / '.cryptalis-test-runtime-url'),
             'plaintext_conninfo_file': str(private / '.cryptalis-test-source-url'),
@@ -78,6 +80,10 @@ def main():
                     'owner_id': 10001 if i % 3 else None} for i in range(args.rows)]
                 for start in range(0, len(values), 1000):
                     connection.execute(Url.__table__.insert(), values[start:start + 1000])
+                users = [{'id': 7000000000 + i, 'email': f'user-{i:08d}@example.invalid', 'password_hash': None}
+                         for i in range(args.users)]
+                for start in range(0, len(users), 1000):
+                    connection.execute(User.__table__.insert(), users[start:start + 1000])
                 role = manifest['runtime_role']
                 plain = credentials['plaintext'][0]
                 connection.exec_driver_sql('REVOKE ALL ON SCHEMA smolink_preview FROM PUBLIC')

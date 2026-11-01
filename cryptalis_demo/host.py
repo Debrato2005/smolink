@@ -49,6 +49,9 @@ def import_application(config):
 
 
 def make_provider(spec):
+    if spec.get('kind') == 'development':
+        from cryptalis.crypto import DevelopmentKeyProvider
+        return DevelopmentKeyProvider(spec['key_file'])
     from cryptalis.crypto.openbao import OpenBaoTransitKeyProvider
     return OpenBaoTransitKeyProvider(
         endpoint=spec['endpoint'], ca_cert=spec['ca_cert'],
@@ -60,7 +63,7 @@ def make_provider(spec):
 
 def project(config, registry):
     from cryptalis import Project
-    return Project(ROOT / 'cryptalis_demo/manifest.json', registry,
+    return Project(ROOT / 'cryptalis_demo' / config.get('manifest', 'manifest.json'), registry,
                    provider=make_provider(config['providers'][config.get('active_provider', 0)]),
                    state_dir=config['state_dir'])
 
