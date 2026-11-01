@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/smolink-preview/cryptalis_demo/capture_swagger.py", line 108, in <module>
+    main()
+    ~~~~^^
+  File "/workspace/smolink-preview/cryptalis_demo/capture_swagger.py", line 90, in main
+    browser.wait("operation.querySelector('.live-responses-table .response-col_status').textContent.trim() === '201'")
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/smolink-preview/cryptalis_demo/capture_swagger.py", line 44, in wait
+    raise RuntimeError('Original Swagger UI did not reach the expected state.')
+RuntimeError: Original Swagger UI did not reach the expected state.

@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/smolink-preview/cryptalis_demo/benchmark.py", line 165, in <module>
+    main()
+    ~~~~^^
+  File "/workspace/smolink-preview/cryptalis_demo/benchmark.py", line 156, in main
+    report = asyncio.run(measure(load_config(args.config), args.mode, args.samples))
+  File "/usr/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/workspace/smolink-preview/cryptalis_demo/benchmark.py", line 53, in measure
+    runtime = await build_runtime(config, mode)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/smolink-preview/cryptalis_demo/host.py", line 123, in build_runtime
+    app.dependency_overrides[get_session] = sessions
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'app' has no attribute 'dependency_overrides'
