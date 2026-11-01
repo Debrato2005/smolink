@@ -1,0 +1,22 @@
+{
+  "backup_seconds": 0.12709394800003793,
+  "protected_backup_bytes": 3651086,
+  "restore_seconds": 0.24167362900004719,
+  "recovery_seconds": 0.6064246070000081,
+  "source_stop_to_first_committed_http_create_seconds": 3.6504043159999355,
+  "source_postmaster_pid_absent": true,
+  "source_cluster_stopped_before_target_start": true,
+  "latest_committed_edit_recovered": true,
+  "first_write": {
+    "status": 201,
+    "json": {
+      "id": 7447494741601550336,
+      "short_code": "restored-75043489aeb6",
+      "short_url": "http://127.0.0.1:8000/restored-75043489aeb6",
+      "destination": "https://example.invalid/first-write-after-fresh-restore",
+      "expires_at": null,
+      "created_at": "2026-11-01T06:29:30.291251Z"
+    }
+  },
+  "limits": "Local one-host stop/start exercise; no production RPO/RTO or distributed fencing claim"
+}

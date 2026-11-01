@@ -1,0 +1,32 @@
+[
+  {
+    "workload": "repository_point_c1",
+    "added_p95_ms": 4.607172,
+    "target": "MISS"
+  },
+  {
+    "workload": "http_create_c1",
+    "added_p95_ms": 7.734041000000001,
+    "target": "No write budget"
+  },
+  {
+    "workload": "repository_point_c4",
+    "added_p95_ms": 18.401316,
+    "target": "MISS"
+  },
+  {
+    "workload": "http_create_c4",
+    "added_p95_ms": 37.482097,
+    "target": "No write budget"
+  },
+  {
+    "workload": "repository_point_c16",
+    "added_p95_ms": 89.071358,
+    "target": "MISS"
+  },
+  {
+    "workload": "http_create_c16",
+    "added_p95_ms": 183.38812900000002,
+    "target": "No write budget"
+  }
+]

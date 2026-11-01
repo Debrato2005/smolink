@@ -1,0 +1,15 @@
+{
+  "mode": "removed",
+  "application_read": {
+    "id": 5000000000,
+    "destination": "https://example.invalid/latest-committed-edit-after-recovery"
+  },
+  "independent_database": {
+    "type": "character varying",
+    "character_limit": 2048,
+    "latest_value_matches": true
+  },
+  "url_rows": 10004,
+  "cryptalis_owned_relations": 0,
+  "cryptalis_installed": false
+}

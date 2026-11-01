@@ -1,0 +1,8 @@
+{
+  "operation": "remove",
+  "elapsed_seconds": 0.1913263140000936,
+  "result": {
+    "phase": "REMOVED",
+    "committed_rows": 10003
+  }
+}

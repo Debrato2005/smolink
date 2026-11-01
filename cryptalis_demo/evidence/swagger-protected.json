@@ -1,0 +1,15 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "interface": "original Smolink Swagger UI",
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/urls",
+    "json": {
+      "destination": "https://example.invalid/swagger-live-proof?marker=synthetic-plaintext",
+      "alias": "swagger-130e5574b989"
+    }
+  },
+  "status": "201",
+  "response_text": "{\n  \"id\": 7447494221814039000,\n  \"short_code\": \"swagger-130e5574b989\",\n  \"short_url\": \"http://127.0.0.1:8000/swagger-130e5574b989\",\n  \"destination\": \"https://example.invalid/swagger-live-proof?marker=synthetic-plaintext\",\n  \"expires_at\": null,\n  \"created_at\": \"2026-11-01T06:27:26.365365Z\"\n}",
+  "screenshot": "swagger-protected.png"
+}

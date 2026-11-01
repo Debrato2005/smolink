@@ -1,0 +1,17 @@
+{
+  "mode": "protected",
+  "application_read": {
+    "id": 5000000000,
+    "destination": "https://example.invalid/latest-committed-edit-after-recovery"
+  },
+  "independent_database": {
+    "type": "bytea",
+    "frame_prefix_hex": "43463100",
+    "stored_bytes": 102,
+    "sha256": "e26aad6999340294b3bc4bcaea83e008a222425706b5355ffd0d5a95fd1862d6",
+    "plaintext_marker_present": false
+  },
+  "url_rows": 10003,
+  "cryptalis_owned_relations": 2,
+  "cryptalis_installed": true
+}

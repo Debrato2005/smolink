@@ -1,0 +1,8 @@
+{
+  "operation": "rotate-wrapping",
+  "elapsed_seconds": 2.069332304999989,
+  "result": {
+    "phase": "ACTIVE",
+    "committed_rows": 10002
+  }
+}

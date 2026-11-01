@@ -1,0 +1,12 @@
+{
+  "interface": "original POST /api/v1/urls in fresh environment without Cryptalis",
+  "status": 201,
+  "json": {
+    "id": 7447494957239107584,
+    "short_code": "native-after-decrypt",
+    "short_url": "http://127.0.0.1:8000/native-after-decrypt",
+    "destination": "https://example.invalid/native-after-decrypt-proof",
+    "expires_at": null,
+    "created_at": "2026-11-01T06:30:21.724652Z"
+  }
+}

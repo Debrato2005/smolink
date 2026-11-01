@@ -1,0 +1,11 @@
+{
+  "original_backend_files_changed": 0,
+  "integration_host_lines": 164,
+  "manifest_lines": 21,
+  "models_changed": 0,
+  "business_queries_changed": 0,
+  "existing_route_handlers_changed": 0,
+  "settings_and_services": "new demo-only manifest, host factory, lifecycle CLI, source/target/runtime roles, private deployment state, TLS OpenBao, PostgreSQL16 and Redis; see README",
+  "setup_effort": "automated session; reliable developer person-hours not measured",
+  "limits": "host-file size includes validation/CLI/resource helpers; total automation is separate; not a universal zero-change claim"
+}

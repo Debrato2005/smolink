@@ -1,0 +1,8 @@
+{
+  "operation": "decrypt",
+  "elapsed_seconds": 2.0446262780000097,
+  "result": {
+    "phase": "PLAINTEXT_ACTIVE",
+    "committed_rows": 10003
+  }
+}

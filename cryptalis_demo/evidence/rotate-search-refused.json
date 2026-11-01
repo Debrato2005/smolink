@@ -1,0 +1,9 @@
+{
+  "operation": "rotate-search",
+  "outcome": "REFUSED",
+  "error": "TransitionFailure",
+  "code": "search_rotation_requires_searchable_fields",
+  "reason": "Url.destination uses the declared storage-only profile; no searchable field is active.",
+  "state_after_refusal": "ACTIVE",
+  "claim": "No Smolink protected search or search-key rotation was demonstrated."
+}

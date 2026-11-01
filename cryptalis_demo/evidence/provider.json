@@ -1,0 +1,25 @@
+{
+  "status": "READY",
+  "image": "openbao/openbao@sha256:5046911075e137e154ce49ab051502f4ec7cf367d484ae4a4dce665d9b90561f",
+  "version": "2.7.2",
+  "custody": "single-node local TLS OpenBao; generated Transit keys; narrow 8-hour tokens",
+  "limits": "Local functional custody only. Production provider gate remains UNKNOWN.",
+  "native_controls": [
+    {
+      "key_name": "preview-v1",
+      "native_wrap_unwrap": "PASS",
+      "context_mismatch": "REFUSED",
+      "key_rotation": "DENIED",
+      "unapproved_key": "DENIED",
+      "token_creation": "DENIED"
+    },
+    {
+      "key_name": "preview-v2",
+      "native_wrap_unwrap": "PASS",
+      "context_mismatch": "REFUSED",
+      "key_rotation": "DENIED",
+      "unapproved_key": "DENIED",
+      "token_creation": "DENIED"
+    }
+  ]
+}
