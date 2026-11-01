@@ -20,8 +20,8 @@ This does not replace the [frozen demonstration](../../REPORT.md), which keeps l
 
 [`journey.log`](journey.log) records one complete run on a fresh cluster, and
 [`journey-final-wheel.log`](journey-final-wheel.log) repeats it on the later development
-wheel `7cc2631cb62e58ec215af6c62c2b7fda36f1f4990ee9c675452ca0f051cd0642`, which adds bounded upsert. Latency and storage below were not
-remeasured on that wheel. These five responses are identical before protection, while
+wheel `0a79faf767a03fc9c2301f4a8d4594df448ab5e0a85e6889f3a417497ab7a3b0`, which adds bounded upsert and faster rotation. Latency and storage
+below were not remeasured on that wheel. These five responses are identical before protection, while
 protected, after payload rotation, after search rotation and after removal:
 
 | Request | Status |
@@ -96,12 +96,14 @@ The protected table holds one more row than the native one. Sizes come from the
 
 Wall time for one process on 10,002 accounts and 1,000 URLs, including Python start-up:
 
-| Step | Seconds |
-|---|---:|
-| Doctor and protection | 1.88 |
-| Payload rotation | 8.20 |
-| Search rotation | 8.43 |
-| Decrypt and removal | 1.94 |
+| Step | Measured wheel, seconds | Final wheel, seconds |
+|---|---:|---:|
+| Doctor and protection | 1.88 | 1.79 |
+| Payload rotation | 8.20 | 5.49 |
+| Search rotation | 8.43 | 5.71 |
+| Decrypt and removal | 1.94 | 1.95 |
+
+Each cell is one run, from the matching journey log.
 
 ## Limits
 
