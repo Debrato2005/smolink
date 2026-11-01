@@ -72,7 +72,10 @@ samples. A result counts as MEET only if every round meets the target.
 | Point read | 1.13 | 3.83 | 2.69, 2.73, 2.65 | 2.69 | 3 | MEET | 5093 / 1281 |
 | IN-20 (ORM, no Smolink route) | 1.65 | 5.43 | 3.78, 3.84, 3.76 | 3.78 | 8 | MEET | 3517 / 858 |
 
-**At concurrency 1, every target is met in every round.** At concurrency 4 and 16 in one
+**At concurrency 1, every target is met in every round, for reads of this one protected
+field.** Cost grows with protected fields read: a separate Cryptalis diagnostic adds about
+0.15 ms per field, so point and equality reads miss 3 ms from about 10 protected fields, even
+at concurrency 1. At concurrency 4 and 16 in one
 process, every target is missed. Protected work is CPU-bound Python on one event loop, so
 added latency grows with concurrency, about 2 ms of work per queued request. Four worker
 processes more than halve equality latency against one process at concurrency 4 and
