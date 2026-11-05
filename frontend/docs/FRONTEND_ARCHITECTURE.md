@@ -4,7 +4,7 @@
 
 ## Runtime and module direction
 
-React and TypeScript run as a Vite single-page application (SPA). React Router declarative mode owns browser paths. npm owns one exact lockfile. The [Source Ledger](SOURCE_LEDGER.md) owns versions and alternatives.
+React and TypeScript run as a Vite single-page application (SPA). React Router declarative mode owns browser paths. Bun owns one exact lockfile, `bun.lock`. The [Source Ledger](SOURCE_LEDGER.md) owns versions and alternatives.
 
 Use this direction:
 
@@ -61,7 +61,7 @@ Owner integration is blocked until the backend supplies a documented lossless ID
 
 `ProductGateway` extends the creation boundary with account, list, get, update, remove, analytics, and QR operations. The live gateway implements creation and reports every other operation as `unavailable`. The fixture gateway implements all of them in memory with URLs on the reserved `smolink.test` domain and selectable scenarios. The account operation also accepts `google`, which the fixture resolves and the live gateway reports as unavailable. Development-only UI (Developer tools, Use test account, Use test link) is gated on `import.meta.env.DEV`, so production bundles exclude it.
 
-`readConfig` defaults to live data. `.env.fixture` explicitly selects development fixtures through `npm run dev`. `.env.live` selects HTTP through `npm run dev:live`. Invalid source values fail startup. Every build rejects fixture configuration. Runtime production selection also refuses it.
+`readConfig` defaults to live data. `.env.fixture` explicitly selects development fixtures through `bun run dev`. `.env.live` selects HTTP through `bun run dev:live`. Invalid source values fail startup. Every build rejects fixture configuration. Runtime production selection also refuses it.
 
 `createLinkGateway` selects once at bootstrap. Vite's `DEV` branch dynamically imports the sole fixture gateway. Production removes that branch and fixture chunk. A failed live request never selects a fixture. Product copy does not label data as demo or sample. The development-only Developer tools panel names local data.
 

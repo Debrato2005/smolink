@@ -1,0 +1,3 @@
+[install]
+# Save exact versions, as .npmrc save-exact=true did under npm.
+exact = true

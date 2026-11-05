@@ -6,21 +6,21 @@ Smolink's React application is a presentation layer over explicit HTTP contracts
 
 ## Current status
 
-The app uses a neobrutalist Smolink system built from three references: a sky-blue interactive square-mesh page background, a sticky navbar with boxed hover, focus, and active states, a 40/60 desktop hero with text on the left and the shortener on the right, color-filled feature cards, and a result ticket. The original grid intersections move with pointer velocity, return with spring tension, and carry click waves throughout the route shell. Reduced motion and canvas failure keep the original static grid. Sign-in offers Continue with Google beside email. Development data (`npm run dev`) shows every journey. Production connects guest creation only and marks QR, accounts, click stats, and redirects as coming soon until backend contracts exist.
+The app uses a neobrutalist Smolink system built from three references: a sky-blue interactive square-mesh page background, a sticky navbar with boxed hover, focus, and active states, a 40/60 desktop hero with text on the left and the shortener on the right, color-filled feature cards, and a result ticket. The original grid intersections move with pointer velocity, return with spring tension, and carry click waves throughout the route shell. Reduced motion and canvas failure keep the original static grid. Sign-in offers Continue with Google beside email. Development data (`bun run dev`) shows every journey. Production connects guest creation only and marks QR, accounts, click stats, and redirects as coming soon until backend contracts exist.
 
 Read the [current handoff](docs/HANDOFF.md) for observed checks and blockers. The [implementation queue](docs/BUILD_CHECKLIST.md) owns task status.
 
 ## Prerequisites
 
-Use Node `^22.22.0 || >=24.0.0`, npm, and Python 3 for the document check. The router requires Node 22.22 or later. The lockfile is npm's `package-lock.json`. Use one package manager.
+Use Bun `1.3.14` or later, Node `^22.22.0 || >=24.0.0`, and Python 3 for the document check. Bun installs dependencies and runs scripts; Vite, Vitest and Playwright still run on Node, and the router requires Node 22.22 or later. The lockfile is Bun's text `bun.lock`. Use one package manager.
 
 ## Quick start
 
 Run these commands from `frontend/`:
 
 ```bash
-npm ci
-npm run dev
+bun install --frozen-lockfile
+bun run dev
 ```
 
 Open [the local preview](http://127.0.0.1:3000). The port matches the backend template's frontend email-link origin. `.env.fixture` explicitly selects fixtures. No backend service is needed. The development-only Developer tools panel identifies local data. Reload clears local changes.
@@ -28,31 +28,31 @@ Open [the local preview](http://127.0.0.1:3000). The port matches the backend te
 For live guest creation, start the backend with the [root development guide](../docs/development.md), then run:
 
 ```bash
-npm run dev:live
+bun run dev:live
 ```
 
 The development proxy sends `/api` to `http://127.0.0.1:8000`. Live errors remain live errors. Fixtures never replace them. Redirect, QR, and owner endpoints remain unavailable. Local authentication is implemented in backend source, but frontend session integration remains blocked.
 
 ## Commands
 
-| Command                                          | Purpose                                                           |
-| ------------------------------------------------ | ----------------------------------------------------------------- |
-| `npm ci`                                         | Install the exact lockfile                                        |
-| `npm run dev`                                    | Start explicit fixture development on port 3000                   |
-| `npm run dev:live`                               | Start live HTTP development                                       |
-| `npm run typecheck`                              | Check strict TypeScript                                           |
-| `npm run lint`                                   | Check JavaScript/TypeScript with zero warnings                    |
-| `npm run format`                                 | Format maintained frontend files                                  |
-| `npm run format:check`                           | Check formatting                                                  |
-| `npm test`                                       | Run focused contract tests, including a real loopback HTTP server |
-| `npm run test:watch`                             | Watch focused tests                                               |
-| `npx playwright install chromium firefox webkit` | Install pinned browser runtimes                                   |
-| `npm run test:e2e`                               | Run the fixture browser suite in all three engines                |
-| `npm run test:e2e -- --project=chromium`         | Run the Chromium subset                                           |
-| `npm run build`                                  | Typecheck and build live production assets                        |
-| `SMOLINK_E2E_TARGET=production npm run test:e2e` | Check built assets with injected API failure                      |
-| `npm run preview`                                | Serve the production build on port 4173                           |
-| `npm run docs:check`                             | Check document structure                                          |
+| Command                                           | Purpose                                                           |
+| ------------------------------------------------- | ----------------------------------------------------------------- |
+| `bun install --frozen-lockfile`                   | Install the exact lockfile                                        |
+| `bun run dev`                                     | Start explicit fixture development on port 3000                   |
+| `bun run dev:live`                                | Start live HTTP development                                       |
+| `bun run typecheck`                               | Check strict TypeScript                                           |
+| `bun run lint`                                    | Check JavaScript/TypeScript with zero warnings                    |
+| `bun run format`                                  | Format maintained frontend files                                  |
+| `bun run format:check`                            | Check formatting                                                  |
+| `bun run test`                                    | Run focused contract tests, including a real loopback HTTP server |
+| `bun run test:watch`                              | Watch focused tests                                               |
+| `bunx playwright install chromium firefox webkit` | Install pinned browser runtimes                                   |
+| `bun run test:e2e`                                | Run the fixture browser suite in all three engines                |
+| `bun run test:e2e --project=chromium`             | Run the Chromium subset                                           |
+| `bun run build`                                   | Typecheck and build live production assets                        |
+| `SMOLINK_E2E_TARGET=production bun run test:e2e`  | Check built assets with injected API failure                      |
+| `bun run preview`                                 | Serve the production build on port 4173                           |
+| `bun run docs:check`                              | Check document structure                                          |
 
 Set `SMOLINK_CHROMIUM_PATH` when the host cannot download the pinned Chromium. Playwright starts its own fixture server on port 3100. Production checks use port 4173. Keep those ports free; ordinary development uses port 3000. Browser installation can require host libraries. Record missing libraries as environment blockers instead of a pass.
 

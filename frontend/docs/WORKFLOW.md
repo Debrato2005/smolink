@@ -10,7 +10,7 @@ Backend implementation is a separate dimension. A mounted auth endpoint does not
 
 ## Route map
 
-Fixture mode (`npm run dev`) shows every journey with local development data that looks like the real product. A development-only Developer tools panel in the footer names that data and switches scenarios. Live mode (`npm run dev:live` and production) connects guest creation only and marks other features as coming soon. No product copy says demo or sample.
+Fixture mode (`bun run dev`) shows every journey with local development data that looks like the real product. A development-only Developer tools panel in the footer names that data and switches scenarios. Live mode (`bun run dev:live` and production) connects guest creation only and marks other features as coming soon. No product copy says demo or sample.
 
 | Frontend path                              | Fixture behavior                                                 | Live behavior                                              | Classification                                                   |
 | ------------------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- |

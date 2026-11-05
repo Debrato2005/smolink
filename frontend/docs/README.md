@@ -29,6 +29,6 @@ Do not require all documents for a small task. Do not place command receipts in 
 
 ## Structural validation
 
-Run `npm run docs:check` from `frontend/`. [verify_docs.py](verify_docs.py) checks file presence, owner labels, required sections, local links/anchors, and task structure. It rejects unclassified placeholders in stable contract documents.
+Run `bun run docs:check` from `frontend/`. [verify_docs.py](verify_docs.py) checks file presence, owner labels, required sections, local links/anchors, and task structure. It rejects unclassified placeholders in stable contract documents.
 
 This is a structure check. It does not prove semantic truth, API correctness, browser acceptance, accessibility conformance, or live integration.
