@@ -30,7 +30,7 @@ export default defineConfig({
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ],
   webServer: {
-    command: production ? 'npm run preview' : 'npm run dev -- --port 3100',
+    command: production ? 'bun run preview' : 'bun run dev --port 3100',
     url: baseURL,
     reuseExistingServer: process.env.SMOLINK_E2E_REUSE === '1',
   },

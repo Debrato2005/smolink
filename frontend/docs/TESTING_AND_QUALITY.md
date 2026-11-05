@@ -58,14 +58,14 @@ No frontend secret, token persistence, URL telemetry, raw error display, or thir
 Run from `frontend/`:
 
 ```bash
-npm run docs:check
-npm run typecheck
-npm run lint
-npm run format:check
-npm test
-npm run test:e2e
-npm run build
-SMOLINK_E2E_TARGET=production npm run test:e2e
+bun run docs:check
+bun run typecheck
+bun run lint
+bun run format:check
+bun run test
+bun run test:e2e
+bun run build
+SMOLINK_E2E_TARGET=production bun run test:e2e
 ```
 
 Also inspect rendered captures, production behavior, final Git status, all new files, and `git diff --check`. Compare outside-frontend state against the initial baseline. Existing dirty root paths are preserved work, not task modifications.

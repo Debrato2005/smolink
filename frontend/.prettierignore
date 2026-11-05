@@ -3,7 +3,7 @@ dist
 .local
 .agents
 skills-lock.json
-package-lock.json
+bun.lock
 playwright-report
 test-results
 .impeccable/
