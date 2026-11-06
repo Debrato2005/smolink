@@ -29,6 +29,7 @@ from app.repositories.auth_repository import (
     get_password_reset_token_by_hash_for_update,
     revoke_all_refresh_token_families,
     consume_active_email_verification_tokens,
+    consume_active_password_reset_tokens,
     )
 from app.repositories.user_repository import (
     create_user,
@@ -36,6 +37,7 @@ from app.repositories.user_repository import (
     get_user_by_id,
 )
 from app.utils.security import (
+    burn_password_check,
     create_access_token,
     create_refresh_token,
     decode_refresh_token,
@@ -118,6 +120,7 @@ async def authenticate_user(
     user=await get_user_by_email(session,normalize_email(email))
 
     if user is None or user.password_hash is None:
+        burn_password_check(password)
         raise InvalidCredentialsError
 
     if (
@@ -348,6 +351,12 @@ async def request_password_reset(
     if user is None or user.password_hash is None:
         return None
 
+    await consume_active_password_reset_tokens(
+        session,
+        user_id=user.id,
+        consumed_at=datetime.now(timezone.utc),
+    )
+
     raw_token=generate_opaque_token()
     token=PasswordResetToken(
         id=generator.next_id(),
@@ -396,6 +405,11 @@ async def reset_password(
         raise InvalidOrExpiredTokenError
 
     token_record.consumed_at=now
+    await consume_active_password_reset_tokens(
+        session,
+        user_id=user.id,
+        consumed_at=now,
+    )
     user.password_hash=hash_password(new_password)
     user.failed_login_count=0
     user.locked_until=None

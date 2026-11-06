@@ -1,0 +1,3 @@
+# Gitleaks findings reviewed on 2026-11-06 and confirmed not to be secrets:
+# file-content hashes in a removed graphify-out cache index (generic-api-key pattern).
+d617363de51c8b6b60c90ce16a18e48483c90efe:graphify-out/cache/stat-index.json:generic-api-key:1

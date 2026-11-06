@@ -76,12 +76,16 @@ async def register(
         await session.commit()
         await session.refresh(user)
 
-        await send_verification_email(
-            recipient_email=user.email,
-            verification_token=registration.verification_token,
-            idempotency_key=f"verification:{user.id}",
-        )
-        
+        try:
+            await send_verification_email(
+                recipient_email=user.email,
+                verification_token=registration.verification_token,
+                idempotency_key=f"verification:{user.id}",
+            )
+        except EmailDeliveryError:
+            # The account exists; the user can request a new email through resend-verification.
+            pass
+
     except EmailTakenError:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,

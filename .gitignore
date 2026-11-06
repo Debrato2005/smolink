@@ -75,3 +75,6 @@ graphify-out/
 
 # Generated Graphify knowledge graph
 graphify-out/
+
+# Local tool caches (npm update-notifier and similar)
+.local/
