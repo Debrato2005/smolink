@@ -126,15 +126,3 @@ async def consume_active_email_verification_tokens(
                           .where(EmailVerificationToken.user_id==user_id,
                                  EmailVerificationToken.consumed_at.is_(None),)
                                  .values(consumed_at=consumed_at))
-
-
-async def consume_active_password_reset_tokens(
-        session:AsyncSession,
-        *,
-        user_id:int,
-        consumed_at:datetime
-)->None:
-    await session.execute(update(PasswordResetToken)
-                          .where(PasswordResetToken.user_id==user_id,
-                                 PasswordResetToken.consumed_at.is_(None),)
-                                 .values(consumed_at=consumed_at))
