@@ -2,13 +2,11 @@
 # User creation uses rate:create:user:{user_id}, limited to 30 per minute.
 # Auth POST routes share rate:auth:{ip}, limited to 5 per minute.
 # These are rolling 60-second windows, checked atomically in Redis.
-# Client IP comes from request.client.host, with "unknown" for no client; IPv6 is keyed per /64.
+# Client IP comes from request.client.host, with "unknown" for no client.
 # Invalid Bearer authentication fails before creation limiting continues.
 # Denial returns 429. Retry-After is a response header measured in seconds.
 # Limiter failure returns 503 because enforcement cannot establish an allowance.
 # Inspect exceptions through logs or a debugger. Preserve failure handling.
-
-import ipaddress
 
 from fastapi import Depends, HTTPException, Request, status
 from redis.asyncio import Redis
@@ -18,19 +16,6 @@ from app.core.redis import get_redis_client
 
 from app.api.v1.dependencies.auth import get_optional_current_user
 from app.models.user import User
-
-
-def client_rate_key(host: str | None) -> str:
-    """Rate-limit identity for a client address: IPv4 as is, IPv6 per /64 (one subscriber's usual allocation)."""
-    if not host:
-        return "unknown"
-    try:
-        address = ipaddress.ip_address(host)
-    except ValueError:
-        return host
-    if address.version == 6 and address.ipv4_mapped is None:
-        return str(ipaddress.ip_network(f"{address}/64", strict=False))
-    return str(getattr(address, "ipv4_mapped", None) or address)
 
 async def limit_url_creation(
     request: Request,
@@ -42,7 +27,11 @@ async def limit_url_creation(
 
     if current_user is None:
 
-        client_ip = client_rate_key(request.client.host if request.client is not None else None)
+        client_ip = (
+            request.client.host
+            if request.client is not None
+            else "unknown"
+        )
 
         key = f"rate:create:guest:{client_ip}"
 
@@ -80,7 +69,7 @@ async def limit_url_creation(
 async def limit_auth_write(request:Request, client: Redis=Depends(get_redis_client),
                            )->None:
     
-    client_ip=client_rate_key(request.client.host if request.client is not None else None)
+    client_ip=request.client.host if request.client is not None else "unknown"
 
     try :
         result = await SlidingWindowRateLimiter(client).check(
