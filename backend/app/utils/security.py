@@ -23,6 +23,13 @@ import secrets
 
 password_hasher=PasswordHasher()
 
+# Verifying against this hash costs the same as a real check, so login timing does not reveal which emails exist.
+_TIMING_PARITY_HASH = password_hasher.hash("smolink-timing-parity-placeholder")
+
+
+def burn_password_check(password: str) -> None:
+    verify_password(password, _TIMING_PARITY_HASH)
+
 def hash_password(password:str)->str:
     return password_hasher.hash(password)
 

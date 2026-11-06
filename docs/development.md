@@ -22,7 +22,7 @@ The `smolink` database credentials are for local development only.
 2. Edit `backend/.env` for your local environment.
 
    Replace the JWT, token-hash, and IP-hash placeholders with distinct random
-   secrets. Keep this file uncommitted. Preserve an existing configuration.
+   secrets of at least 32 characters each; startup rejects shorter or reused values. Keep this file uncommitted. Preserve an existing configuration.
    All `Settings` fields without defaults are required, including email and
    Google fields. Google routes are still pending. Actual email delivery
    requires a Resend key and a verified sender domain. Email links target

@@ -6,14 +6,24 @@ class InvalidAliasError(ValueError):
 ALIAS_PATTERN = re.compile(r"^[a-z0-9-]{3,64}$")
 RESERVED_ALIASES = frozenset(
     {
+        "admin",
         "api",
+        "assets",
+        "auth",
+        "dashboard",
         "docs",
+        "forgot-password",
         "health",
         "login",
         "me",
         "openapi.json",
         "redoc",
         "register",
+        "reset-password",
+        "settings",
+        "static",
+        "urls",
+        "verify-email",
     }
 )
 
